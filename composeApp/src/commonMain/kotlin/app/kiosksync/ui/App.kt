@@ -1,80 +1,113 @@
 package app.kiosksync.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material.darkColors
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import app.kiosksync.AppContainer
-import app.kiosksync.core.APP_NAME
-import app.kiosksync.core.Strings
+import app.kiosksync.core.AppRole
+import app.kiosksync.core.DEFAULT_PORT
+import app.kiosksync.feature.role.AppConfig
+import app.kiosksync.feature.role.RoleSelectionScreen
+import app.kiosksync.feature.role.RoleStateHolder
+import java.util.UUID
 
 @Composable
 fun App(container: AppContainer) {
-    MaterialTheme {
+    val existingConfig = remember { container.localStorage.loadConfig() }
+    val initialDeviceId = remember { existingConfig?.deviceId ?: UUID.randomUUID().toString() }
+    val effectivePort = container.args.port ?: existingConfig?.port ?: DEFAULT_PORT
+
+    // Determine initial screen based on CLI args and saved config
+    val initialScreen = remember {
+        val forcedRole = container.args.role
+        if (forcedRole != null) {
+            val config = AppConfig(
+                role = forcedRole,
+                deviceId = initialDeviceId,
+                deviceName = container.deviceName,
+                port = effectivePort
+            )
+            // Persist forced role config so subsequent operations have complete config
+            container.localStorage.saveConfig(config)
+            when (forcedRole) {
+                AppRole.EMITTER -> Screen.EmitterHome(config)
+                AppRole.RECEIVER -> Screen.ReceiverHome(config)
+            }
+        } else if (existingConfig != null) {
+            when (existingConfig.role) {
+                AppRole.EMITTER -> Screen.EmitterHome(existingConfig)
+                AppRole.RECEIVER -> Screen.ReceiverHome(existingConfig)
+            }
+        } else {
+            Screen.RoleSelection
+        }
+    }
+
+    var currentScreen by remember { mutableStateOf<Screen>(initialScreen) }
+
+    val roleStateHolder = remember {
+        RoleStateHolder(
+            localStorage = container.localStorage,
+            logger = container.logger,
+            initialRole = container.args.role ?: existingConfig?.role
+        )
+    }
+
+    MaterialTheme(
+        colors = darkColors(
+            background = Color(0xFF121212),
+            surface = Color(0xFF1E1E1E),
+            primary = Color(0xFF3D7AF5),
+            onBackground = Color.White,
+            onSurface = Color.White
+        )
+    ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = Color(0xFF1E1E1E)
+            color = MaterialTheme.colors.background
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = APP_NAME,
-                        fontSize = 28.sp,
-                        color = Color.White
+            when (val screen = currentScreen) {
+                is Screen.RoleSelection -> {
+                    RoleSelectionScreen(
+                        stateHolder = roleStateHolder,
+                        onRoleConfirmed = { confirmedConfig ->
+                            currentScreen = when (confirmedConfig.role) {
+                                AppRole.EMITTER -> Screen.EmitterHome(confirmedConfig)
+                                AppRole.RECEIVER -> Screen.ReceiverHome(confirmedConfig)
+                            }
+                        },
+                        deviceId = initialDeviceId,
+                        deviceName = container.deviceName,
+                        port = effectivePort
                     )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        text = Strings.SKELETON_READY,
-                        fontSize = 16.sp,
-                        color = Color(0xFFAAAAAA)
+                }
+
+                is Screen.EmitterHome -> {
+                    RoleHomeScreen(
+                        config = screen.config,
+                        stateHolder = roleStateHolder,
+                        onRoleReset = {
+                            currentScreen = Screen.RoleSelection
+                        }
                     )
-                    Spacer(modifier = Modifier.height(20.dp))
-                    Text(
-                        text = "Data dir: ${container.dataDirPath}",
-                        fontSize = 13.sp,
-                        color = Color(0xFF777777)
+                }
+
+                is Screen.ReceiverHome -> {
+                    RoleHomeScreen(
+                        config = screen.config,
+                        stateHolder = roleStateHolder,
+                        onRoleReset = {
+                            currentScreen = Screen.RoleSelection
+                        }
                     )
-                    if (container.args.role != null) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Rol forzado: ${container.args.role}",
-                            fontSize = 13.sp,
-                            color = Color(0xFF88AA88)
-                        )
-                    }
-                    if (container.args.port != null) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Puerto: ${container.args.port}",
-                            fontSize = 13.sp,
-                            color = Color(0xFF88AA88)
-                        )
-                    }
-                    if (container.args.windowed) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Modo: Ventana (--windowed)",
-                            fontSize = 13.sp,
-                            color = Color(0xFF88AA88)
-                        )
-                    }
                 }
             }
         }
