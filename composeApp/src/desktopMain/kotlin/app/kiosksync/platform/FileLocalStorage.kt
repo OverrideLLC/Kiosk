@@ -78,6 +78,71 @@ class FileLocalStorage(
         }
     }
 
+    override fun loadReceiverPairedInfo(): app.kiosksync.core.ReceiverPairedInfo? {
+        if (!pairedFile.exists()) return null
+        return try {
+            val content = pairedFile.readText(Charsets.UTF_8).trim()
+            if (content.startsWith("{")) {
+                json.decodeFromString<app.kiosksync.core.ReceiverPairedInfo>(content)
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            logger.error("Error loading receiver paired.json", e)
+            null
+        }
+    }
+
+    override fun saveReceiverPairedInfo(info: app.kiosksync.core.ReceiverPairedInfo) {
+        try {
+            dataDir.mkdirs()
+            val content = json.encodeToString(app.kiosksync.core.ReceiverPairedInfo.serializer(), info)
+            pairedFile.writeText(content, Charsets.UTF_8)
+            logger.info("Saved receiver pairing to ${pairedFile.absolutePath}")
+        } catch (e: Exception) {
+            logger.error("Error saving receiver paired.json", e)
+        }
+    }
+
+    override fun loadEmitterPairedDevices(): List<app.kiosksync.core.EmitterPairedDevice> {
+        if (!pairedFile.exists()) return emptyList()
+        return try {
+            val content = pairedFile.readText(Charsets.UTF_8).trim()
+            if (content.startsWith("[")) {
+                json.decodeFromString<List<app.kiosksync.core.EmitterPairedDevice>>(content)
+            } else {
+                emptyList()
+            }
+        } catch (e: Exception) {
+            logger.error("Error loading emitter paired.json", e)
+            emptyList()
+        }
+    }
+
+    override fun saveEmitterPairedDevices(devices: List<app.kiosksync.core.EmitterPairedDevice>) {
+        try {
+            dataDir.mkdirs()
+            val content = json.encodeToString(
+                kotlinx.serialization.builtins.ListSerializer(app.kiosksync.core.EmitterPairedDevice.serializer()),
+                devices
+            )
+            pairedFile.writeText(content, Charsets.UTF_8)
+            logger.info("Saved emitter paired devices list (${devices.size} items)")
+        } catch (e: Exception) {
+            logger.error("Error saving emitter paired devices", e)
+        }
+    }
+
+    override fun addEmitterPairedDevice(device: app.kiosksync.core.EmitterPairedDevice) {
+        val current = loadEmitterPairedDevices().filterNot { it.deviceId == device.deviceId }
+        saveEmitterPairedDevices(current + device)
+    }
+
+    override fun removeEmitterPairedDevice(deviceId: String) {
+        val current = loadEmitterPairedDevices().filterNot { it.deviceId == deviceId }
+        saveEmitterPairedDevices(current)
+    }
+
     override fun loadPlaylist(): Playlist? {
         if (!playlistFile.exists()) {
             return null
