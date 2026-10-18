@@ -112,7 +112,8 @@ fun App(
                         },
                         deviceId = initialDeviceId,
                         deviceName = container.deviceName,
-                        port = effectivePort
+                        port = effectivePort,
+                        onExitRequested = onExitRequested
                     )
                 }
 
@@ -122,7 +123,8 @@ fun App(
                         stateHolder = roleStateHolder,
                         onRoleReset = {
                             currentScreen = Screen.RoleSelection
-                        }
+                        },
+                        onExitRequested = onExitRequested
                     )
                 }
 

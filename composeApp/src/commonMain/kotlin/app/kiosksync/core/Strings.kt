@@ -21,6 +21,7 @@ object Strings {
     const val STATUS_ONLINE = "En línea"
     const val STATUS_OFFLINE = "Desconectada"
     const val STATUS_UNPAIRED = "Sin vincular"
+    const val EXIT_APP = "Salir del programa"
 
     // Skeleton indicator for Phase 0
     const val SKELETON_READY = "KioskSync - Fase 0 inicializada correctamente"

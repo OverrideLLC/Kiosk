@@ -38,7 +38,8 @@ import app.kiosksync.feature.role.RoleStateHolder
 fun RoleHomeScreen(
     config: AppConfig,
     stateHolder: RoleStateHolder,
-    onRoleReset: () -> Unit
+    onRoleReset: () -> Unit,
+    onExitRequested: () -> Unit = {}
 ) {
     val uiState by stateHolder.uiState.collectAsState()
 
@@ -105,17 +106,33 @@ fun RoleHomeScreen(
 
             Spacer(modifier = Modifier.height(36.dp))
 
-            OutlinedButton(
-                onClick = { stateHolder.requestChangeRole() },
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = Color(0xFFE57373)
-                ),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text(
-                    text = Strings.CHANGE_ROLE,
-                    fontSize = 14.sp
-                )
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                OutlinedButton(
+                    onClick = { stateHolder.requestChangeRole() },
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color(0xFFE57373)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = Strings.CHANGE_ROLE,
+                        fontSize = 14.sp
+                    )
+                }
+
+                Button(
+                    onClick = onExitRequested,
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = Color(0xFF333333),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = Strings.EXIT_APP,
+                        fontSize = 14.sp
+                    )
+                }
             }
         }
 

@@ -16,6 +16,7 @@ import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Card
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.OutlinedButton
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -36,7 +37,8 @@ fun RoleSelectionScreen(
     onRoleConfirmed: (AppConfig) -> Unit,
     deviceId: String,
     deviceName: String,
-    port: Int
+    port: Int,
+    onExitRequested: () -> Unit = {}
 ) {
     val uiState by stateHolder.uiState.collectAsState()
 
@@ -116,6 +118,22 @@ fun RoleSelectionScreen(
                 text = Strings.ROLE_CONFIRM_BUTTON,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedButton(
+            onClick = onExitRequested,
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = Color(0xFFAAAAAA)
+            ),
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier.height(40.dp).width(260.dp)
+        ) {
+            Text(
+                text = Strings.EXIT_APP,
+                fontSize = 13.sp
             )
         }
     }
