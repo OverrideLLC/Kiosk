@@ -8,19 +8,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import app.kiosksync.AppContainer
 import app.kiosksync.core.AppRole
 import app.kiosksync.core.DEFAULT_PORT
+import app.kiosksync.feature.playback.CarouselScreen
+import app.kiosksync.feature.playback.PlaybackStateHolder
 import app.kiosksync.feature.role.AppConfig
 import app.kiosksync.feature.role.RoleSelectionScreen
 import app.kiosksync.feature.role.RoleStateHolder
 import java.util.UUID
 
 @Composable
-fun App(container: AppContainer) {
+fun App(
+    container: AppContainer,
+    onExitRequested: () -> Unit = {},
+    registerEscHandler: ((() -> Unit)?) -> Unit = {}
+) {
+    val coroutineScope = rememberCoroutineScope()
     val existingConfig = remember { container.localStorage.loadConfig() }
     val initialDeviceId = remember { existingConfig?.deviceId ?: UUID.randomUUID().toString() }
     val effectivePort = container.args.port ?: existingConfig?.port ?: DEFAULT_PORT
@@ -35,7 +43,6 @@ fun App(container: AppContainer) {
                 deviceName = container.deviceName,
                 port = effectivePort
             )
-            // Persist forced role config so subsequent operations have complete config
             container.localStorage.saveConfig(config)
             when (forcedRole) {
                 AppRole.EMITTER -> Screen.EmitterHome(config)
@@ -59,6 +66,25 @@ fun App(container: AppContainer) {
             logger = container.logger,
             initialRole = container.args.role ?: existingConfig?.role
         )
+    }
+
+    val playbackStateHolder = remember {
+        PlaybackStateHolder(
+            localStorage = container.localStorage,
+            logger = container.logger,
+            scope = coroutineScope
+        )
+    }
+
+    // Register Esc handler for receiver mode
+    remember(currentScreen) {
+        if (currentScreen is Screen.ReceiverHome) {
+            registerEscHandler {
+                playbackStateHolder.requestExitDialog()
+            }
+        } else {
+            registerEscHandler(null)
+        }
     }
 
     MaterialTheme(
@@ -101,10 +127,11 @@ fun App(container: AppContainer) {
                 }
 
                 is Screen.ReceiverHome -> {
-                    RoleHomeScreen(
-                        config = screen.config,
-                        stateHolder = roleStateHolder,
-                        onRoleReset = {
+                    CarouselScreen(
+                        stateHolder = playbackStateHolder,
+                        onExitRequested = onExitRequested,
+                        onChangeRoleRequested = {
+                            roleStateHolder.confirmChangeRole()
                             currentScreen = Screen.RoleSelection
                         }
                     )

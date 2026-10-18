@@ -31,6 +31,10 @@ class FakeLocalStorage : LocalStorage {
     override fun clearPairing() {
         clearPairingCalled = true
     }
+
+    override fun loadPlaylist(): app.kiosksync.feature.playlist.Playlist? = null
+    override fun savePlaylist(playlist: app.kiosksync.feature.playlist.Playlist) {}
+    override fun loadMediaBitmap(mediaId: String, fileName: String): androidx.compose.ui.graphics.ImageBitmap? = null
 }
 
 class NoOpLogger : AppLogger {
