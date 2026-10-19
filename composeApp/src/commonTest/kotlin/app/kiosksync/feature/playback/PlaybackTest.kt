@@ -1,43 +1,18 @@
 package app.kiosksync.feature.playback
 
-import androidx.compose.ui.graphics.ImageBitmap
+import app.kiosksync.FakeLocalStorage
 import app.kiosksync.core.AppLogger
-import app.kiosksync.core.DEFAULT_DURATION_SEC
 import app.kiosksync.core.MAX_DURATION_SEC
 import app.kiosksync.core.MIN_DURATION_SEC
 import app.kiosksync.feature.playlist.Playlist
 import app.kiosksync.feature.playlist.PlaylistItem
-import app.kiosksync.feature.role.AppConfig
-import app.kiosksync.platform.LocalStorage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-
-class FakePlaybackLocalStorage(
-    var playlist: Playlist? = null,
-    val availableBitmaps: MutableMap<String, ImageBitmap> = mutableMapOf()
-) : LocalStorage {
-    override fun loadConfig(): AppConfig? = null
-    override fun saveConfig(config: AppConfig) {}
-    override fun clearConfig() {}
-    override fun clearPairing() {}
-
-    override fun loadPlaylist(): Playlist? = playlist
-    override fun savePlaylist(playlist: Playlist) {
-        this.playlist = playlist
-    }
-
-    override fun loadMediaBitmap(mediaId: String, fileName: String): ImageBitmap? {
-        return availableBitmaps[mediaId]
-    }
-}
 
 class TestLogger : AppLogger {
     val messages = mutableListOf<String>()
@@ -94,8 +69,8 @@ class PlaybackTest {
 
     @Test
     fun testPlaybackLoopSkipsDamagedImage() = runTest {
-        val dummyBitmap = ImageBitmap(1, 1)
-        val storage = FakePlaybackLocalStorage(
+        val dummyBitmap = androidx.compose.ui.graphics.ImageBitmap(1, 1)
+        val storage = FakeLocalStorage(
             playlist = Playlist(
                 version = 1,
                 items = listOf(

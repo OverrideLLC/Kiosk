@@ -9,4 +9,5 @@ interface EmitterClient {
     suspend fun pair(host: String, port: Int, emitterId: String, emitterName: String, code: String): Result<PairResponse>
     suspend fun unpair(host: String, port: Int, emitterId: String, token: String): Result<Boolean>
     suspend fun getStatus(host: String, port: Int, emitterId: String, token: String): Result<ReceiverStatusResponse>
+    fun close()
 }

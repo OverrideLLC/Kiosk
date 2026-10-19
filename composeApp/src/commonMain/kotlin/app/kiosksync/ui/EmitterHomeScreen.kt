@@ -1,0 +1,42 @@
+package app.kiosksync.ui
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import app.kiosksync.AppContainer
+import app.kiosksync.feature.pairing.EmitterScreen
+import app.kiosksync.feature.pairing.EmitterStateHolder
+import app.kiosksync.feature.role.AppConfig
+
+@Composable
+fun EmitterHomeScreen(
+    config: AppConfig,
+    container: AppContainer,
+    onExitRequested: () -> Unit,
+    onRoleReset: () -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    val stateHolder = remember(config.deviceId) {
+        EmitterStateHolder(
+            discovery = container.discovery,
+            client = container.emitterClient,
+            storage = container.localStorage,
+            logger = container.logger,
+            emitterId = config.deviceId,
+            emitterName = container.deviceName,
+            scope = scope
+        )
+    }
+
+    DisposableEffect(stateHolder) {
+        stateHolder.start()
+        onDispose { stateHolder.stop() }
+    }
+
+    EmitterScreen(
+        stateHolder = stateHolder,
+        onExitRequested = onExitRequested,
+        onRoleReset = onRoleReset
+    )
+}

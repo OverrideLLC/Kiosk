@@ -28,7 +28,8 @@ data class PlaybackUiState(
 class PlaybackStateHolder(
     private val localStorage: LocalStorage,
     private val logger: AppLogger,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    private val statusTracker: ReceiverStatusTracker? = null
 ) {
     private val _uiState = MutableStateFlow(PlaybackUiState())
     val uiState: StateFlow<PlaybackUiState> = _uiState.asStateFlow()
@@ -62,6 +63,11 @@ class PlaybackStateHolder(
     fun updatePlaylist(newPlaylist: Playlist) {
         activePlaylist = newPlaylist
         _uiState.update { it.copy(playlist = newPlaylist) }
+        statusTracker?.update(
+            playlistVersion = newPlaylist.version,
+            mediaId = _uiState.value.currentItem?.mediaId,
+            fileName = _uiState.value.currentItem?.fileName
+        )
         logger.info("Playlist updated dynamically to version ${newPlaylist.version}")
     }
 
@@ -80,6 +86,7 @@ class PlaybackStateHolder(
                         hasItems = false
                     )
                 }
+                statusTracker?.update(playlistVersion = 0, mediaId = null, fileName = null)
                 delay(1000)
                 continue
             }
@@ -118,6 +125,11 @@ class PlaybackStateHolder(
                         hasItems = true
                     )
                 }
+                statusTracker?.update(
+                    playlistVersion = playlist.version,
+                    mediaId = validItem.mediaId,
+                    fileName = validItem.fileName
+                )
 
                 val durationSec = playlist.getEffectiveDurationSec(validItem)
                 logger.debug("Displaying image '${validItem.fileName}' for $durationSec seconds")
@@ -140,6 +152,7 @@ class PlaybackStateHolder(
                         hasItems = false
                     )
                 }
+                statusTracker?.update(playlistVersion = playlist.version, mediaId = null, fileName = null)
                 delay(3000)
             }
         }

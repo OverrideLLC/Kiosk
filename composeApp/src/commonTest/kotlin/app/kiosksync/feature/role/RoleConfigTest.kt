@@ -1,8 +1,8 @@
 package app.kiosksync.feature.role
 
-import app.kiosksync.core.AppLogger
+import app.kiosksync.FakeLocalStorage
+import app.kiosksync.NoOpLogger
 import app.kiosksync.core.AppRole
-import app.kiosksync.platform.LocalStorage
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -10,39 +10,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-
-class FakeLocalStorage : LocalStorage {
-    var savedConfig: AppConfig? = null
-    var clearConfigCalled = false
-    var clearPairingCalled = false
-
-    override fun loadConfig(): AppConfig? = savedConfig
-
-    override fun saveConfig(config: AppConfig) {
-        savedConfig = config
-    }
-
-    override fun clearConfig() {
-        clearConfigCalled = true
-        savedConfig = null
-        clearPairing()
-    }
-
-    override fun clearPairing() {
-        clearPairingCalled = true
-    }
-
-    override fun loadPlaylist(): app.kiosksync.feature.playlist.Playlist? = null
-    override fun savePlaylist(playlist: app.kiosksync.feature.playlist.Playlist) {}
-    override fun loadMediaBitmap(mediaId: String, fileName: String): androidx.compose.ui.graphics.ImageBitmap? = null
-}
-
-class NoOpLogger : AppLogger {
-    override fun info(message: String) {}
-    override fun warn(message: String, throwable: Throwable?) {}
-    override fun error(message: String, throwable: Throwable?) {}
-    override fun debug(message: String) {}
-}
 
 class RoleConfigTest {
 

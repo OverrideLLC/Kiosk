@@ -30,7 +30,8 @@ class PairingManager(
     private val logger: AppLogger,
     private val timeProvider: () -> Long = { System.currentTimeMillis() },
     private val tokenGenerator: () -> String = { defaultGenerateToken() },
-    private val codeGenerator: () -> String = { defaultGenerateCode() }
+    private val codeGenerator: () -> String = { defaultGenerateCode() },
+    initializePairingMode: Boolean = true
 ) {
     companion object {
         const val CODE_VALIDITY_MS = 5 * 60 * 1000L // 5 minutes
@@ -68,7 +69,25 @@ class PairingManager(
     private var lockedUntilMs: Long = 0
 
     init {
-        checkInitialPairing()
+        if (initializePairingMode) {
+            checkInitialPairing()
+        } else {
+            loadStoredPairing()
+        }
+    }
+
+    private fun loadStoredPairing() {
+        val pairedInfo = localStorage.loadReceiverPairedInfo() ?: return
+        _uiState.update {
+            it.copy(
+                isPaired = true,
+                pairedInfo = pairedInfo,
+                currentCode = "",
+                codeExpiresInSeconds = 0,
+                isLocked = false
+            )
+        }
+        logger.info("Receiver is already paired with emitter '${pairedInfo.emitterName}' (id: ${pairedInfo.emitterId})")
     }
 
     fun checkInitialPairing() {
@@ -85,6 +104,8 @@ class PairingManager(
             }
             logger.info("Receiver is already paired with emitter '${pairedInfo.emitterName}' (id: ${pairedInfo.emitterId})")
         } else {
+            failedAttempts = 0
+            lockedUntilMs = 0
             generateNewCode()
         }
     }
@@ -99,6 +120,43 @@ class PairingManager(
             generateNewCode()
         }
         return activeCode
+    }
+
+    /**
+     * Updates countdowns and renews the code when it expires. Meant to be called
+     * once per second by the receiver UI.
+     */
+    @Synchronized
+    fun tick() {
+        if (_uiState.value.isPaired) {
+            return
+        }
+
+        val now = timeProvider()
+        if (now < lockedUntilMs) {
+            val remainingSec = ((lockedUntilMs - now) + 999L) / 1000L
+            _uiState.update {
+                it.copy(isLocked = true, lockRemainingSeconds = remainingSec)
+            }
+            return
+        }
+
+        if (_uiState.value.isLocked) {
+            _uiState.update { it.copy(isLocked = false, lockRemainingSeconds = 0) }
+        }
+
+        if (activeCode.isEmpty() || now - codeCreatedAtMs >= CODE_VALIDITY_MS) {
+            generateNewCode()
+        } else {
+            val expiresInSec = (CODE_VALIDITY_MS - (now - codeCreatedAtMs)) / 1000L
+            _uiState.update {
+                it.copy(
+                    codeExpiresInSeconds = expiresInSec.coerceAtLeast(0),
+                    isLocked = false,
+                    lockRemainingSeconds = 0
+                )
+            }
+        }
     }
 
     @Synchronized

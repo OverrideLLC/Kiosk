@@ -2,6 +2,8 @@ package app.kiosksync
 
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
@@ -12,8 +14,13 @@ import androidx.compose.ui.window.rememberWindowState
 import app.kiosksync.core.APP_NAME
 import app.kiosksync.core.AppArgs
 import app.kiosksync.core.AppRole
+import app.kiosksync.feature.pairing.PairingManager
+import app.kiosksync.feature.playback.ReceiverStatusTracker
 import app.kiosksync.platform.FileAppLogger
 import app.kiosksync.platform.FileLocalStorage
+import app.kiosksync.platform.JmDnsDiscovery
+import app.kiosksync.platform.KtorEmitterClient
+import app.kiosksync.platform.KtorReceiverServer
 import app.kiosksync.ui.App
 import java.awt.Point
 import java.awt.Toolkit
@@ -44,19 +51,37 @@ fun main(args: Array<String>) {
     val activeRole = appArgs.role ?: existingConfig?.role
 
     val isFullscreenReceiver = !appArgs.windowed && activeRole == AppRole.RECEIVER
-
     val deviceName = try {
         System.getenv("COMPUTERNAME") ?: InetAddress.getLocalHost().hostName ?: "WindowsPC"
     } catch (_: Exception) {
         System.getenv("COMPUTERNAME") ?: "WindowsPC"
     }
 
+    val pairingManager = PairingManager(
+        localStorage = localStorage,
+        logger = logger,
+        initializePairingMode = activeRole == AppRole.RECEIVER
+    )
+    val statusTracker = ReceiverStatusTracker()
+    val discovery = JmDnsDiscovery(logger)
+    val receiverServer = KtorReceiverServer(
+        pairingManager = pairingManager,
+        logger = logger,
+        statusProvider = { statusTracker.snapshot() }
+    )
+    val emitterClient = KtorEmitterClient(logger)
+
     val container = AppContainer(
         args = appArgs,
         dataDirPath = effectiveDataDir.absolutePath,
         logger = logger,
         localStorage = localStorage,
-        deviceName = deviceName
+        deviceName = deviceName,
+        pairingManager = pairingManager,
+        discovery = discovery,
+        receiverServer = receiverServer,
+        emitterClient = emitterClient,
+        receiverStatusTracker = statusTracker
     )
 
     application {
@@ -67,10 +92,12 @@ fun main(args: Array<String>) {
         )
 
         var escHandler: (() -> Unit)? = null
+        var unpairHandler: (() -> Unit)? = null
 
         Window(
             onCloseRequest = {
                 logger.info("Application close requested. Exiting.")
+                container.shutdown()
                 exitApplication()
             },
             title = APP_NAME,
@@ -78,11 +105,21 @@ fun main(args: Array<String>) {
             undecorated = isFullscreenReceiver,
             alwaysOnTop = isFullscreenReceiver,
             onKeyEvent = { keyEvent ->
-                if (keyEvent.key == Key.Escape && keyEvent.type == KeyEventType.KeyDown) {
-                    escHandler?.invoke()
-                    true
-                } else {
-                    false
+                when {
+                    keyEvent.type == KeyEventType.KeyDown &&
+                        keyEvent.isCtrlPressed &&
+                        keyEvent.isShiftPressed &&
+                        keyEvent.key == Key.P -> {
+                        unpairHandler?.invoke()
+                        true
+                    }
+
+                    keyEvent.key == Key.Escape && keyEvent.type == KeyEventType.KeyDown -> {
+                        escHandler?.invoke()
+                        true
+                    }
+
+                    else -> false
                 }
             }
         ) {
@@ -97,9 +134,15 @@ fun main(args: Array<String>) {
 
             App(
                 container = container,
-                onExitRequested = ::exitApplication,
+                onExitRequested = {
+                    container.shutdown()
+                    exitApplication()
+                },
                 registerEscHandler = { handler ->
                     escHandler = handler
+                },
+                registerUnpairHandler = { handler ->
+                    unpairHandler = handler
                 }
             )
         }

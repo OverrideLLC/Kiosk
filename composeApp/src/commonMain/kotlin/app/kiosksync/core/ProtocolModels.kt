@@ -55,3 +55,23 @@ data class DiscoveredDevice(
     val port: Int,
     val paired: Boolean
 )
+
+@Serializable
+data class ErrorResponse(
+    val error: String,
+    val message: String? = null,
+    val remainingAttempts: Int? = null,
+    val remainingSeconds: Long? = null
+)
+
+enum class PairError {
+    INVALID_CODE,
+    LOCKED_OUT,
+    ALREADY_PAIRED
+}
+
+class PairRejectedException(
+    val error: PairError,
+    val remainingAttempts: Int? = null,
+    val remainingSeconds: Long? = null
+) : Exception("Pairing rejected: $error")
