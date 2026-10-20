@@ -15,6 +15,7 @@ import app.kiosksync.core.APP_NAME
 import app.kiosksync.core.AppArgs
 import app.kiosksync.core.AppRole
 import app.kiosksync.feature.pairing.PairingManager
+import app.kiosksync.feature.playback.ReceiverPlaylistBridge
 import app.kiosksync.feature.playback.ReceiverStatusTracker
 import app.kiosksync.platform.FileAppLogger
 import app.kiosksync.platform.FileLocalStorage
@@ -22,6 +23,8 @@ import app.kiosksync.platform.JmDnsDiscovery
 import app.kiosksync.platform.KtorEmitterClient
 import app.kiosksync.platform.KtorReceiverServer
 import app.kiosksync.ui.App
+import java.awt.FileDialog
+import java.awt.Frame
 import java.awt.Point
 import java.awt.Toolkit
 import java.awt.image.BufferedImage
@@ -60,16 +63,25 @@ fun main(args: Array<String>) {
     val pairingManager = PairingManager(
         localStorage = localStorage,
         logger = logger,
-        initializePairingMode = activeRole == AppRole.RECEIVER
+        initializePairingMode = activeRole == AppRole.RECEIVER,
+        loadStoredPairingOnInit = activeRole == AppRole.RECEIVER
     )
     val statusTracker = ReceiverStatusTracker()
+    val playlistBridge = ReceiverPlaylistBridge()
     val discovery = JmDnsDiscovery(logger)
     val receiverServer = KtorReceiverServer(
         pairingManager = pairingManager,
         logger = logger,
+        storage = localStorage,
+        playlistBridge = playlistBridge,
         statusProvider = { statusTracker.snapshot() }
     )
     val emitterClient = KtorEmitterClient(logger)
+    val pickImageFiles: () -> List<String> = {
+        runCatching { showImagePicker() }
+            .onFailure { logger.warn("Could not open the image picker: ${it.message}") }
+            .getOrDefault(emptyList())
+    }
 
     val container = AppContainer(
         args = appArgs,
@@ -81,7 +93,9 @@ fun main(args: Array<String>) {
         discovery = discovery,
         receiverServer = receiverServer,
         emitterClient = emitterClient,
-        receiverStatusTracker = statusTracker
+        receiverStatusTracker = statusTracker,
+        receiverPlaylistBridge = playlistBridge,
+        pickImageFiles = pickImageFiles
     )
 
     application {
@@ -147,4 +161,12 @@ fun main(args: Array<String>) {
             )
         }
     }
+}
+
+private fun showImagePicker(): List<String> {
+    val dialog = FileDialog(null as Frame?, "Agregar imágenes", FileDialog.LOAD)
+    dialog.isMultipleMode = true
+    dialog.file = "*.jpg;*.jpeg;*.png;*.webp"
+    dialog.isVisible = true
+    return dialog.files?.map { it.absolutePath }.orEmpty()
 }

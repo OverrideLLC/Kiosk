@@ -32,6 +32,32 @@ data class ReceiverStatusResponse(
 )
 
 @Serializable
+data class MediaState(
+    val mediaId: String,
+    val sha256: String
+)
+
+@Serializable
+data class SyncStateResponse(
+    val playlistVersion: Int = 0,
+    val media: List<MediaState> = emptyList()
+)
+
+@Serializable
+data class MediaUploadResponse(
+    val mediaId: String,
+    val sha256: String,
+    val sizeBytes: Long
+)
+
+@Serializable
+data class PlaylistApplyResponse(
+    val applied: Boolean,
+    val version: Int = 0,
+    val missingMediaIds: List<String> = emptyList()
+)
+
+@Serializable
 data class ReceiverPairedInfo(
     val emitterId: String,
     val emitterName: String,
@@ -75,3 +101,7 @@ class PairRejectedException(
     val remainingAttempts: Int? = null,
     val remainingSeconds: Long? = null
 ) : Exception("Pairing rejected: $error")
+
+class PlaylistRejectedException(
+    val missingMediaIds: List<String>
+) : Exception("Receiver rejected the playlist because media is missing")

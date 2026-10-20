@@ -4,22 +4,32 @@ import app.kiosksync.core.AppLogger
 import app.kiosksync.core.DeviceInfo
 import app.kiosksync.core.ErrorResponse
 import app.kiosksync.core.HEADER_AUTH_TOKEN
+import app.kiosksync.core.HEADER_CONTENT_SHA256
 import app.kiosksync.core.HEADER_EMITTER_ID
 import app.kiosksync.core.HTTP_TIMEOUT_MS
+import app.kiosksync.core.MediaUploadResponse
 import app.kiosksync.core.PairError
 import app.kiosksync.core.PairRejectedException
 import app.kiosksync.core.PairRequest
 import app.kiosksync.core.PairResponse
+import app.kiosksync.core.PlaylistApplyResponse
+import app.kiosksync.core.PlaylistRejectedException
 import app.kiosksync.core.ReceiverStatusResponse
+import app.kiosksync.core.SYNC_TIMEOUT_MS
+import app.kiosksync.core.SyncStateResponse
+import app.kiosksync.core.UPLOAD_TIMEOUT_MS
+import app.kiosksync.feature.playlist.Playlist
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.delete
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -123,6 +133,75 @@ class KtorEmitterClient(
             throw IOException("GET /status returned HTTP ${response.status}")
         }
         response.body<ReceiverStatusResponse>()
+    }
+
+    override suspend fun getSyncState(
+        host: String,
+        port: Int,
+        emitterId: String,
+        token: String
+    ): Result<SyncStateResponse> = runCatching {
+        val response = client.get("${baseUrl(host, port)}/sync/state") {
+            header(HEADER_EMITTER_ID, emitterId)
+            header(HEADER_AUTH_TOKEN, token)
+            timeout { requestTimeoutMillis = SYNC_TIMEOUT_MS }
+        }
+        if (response.status != HttpStatusCode.OK) {
+            throw IOException("GET /sync/state returned HTTP ${response.status}")
+        }
+        response.body<SyncStateResponse>()
+    }
+
+    override suspend fun uploadMedia(
+        host: String,
+        port: Int,
+        emitterId: String,
+        token: String,
+        mediaId: String,
+        sha256: String,
+        bytes: ByteArray
+    ): Result<MediaUploadResponse> = runCatching {
+        val response = client.put("${baseUrl(host, port)}/media/$mediaId") {
+            header(HEADER_EMITTER_ID, emitterId)
+            header(HEADER_AUTH_TOKEN, token)
+            header(HEADER_CONTENT_SHA256, sha256)
+            contentType(ContentType.Application.OctetStream)
+            setBody(bytes)
+            timeout {
+                requestTimeoutMillis = UPLOAD_TIMEOUT_MS
+                socketTimeoutMillis = UPLOAD_TIMEOUT_MS
+            }
+        }
+        if (response.status != HttpStatusCode.OK) {
+            throw IOException("PUT /media returned HTTP ${response.status}")
+        }
+        response.body<MediaUploadResponse>()
+    }
+
+    override suspend fun putPlaylist(
+        host: String,
+        port: Int,
+        emitterId: String,
+        token: String,
+        playlist: Playlist
+    ): Result<PlaylistApplyResponse> = runCatching {
+        val response = client.put("${baseUrl(host, port)}/playlist") {
+            header(HEADER_EMITTER_ID, emitterId)
+            header(HEADER_AUTH_TOKEN, token)
+            contentType(ContentType.Application.Json)
+            setBody(playlist)
+            timeout { requestTimeoutMillis = SYNC_TIMEOUT_MS }
+        }
+        when (response.status) {
+            HttpStatusCode.OK -> response.body<PlaylistApplyResponse>()
+
+            HttpStatusCode.Conflict -> {
+                val rejected = runCatching { response.body<PlaylistApplyResponse>() }.getOrNull()
+                throw PlaylistRejectedException(rejected?.missingMediaIds.orEmpty())
+            }
+
+            else -> throw IOException("PUT /playlist returned HTTP ${response.status}")
+        }
     }
 
     override fun close() {

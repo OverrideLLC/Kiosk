@@ -10,6 +10,7 @@ import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.darkColors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -86,6 +87,24 @@ fun App(
             scope = coroutineScope,
             statusTracker = container.receiverStatusTracker
         )
+    }
+
+    DisposableEffect(playbackStateHolder) {
+        container.receiverPlaylistBridge.setListener { playlist ->
+            playbackStateHolder.updatePlaylist(playlist)
+        }
+        onDispose {
+            container.receiverPlaylistBridge.setListener(null)
+            playbackStateHolder.stop()
+        }
+    }
+
+    LaunchedEffect(currentScreen) {
+        if (currentScreen is Screen.ReceiverHome) {
+            playbackStateHolder.start()
+        } else {
+            playbackStateHolder.stop()
+        }
     }
 
     val pairingState by pairingManager.uiState.collectAsState()

@@ -31,7 +31,8 @@ class PairingManager(
     private val timeProvider: () -> Long = { System.currentTimeMillis() },
     private val tokenGenerator: () -> String = { defaultGenerateToken() },
     private val codeGenerator: () -> String = { defaultGenerateCode() },
-    initializePairingMode: Boolean = true
+    initializePairingMode: Boolean = true,
+    loadStoredPairingOnInit: Boolean = true
 ) {
     companion object {
         const val CODE_VALIDITY_MS = 5 * 60 * 1000L // 5 minutes
@@ -71,7 +72,7 @@ class PairingManager(
     init {
         if (initializePairingMode) {
             checkInitialPairing()
-        } else {
+        } else if (loadStoredPairingOnInit) {
             loadStoredPairing()
         }
     }

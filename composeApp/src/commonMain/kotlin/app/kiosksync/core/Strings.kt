@@ -75,6 +75,63 @@ object Strings {
     const val CONTINUE_BUTTON = "Continuar"
     const val EXIT_APP_CONFIRM = "Salir de la aplicación"
 
+    // Playlist editor
+    const val PLAYLIST_TITLE = "Playlist"
+    const val PLAYLIST_SUBTITLE = "Ordena las imágenes y ajusta cuánto tiempo se muestra cada una."
+    const val ADD_IMAGES = "Agregar imágenes"
+    const val ADDING_IMAGES = "Agregando…"
+    const val PLAYLIST_EMPTY = "Todavía no hay imágenes. Agrega archivos JPG, PNG o WEBP."
+    const val DEFAULT_DURATION = "Duración por defecto"
+    const val DURATION_HINT = "Entre 3 y 600 segundos. Vacío en una imagen = usar la duración por defecto."
+    const val SECONDS_SUFFIX = "s"
+    const val DURATION_FIELD_HINT = "auto"
+    const val MOVE_UP = "Subir"
+    const val MOVE_DOWN = "Bajar"
+    const val REMOVE_ITEM = "Quitar"
+    const val ITEM_DEFAULT_DURATION = "Por defecto"
+    const val PLAYLIST_IMPORTED = "Imágenes agregadas"
+    const val PLAYLIST_REJECTED = "Archivos rechazados"
+    const val PLAYLIST_IMPORT_NONE = "No se agregó ninguna imagen. Solo se admiten JPG, PNG o WEBP de hasta 25 MB."
+    const val PLAYLIST_IMPORT_ERROR = "Algunas imágenes no se pudieron agregar. Revisa el formato y el tamaño."
+
+    // Sending content
+    const val SEND_TITLE = "Enviar"
+    const val SEND_SUBTITLE = "Envía la playlist actual a las pantallas seleccionadas."
+    const val SEND_BUTTON = "Enviar a pantallas seleccionadas"
+    const val SENDING = "Enviando…"
+    const val SEND_NO_SCREENS = "Selecciona al menos una pantalla vinculada."
+    const val SEND_EMPTY_PLAYLIST = "Agrega al menos una imagen a la playlist antes de enviar."
+    const val SEND_DEVICE_PENDING = "En espera…"
+    const val SEND_DEVICE_UPLOADING = "Subiendo imágenes"
+    const val SEND_DEVICE_APPLYING = "Aplicando playlist…"
+    const val SEND_DEVICE_SUCCESS = "Enviado correctamente."
+    const val SEND_DEVICE_UP_TO_DATE = "Ya estaba actualizada."
+    const val SEND_DEVICE_FAILED = "No se pudo enviar."
+    const val SEND_ERROR_MISSING = "Faltan imágenes en la Pantalla."
+    const val SEND_ERROR_LOCAL_MEDIA = "Falta un archivo de imagen en este equipo."
+    const val SEND_ERROR_NETWORK = "No se pudo conectar con la Pantalla."
+
+    fun sendCompleted(success: Int, failure: Int): String = when {
+        success == 0 -> "No se pudo enviar a ninguna pantalla."
+        failure == 0 && success == 1 -> "Contenido enviado a 1 pantalla."
+        failure == 0 -> "Contenido enviado a $success pantallas."
+        else -> "Envío terminado: $success pantalla(s) correcta(s) y $failure con error."
+    }
+
+    fun syncUploading(uploaded: Int, total: Int): String = "Subiendo $uploaded de $total…"
+
+    fun playlistImportSummary(added: Int, rejected: Int): String = when {
+        added > 0 && rejected == 0 -> "$PLAYLIST_IMPORTED: $added."
+        added > 0 && rejected > 0 -> "$PLAYLIST_IMPORTED: $added. $PLAYLIST_REJECTED: $rejected."
+        else -> PLAYLIST_IMPORT_NONE
+    }
+
+    fun selectedScreens(count: Int): String = when (count) {
+        0 -> SEND_NO_SCREENS
+        1 -> "1 pantalla seleccionada."
+        else -> "$count pantallas seleccionadas."
+    }
+
     // Skeleton indicator for Phase 0
     const val SKELETON_READY = "KioskSync - Fase 0 inicializada correctamente"
 }

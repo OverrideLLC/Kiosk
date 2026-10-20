@@ -5,12 +5,24 @@ import app.kiosksync.core.AppLogger
 import app.kiosksync.core.DeviceInfo
 import app.kiosksync.core.ErrorResponse
 import app.kiosksync.core.HEADER_AUTH_TOKEN
+import app.kiosksync.core.HEADER_CONTENT_SHA256
 import app.kiosksync.core.HEADER_EMITTER_ID
+import app.kiosksync.core.ImageFormat
+import app.kiosksync.core.MAX_DURATION_SEC
+import app.kiosksync.core.MAX_IMAGE_SIZE_BYTES
+import app.kiosksync.core.MIN_DURATION_SEC
+import app.kiosksync.core.MediaState
+import app.kiosksync.core.MediaUploadResponse
 import app.kiosksync.core.PairRequest
 import app.kiosksync.core.PairResponse
+import app.kiosksync.core.PlaylistApplyResponse
 import app.kiosksync.core.ReceiverStatusResponse
+import app.kiosksync.core.SyncStateResponse
 import app.kiosksync.feature.pairing.PairResult
 import app.kiosksync.feature.pairing.PairingManager
+import app.kiosksync.feature.playback.ReceiverPlaylistBridge
+import app.kiosksync.feature.playlist.Playlist
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
@@ -27,12 +39,15 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import io.ktor.server.routing.put
 import io.ktor.server.routing.routing
 import kotlinx.serialization.json.Json
 
 class KtorReceiverServer(
     private val pairingManager: PairingManager,
     private val logger: AppLogger,
+    private val storage: LocalStorage,
+    private val playlistBridge: ReceiverPlaylistBridge,
     private val statusProvider: () -> ReceiverStatusResponse
 ) : ReceiverServer {
 
@@ -157,9 +172,168 @@ class KtorReceiverServer(
             }
 
             get("/status") {
-                if (!call.requireAuthorization()) return@get
-                call.respond(statusProvider())
+                try {
+                    if (!call.requireAuthorization()) return@get
+                    call.respond(statusProvider())
+                } catch (error: Exception) {
+                    logger.error("Error handling GET /status", error)
+                    runCatching {
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ErrorResponse("status_error", error.message)
+                        )
+                    }
+                }
             }
+
+            get("/sync/state") {
+                if (!call.requireAuthorization()) return@get
+                val currentPlaylist = storage.loadPlaylist()
+                call.respond(
+                    SyncStateResponse(
+                        playlistVersion = currentPlaylist?.version ?: 0,
+                        media = storage.listStoredMedia().map {
+                            MediaState(mediaId = it.mediaId, sha256 = it.sha256)
+                        }
+                    )
+                )
+            }
+
+            put("/media/{mediaId}") {
+                if (!call.requireAuthorization()) return@put
+
+                val mediaId = call.parameters["mediaId"].orEmpty()
+                if (!MEDIA_ID_REGEX.matches(mediaId)) {
+                    call.respond(HttpStatusCode.BadRequest, ErrorResponse("invalid_media_id"))
+                    return@put
+                }
+
+                val expectedHash = call.request.headers[HEADER_CONTENT_SHA256]
+                    ?.trim()
+                    ?.lowercase()
+                if (expectedHash.isNullOrBlank() || expectedHash.length != 64) {
+                    call.respond(HttpStatusCode.BadRequest, ErrorResponse("missing_hash"))
+                    return@put
+                }
+
+                val declaredLength = call.request.headers[HttpHeaders.ContentLength]?.toLongOrNull()
+                if (declaredLength != null && declaredLength > MAX_IMAGE_SIZE_BYTES) {
+                    call.respond(
+                        HttpStatusCode.PayloadTooLarge,
+                        ErrorResponse("image_too_large")
+                    )
+                    return@put
+                }
+
+                val bytes = runCatching { call.receive<ByteArray>() }.getOrNull()
+                if (bytes == null || bytes.isEmpty()) {
+                    call.respond(HttpStatusCode.BadRequest, ErrorResponse("invalid_body"))
+                    return@put
+                }
+                if (bytes.size.toLong() > MAX_IMAGE_SIZE_BYTES) {
+                    call.respond(
+                        HttpStatusCode.PayloadTooLarge,
+                        ErrorResponse("image_too_large")
+                    )
+                    return@put
+                }
+
+                val actualHash = Sha256.hex(bytes)
+                if (!actualHash.equals(expectedHash, ignoreCase = true)) {
+                    call.respond(HttpStatusCode.BadRequest, ErrorResponse("hash_mismatch"))
+                    return@put
+                }
+
+                val format = ImageFormat.detect(bytes)
+                if (format == null) {
+                    call.respond(
+                        HttpStatusCode.UnsupportedMediaType,
+                        ErrorResponse("unsupported_format")
+                    )
+                    return@put
+                }
+
+                val stored = storage.writeReceivedMedia(mediaId, format, bytes)
+                if (stored == null) {
+                    call.respond(
+                        HttpStatusCode.InternalServerError,
+                        ErrorResponse("storage_error")
+                    )
+                    return@put
+                }
+
+                logger.info("Received media '$mediaId' (${stored.sizeBytes} bytes, ${format.extension})")
+                call.respond(
+                    MediaUploadResponse(
+                        mediaId = stored.mediaId,
+                        sha256 = stored.sha256,
+                        sizeBytes = stored.sizeBytes
+                    )
+                )
+            }
+
+            put("/playlist") {
+                if (!call.requireAuthorization()) return@put
+
+                val playlist = runCatching { call.receive<Playlist>() }.getOrNull()
+                if (playlist == null || !playlist.isValid()) {
+                    call.respond(HttpStatusCode.BadRequest, ErrorResponse("invalid_playlist"))
+                    return@put
+                }
+
+                val storedById = storage.listStoredMedia().associateBy { it.mediaId }
+                val missing = playlist.items
+                    .distinctBy { it.mediaId }
+                    .filter { item ->
+                        storedById[item.mediaId]?.sha256?.equals(item.sha256, ignoreCase = true) != true
+                    }
+                    .map { it.mediaId }
+
+                if (missing.isNotEmpty()) {
+                    logger.warn("Rejected playlist version ${playlist.version}; missing media: ${missing.joinToString()}")
+                    call.respond(
+                        HttpStatusCode.Conflict,
+                        PlaylistApplyResponse(
+                            applied = false,
+                            version = storage.loadPlaylist()?.version ?: 0,
+                            missingMediaIds = missing
+                        )
+                    )
+                    return@put
+                }
+
+                storage.savePlaylist(playlist)
+                val referenced = playlist.items.map { it.mediaId }.toSet()
+                storedById.values
+                    .filterNot { it.mediaId in referenced }
+                    .forEach { storage.deleteStoredMedia(it.mediaId) }
+
+                runCatching { playlistBridge.apply(playlist) }
+                    .onFailure { logger.error("Error notifying playback about the new playlist", it) }
+
+                logger.info("Applied playlist version ${playlist.version} with ${playlist.items.size} items")
+                call.respond(
+                    PlaylistApplyResponse(
+                        applied = true,
+                        version = playlist.version
+                    )
+                )
+            }
+        }
+    }
+
+    private fun Playlist.isValid(): Boolean {
+        if (version < 1) return false
+        if (defaultDurationSec !in MIN_DURATION_SEC..MAX_DURATION_SEC) return false
+        if (items.map { it.mediaId }.distinct().size != items.size) return false
+        return items.all { item ->
+            MEDIA_ID_REGEX.matches(item.mediaId) &&
+                item.fileName.isNotBlank() &&
+                item.fileName != "." &&
+                item.fileName != ".." &&
+                item.fileName.none { it in "/\\:*?\"<>|" || it.code < 32 } &&
+                item.sha256.length == 64 &&
+                (item.durationSec == null || item.durationSec in MIN_DURATION_SEC..MAX_DURATION_SEC)
         }
     }
 
@@ -171,5 +345,9 @@ class KtorReceiverServer(
         }
         respond(HttpStatusCode.Unauthorized, ErrorResponse("unauthorized"))
         return false
+    }
+
+    companion object {
+        private val MEDIA_ID_REGEX = Regex("^[A-Za-z0-9_-]{1,100}$")
     }
 }

@@ -35,11 +35,7 @@ class PlaybackStateHolder(
     val uiState: StateFlow<PlaybackUiState> = _uiState.asStateFlow()
 
     private var playbackJob: Job? = null
-    private var activePlaylist: Playlist? = null
-
-    init {
-        start()
-    }
+    private val activePlaylist = MutableStateFlow<Playlist?>(null)
 
     fun start() {
         playbackJob?.cancel()
@@ -55,13 +51,13 @@ class PlaybackStateHolder(
 
     fun reloadPlaylist() {
         val loaded = localStorage.loadPlaylist()
-        activePlaylist = loaded
+        activePlaylist.value = loaded
         _uiState.update { it.copy(playlist = loaded) }
         logger.info("Playlist reloaded: ${loaded?.items?.size ?: 0} items")
     }
 
     fun updatePlaylist(newPlaylist: Playlist) {
-        activePlaylist = newPlaylist
+        activePlaylist.value = newPlaylist
         _uiState.update { it.copy(playlist = newPlaylist) }
         statusTracker?.update(
             playlistVersion = newPlaylist.version,
@@ -72,11 +68,11 @@ class PlaybackStateHolder(
     }
 
     private suspend fun runPlaybackLoop() {
-        activePlaylist = localStorage.loadPlaylist()
+        activePlaylist.value = localStorage.loadPlaylist()
         var index = 0
 
         while (scope.isActive) {
-            val playlist = activePlaylist ?: localStorage.loadPlaylist()
+            val playlist = activePlaylist.value ?: localStorage.loadPlaylist()
             if (playlist == null || playlist.items.isEmpty()) {
                 _uiState.update {
                     it.copy(
@@ -91,7 +87,7 @@ class PlaybackStateHolder(
                 continue
             }
 
-            activePlaylist = playlist
+            activePlaylist.value = playlist
             val items = playlist.items
             if (index >= items.size) {
                 index = 0

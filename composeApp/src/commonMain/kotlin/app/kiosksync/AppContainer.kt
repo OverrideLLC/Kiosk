@@ -3,6 +3,7 @@ package app.kiosksync
 import app.kiosksync.core.AppArgs
 import app.kiosksync.core.AppLogger
 import app.kiosksync.feature.pairing.PairingManager
+import app.kiosksync.feature.playback.ReceiverPlaylistBridge
 import app.kiosksync.feature.playback.ReceiverStatusTracker
 import app.kiosksync.platform.DeviceDiscovery
 import app.kiosksync.platform.EmitterClient
@@ -23,7 +24,9 @@ class AppContainer(
     val discovery: DeviceDiscovery,
     val receiverServer: ReceiverServer,
     val emitterClient: EmitterClient,
-    val receiverStatusTracker: ReceiverStatusTracker
+    val receiverStatusTracker: ReceiverStatusTracker,
+    val receiverPlaylistBridge: ReceiverPlaylistBridge,
+    val pickImageFiles: () -> List<String>
 ) {
     fun shutdown() {
         runCatching { discovery.unregisterService() }

@@ -3,10 +3,13 @@ package app.kiosksync
 import androidx.compose.ui.graphics.ImageBitmap
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.EmitterPairedDevice
+import app.kiosksync.core.ImageFormat
 import app.kiosksync.core.ReceiverPairedInfo
 import app.kiosksync.feature.playlist.Playlist
 import app.kiosksync.feature.role.AppConfig
 import app.kiosksync.platform.LocalStorage
+import app.kiosksync.platform.MediaImportResult
+import app.kiosksync.platform.StoredMedia
 
 class FakeLocalStorage(
     var playlist: Playlist? = null,
@@ -17,6 +20,8 @@ class FakeLocalStorage(
     var emitterPairedDevices: List<EmitterPairedDevice> = emptyList()
     var clearConfigCalled = false
     var clearPairingCalled = false
+    val storedMedia: MutableMap<String, StoredMedia> = mutableMapOf()
+    val mediaBytes: MutableMap<String, ByteArray> = mutableMapOf()
 
     override fun loadConfig(): AppConfig? = savedConfig
 
@@ -64,6 +69,25 @@ class FakeLocalStorage(
 
     override fun loadMediaBitmap(mediaId: String, fileName: String): ImageBitmap? =
         availableBitmaps[mediaId]
+
+    override fun importMedia(sourcePath: String): MediaImportResult =
+        MediaImportResult.Failure(app.kiosksync.platform.MediaImportError.UNREADABLE)
+
+    override fun getMediaBytes(mediaId: String, fileName: String): ByteArray? = mediaBytes[mediaId]
+
+    override fun listStoredMedia(): List<StoredMedia> = storedMedia.values.toList()
+
+    override fun writeReceivedMedia(mediaId: String, format: ImageFormat, bytes: ByteArray): StoredMedia? {
+        val media = StoredMedia(mediaId, "$mediaId.${format.extension}", "hash", bytes.size.toLong())
+        storedMedia[mediaId] = media
+        mediaBytes[mediaId] = bytes
+        return media
+    }
+
+    override fun deleteStoredMedia(mediaId: String): Boolean {
+        mediaBytes.remove(mediaId)
+        return storedMedia.remove(mediaId) != null
+    }
 }
 
 class NoOpLogger : AppLogger {

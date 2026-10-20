@@ -83,6 +83,7 @@ class PlaybackTest {
         val logger = TestLogger()
 
         val stateHolder = PlaybackStateHolder(storage, logger, this)
+        stateHolder.start()
         runCurrent()
 
         // It should skip "damaged" and display "healthy"

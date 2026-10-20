@@ -7,6 +7,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import app.kiosksync.AppContainer
 import app.kiosksync.feature.pairing.EmitterScreen
 import app.kiosksync.feature.pairing.EmitterStateHolder
+import app.kiosksync.feature.playlist.PlaylistEditorStateHolder
 import app.kiosksync.feature.role.AppConfig
 
 @Composable
@@ -29,6 +30,15 @@ fun EmitterHomeScreen(
         )
     }
 
+    val playlistStateHolder = remember(config.deviceId) {
+        PlaylistEditorStateHolder(
+            storage = container.localStorage,
+            logger = container.logger,
+            scope = scope,
+            pickImageFiles = container.pickImageFiles
+        )
+    }
+
     DisposableEffect(stateHolder) {
         stateHolder.start()
         onDispose { stateHolder.stop() }
@@ -36,6 +46,8 @@ fun EmitterHomeScreen(
 
     EmitterScreen(
         stateHolder = stateHolder,
+        playlistStateHolder = playlistStateHolder,
+        storage = container.localStorage,
         onExitRequested = onExitRequested,
         onRoleReset = onRoleReset
     )

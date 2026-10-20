@@ -3,12 +3,16 @@ package app.kiosksync.platform
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import app.kiosksync.core.AppLogger
+import app.kiosksync.core.ImageFormat
 import app.kiosksync.core.MAX_IMAGE_SIZE_BYTES
 import app.kiosksync.feature.playlist.Playlist
 import app.kiosksync.feature.role.AppConfig
 import kotlinx.serialization.json.Json
 import org.jetbrains.skia.Image
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import java.util.UUID
 
 class FileLocalStorage(
     private val dataDir: File,
@@ -160,7 +164,23 @@ class FileLocalStorage(
         try {
             dataDir.mkdirs()
             val content = json.encodeToString(Playlist.serializer(), playlist)
-            playlistFile.writeText(content, Charsets.UTF_8)
+            val tempFile = File(dataDir, "playlist.json.tmp")
+            tempFile.writeText(content, Charsets.UTF_8)
+            try {
+                Files.move(
+                    tempFile.toPath(),
+                    playlistFile.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE
+                )
+            } catch (_: Exception) {
+                // Some filesystems do not support atomic moves. Replace in place instead.
+                Files.move(
+                    tempFile.toPath(),
+                    playlistFile.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING
+                )
+            }
             logger.info("Playlist saved with version ${playlist.version} (${playlist.items.size} items)")
         } catch (e: Exception) {
             logger.error("Error saving playlist.json", e)
@@ -168,23 +188,7 @@ class FileLocalStorage(
     }
 
     override fun loadMediaBitmap(mediaId: String, fileName: String): ImageBitmap? {
-        val extension = fileName.substringAfterLast('.', "").lowercase()
-        val validExtensions = setOf("jpg", "jpeg", "png", "webp")
-        if (extension.isNotEmpty() && extension !in validExtensions) {
-            logger.error("Unsupported image format for file '$fileName'. Supported: JPG, PNG, WEBP.")
-            return null
-        }
-
-        // Try candidate file names in mediaDir
-        val candidates = listOf(
-            File(mediaDir, if (extension.isNotEmpty()) "$mediaId.$extension" else mediaId),
-            File(mediaDir, fileName),
-            File(mediaDir, mediaId)
-        )
-
-        val targetFile = candidates.firstOrNull { it.exists() }
-            ?: mediaDir.listFiles()?.firstOrNull { it.name.startsWith(mediaId) }
-
+        val targetFile = findMediaFile(mediaId, fileName)
         if (targetFile == null || !targetFile.exists()) {
             logger.error("Media file not found for mediaId='$mediaId', fileName='$fileName'")
             return null
@@ -203,5 +207,163 @@ class FileLocalStorage(
             logger.error("Exception decoding image file ${targetFile.name}", e)
             null
         }
+    }
+
+    override fun importMedia(sourcePath: String): MediaImportResult {
+        val source = File(sourcePath)
+        if (!source.isFile || !source.canRead()) {
+            logger.warn("Cannot read selected image '$sourcePath'")
+            return MediaImportResult.Failure(MediaImportError.UNREADABLE)
+        }
+        if (source.length() > MAX_IMAGE_SIZE_BYTES) {
+            logger.warn("Selected image '$sourcePath' exceeds 25 MB")
+            return MediaImportResult.Failure(MediaImportError.TOO_LARGE)
+        }
+
+        val bytes = try {
+            source.readBytes()
+        } catch (e: Exception) {
+            logger.error("Error reading selected image '$sourcePath'", e)
+            return MediaImportResult.Failure(MediaImportError.UNREADABLE)
+        }
+        if (bytes.size.toLong() > MAX_IMAGE_SIZE_BYTES) {
+            return MediaImportResult.Failure(MediaImportError.TOO_LARGE)
+        }
+
+        val format = ImageFormat.detect(bytes)
+        if (format == null) {
+            logger.warn("Selected file '$sourcePath' is not JPG, PNG or WEBP")
+            return MediaImportResult.Failure(MediaImportError.UNSUPPORTED_FORMAT)
+        }
+
+        val mediaId = UUID.randomUUID().toString()
+        val target = writeMediaFile(mediaId, format, bytes)
+            ?: return MediaImportResult.Failure(MediaImportError.UNREADABLE)
+
+        return MediaImportResult.Success(
+            StoredMedia(
+                mediaId = mediaId,
+                fileName = source.name,
+                sha256 = Sha256.hex(bytes),
+                sizeBytes = target.length()
+            )
+        )
+    }
+
+    override fun getMediaBytes(mediaId: String, fileName: String): ByteArray? {
+        val file = findMediaFile(mediaId, fileName)
+        if (file == null || !file.isFile) {
+            logger.warn("Cannot read local media for mediaId='$mediaId'")
+            return null
+        }
+        if (file.length() > MAX_IMAGE_SIZE_BYTES) {
+            logger.warn("Local media '${file.name}' exceeds 25 MB")
+            return null
+        }
+        return try {
+            file.readBytes()
+        } catch (e: Exception) {
+            logger.error("Error reading local media '${file.name}'", e)
+            null
+        }
+    }
+
+    override fun listStoredMedia(): List<StoredMedia> {
+        val files = mediaDir.listFiles() ?: return emptyList()
+        return files.mapNotNull { file ->
+            if (!file.isFile) return@mapNotNull null
+            val extension = file.extension.lowercase()
+            if (extension !in SUPPORTED_EXTENSIONS) return@mapNotNull null
+            val mediaId = file.nameWithoutExtension
+            if (mediaId.isBlank()) return@mapNotNull null
+            val hash = try {
+                Sha256.hex(file)
+            } catch (e: Exception) {
+                logger.error("Error hashing media file '${file.name}'", e)
+                return@mapNotNull null
+            }
+            StoredMedia(
+                mediaId = mediaId,
+                fileName = file.name,
+                sha256 = hash,
+                sizeBytes = file.length()
+            )
+        }
+    }
+
+    override fun writeReceivedMedia(mediaId: String, format: ImageFormat, bytes: ByteArray): StoredMedia? {
+        val target = writeMediaFile(mediaId, format, bytes) ?: return null
+        return StoredMedia(
+            mediaId = mediaId,
+            fileName = target.name,
+            sha256 = Sha256.hex(bytes),
+            sizeBytes = target.length()
+        )
+    }
+
+    override fun deleteStoredMedia(mediaId: String): Boolean {
+        val files = mediaDir.listFiles() ?: return false
+        var deleted = false
+        files.filter { it.isFile && it.nameWithoutExtension == mediaId }.forEach { file ->
+            if (file.delete()) {
+                deleted = true
+                logger.info("Deleted orphan media '${file.name}'")
+            } else {
+                logger.warn("Could not delete orphan media '${file.name}'")
+            }
+        }
+        return deleted
+    }
+
+    private fun findMediaFile(mediaId: String, fileName: String): File? {
+        val extension = fileName.substringAfterLast('.', "").lowercase()
+        val safeFileName = fileName.takeIf {
+            it.isNotBlank() &&
+                it != "." &&
+                it != ".." &&
+                it.none { char -> char in "/\\:*?\"<>|" || char.code < 32 }
+        }
+        val candidates = buildList {
+            if (extension in SUPPORTED_EXTENSIONS) {
+                add(File(mediaDir, "$mediaId.$extension"))
+            }
+            if (safeFileName != null) {
+                add(File(mediaDir, safeFileName))
+            }
+            add(File(mediaDir, mediaId))
+        }
+        candidates.firstOrNull { it.isFile }?.let { return it }
+
+        return mediaDir.listFiles()?.firstOrNull {
+            it.isFile && it.nameWithoutExtension == mediaId
+        }
+    }
+
+    private fun writeMediaFile(mediaId: String, format: ImageFormat, bytes: ByteArray): File? {
+        val target = File(mediaDir, "$mediaId.${format.extension}")
+        val temp = File(mediaDir, "$mediaId.${format.extension}.part")
+        return try {
+            mediaDir.mkdirs()
+            temp.writeBytes(bytes)
+            mediaDir.listFiles()
+                ?.filter { it.isFile && it.nameWithoutExtension == mediaId && it != temp }
+                ?.forEach { it.delete() }
+            try {
+                Files.move(temp.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            } catch (_: Exception) {
+                if (!temp.renameTo(target)) {
+                    throw IllegalStateException("Could not move temporary media file into place")
+                }
+            }
+            target
+        } catch (e: Exception) {
+            logger.error("Error saving media file for mediaId='$mediaId'", e)
+            runCatching { temp.delete() }
+            null
+        }
+    }
+
+    companion object {
+        private val SUPPORTED_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp")
     }
 }

@@ -6,9 +6,13 @@ import app.kiosksync.core.DiscoveredDevice
 import app.kiosksync.core.EmitterPairedDevice
 import app.kiosksync.core.PairError
 import app.kiosksync.core.PairRejectedException
+import app.kiosksync.core.PlaylistRejectedException
 import app.kiosksync.core.STATUS_FAILURE_THRESHOLD
 import app.kiosksync.core.STATUS_POLL_INTERVAL_MS
 import app.kiosksync.core.Strings
+import app.kiosksync.feature.playlist.Playlist
+import app.kiosksync.feature.sync.EmitterSyncService
+import app.kiosksync.feature.sync.LocalMediaMissingException
 import app.kiosksync.platform.DeviceDiscovery
 import app.kiosksync.platform.EmitterClient
 import app.kiosksync.platform.LocalStorage
@@ -33,6 +37,22 @@ data class EmitterDeviceUi(
     val isSelected: Boolean
 )
 
+enum class SyncUiStatus {
+    PENDING,
+    UPLOADING,
+    APPLYING,
+    SUCCESS,
+    FAILED
+}
+
+data class DeviceSyncUi(
+    val status: SyncUiStatus,
+    val uploaded: Int = 0,
+    val total: Int = 0,
+    val version: Int = 0,
+    val message: String? = null
+)
+
 data class EmitterUiState(
     val devices: List<EmitterDeviceUi> = emptyList(),
     val isSearching: Boolean = true,
@@ -45,7 +65,10 @@ data class EmitterUiState(
     val manualIpInput: String = "",
     val manualIpError: String? = null,
     val isManualIpLoading: Boolean = false,
-    val statusMessage: String? = null
+    val statusMessage: String? = null,
+    val statusIsError: Boolean = false,
+    val syncByDevice: Map<String, DeviceSyncUi> = emptyMap(),
+    val isSending: Boolean = false
 )
 
 class EmitterStateHolder(
@@ -59,6 +82,8 @@ class EmitterStateHolder(
 ) {
     private val _uiState = MutableStateFlow(EmitterUiState())
     val uiState: StateFlow<EmitterUiState> = _uiState.asStateFlow()
+
+    private val syncService = EmitterSyncService(client, storage, logger)
 
     private var discovered: List<DiscoveredDevice> = emptyList()
     private val manualDevices = mutableMapOf<String, DiscoveredDevice>()
@@ -157,7 +182,8 @@ class EmitterStateHolder(
                             pairingCode = "",
                             pairingError = null,
                             isPairing = false,
-                            statusMessage = Strings.PAIR_SUCCESS
+                            statusMessage = Strings.PAIR_SUCCESS,
+                            statusIsError = false
                         )
                     }
                     rebuild()
@@ -192,7 +218,7 @@ class EmitterStateHolder(
             _uiState.update { it.copy(unpairDevice = null) }
             val target = targetFor(storedDevice)
             if (target == null) {
-                _uiState.update { it.copy(statusMessage = Strings.UNPAIR_ERROR) }
+                _uiState.update { it.copy(statusMessage = Strings.UNPAIR_ERROR, statusIsError = true) }
                 return@launch
             }
             client.unpair(target.first, target.second, emitterId, storedDevice.token).fold(
@@ -203,12 +229,18 @@ class EmitterStateHolder(
                     failedChecks.remove(device.deviceId)
                     selectedIds = selectedIds - device.deviceId
                     logger.info("Screen '${device.deviceName}' unpaired")
-                    _uiState.update { it.copy(statusMessage = Strings.UNPAIR_SUCCESS) }
+                    _uiState.update {
+                        it.copy(
+                            statusMessage = Strings.UNPAIR_SUCCESS,
+                            statusIsError = false,
+                            syncByDevice = it.syncByDevice - device.deviceId
+                        )
+                    }
                     rebuild()
                 },
                 onFailure = { error ->
                     logger.warn("Could not unpair '${device.deviceName}': ${error.message}")
-                    _uiState.update { it.copy(statusMessage = Strings.UNPAIR_ERROR) }
+                    _uiState.update { it.copy(statusMessage = Strings.UNPAIR_ERROR, statusIsError = true) }
                 }
             )
         }
@@ -291,7 +323,136 @@ class EmitterStateHolder(
     }
 
     fun dismissStatusMessage() {
-        _uiState.update { it.copy(statusMessage = null) }
+        _uiState.update { it.copy(statusMessage = null, statusIsError = false) }
+    }
+
+    fun sendToSelected(playlist: Playlist) {
+        val state = _uiState.value
+        if (state.isSending) return
+        if (playlist.items.isEmpty()) {
+            _uiState.update {
+                it.copy(statusMessage = Strings.SEND_EMPTY_PLAYLIST, statusIsError = true)
+            }
+            return
+        }
+
+        val selected = state.devices.filter { it.isSelected && it.isPairedToThisEmitter }
+        if (selected.isEmpty()) {
+            _uiState.update {
+                it.copy(statusMessage = Strings.SEND_NO_SCREENS, statusIsError = true)
+            }
+            return
+        }
+
+        scope.launch {
+            _uiState.update {
+                it.copy(
+                    isSending = true,
+                    statusMessage = null,
+                    statusIsError = false,
+                    syncByDevice = selected.associate { device ->
+                        device.deviceId to DeviceSyncUi(SyncUiStatus.PENDING)
+                    }
+                )
+            }
+
+            var successCount = 0
+            var failureCount = 0
+
+            for (device in selected) {
+                val stored = storedDevices.firstOrNull { it.deviceId == device.deviceId }
+                if (stored == null) {
+                    updateDeviceSync(device.deviceId) {
+                        DeviceSyncUi(SyncUiStatus.FAILED, message = Strings.SEND_ERROR_NETWORK)
+                    }
+                    failureCount++
+                    continue
+                }
+
+                val target = targetFor(stored)
+                if (target == null) {
+                    updateDeviceSync(device.deviceId) {
+                        DeviceSyncUi(SyncUiStatus.FAILED, message = Strings.SEND_ERROR_NETWORK)
+                    }
+                    failureCount++
+                    continue
+                }
+
+                updateDeviceSync(device.deviceId) {
+                    DeviceSyncUi(SyncUiStatus.UPLOADING)
+                }
+
+                syncService.sync(
+                    device = stored,
+                    host = target.first,
+                    port = target.second,
+                    emitterId = emitterId,
+                    playlist = playlist,
+                    onUploadProgress = { progress ->
+                        updateDeviceSync(device.deviceId) {
+                            DeviceSyncUi(
+                                status = SyncUiStatus.UPLOADING,
+                                uploaded = progress.uploaded,
+                                total = progress.total
+                            )
+                        }
+                    },
+                    onApplying = {
+                        updateDeviceSync(device.deviceId) {
+                            it.copy(status = SyncUiStatus.APPLYING)
+                        }
+                    }
+                ).fold(
+                    onSuccess = { summary ->
+                        successCount++
+                        updateDeviceSync(device.deviceId) {
+                            DeviceSyncUi(
+                                status = SyncUiStatus.SUCCESS,
+                                version = summary.appliedVersion,
+                                message = if (summary.uploadedCount == 0) {
+                                    Strings.SEND_DEVICE_UP_TO_DATE
+                                } else {
+                                    Strings.SEND_DEVICE_SUCCESS
+                                }
+                            )
+                        }
+                    },
+                    onFailure = { error ->
+                        failureCount++
+                        logger.warn(
+                            "Could not send playlist to '${device.deviceName}': ${error.message}"
+                        )
+                        updateDeviceSync(device.deviceId) {
+                            DeviceSyncUi(
+                                status = SyncUiStatus.FAILED,
+                                message = syncErrorMessage(error)
+                            )
+                        }
+                    }
+                )
+            }
+
+            _uiState.update {
+                it.copy(
+                    isSending = false,
+                    statusMessage = Strings.sendCompleted(successCount, failureCount),
+                    statusIsError = failureCount > 0
+                )
+            }
+        }
+    }
+
+    private fun updateDeviceSync(deviceId: String, transform: (DeviceSyncUi) -> DeviceSyncUi) {
+        _uiState.update { state ->
+            val current = state.syncByDevice[deviceId] ?: DeviceSyncUi(SyncUiStatus.PENDING)
+            state.copy(syncByDevice = state.syncByDevice + (deviceId to transform(current)))
+        }
+    }
+
+    private fun syncErrorMessage(error: Throwable): String = when (error) {
+        is PlaylistRejectedException -> Strings.SEND_ERROR_MISSING
+        is LocalMediaMissingException -> Strings.SEND_ERROR_LOCAL_MEDIA
+        else -> Strings.SEND_ERROR_NETWORK
     }
 
     private suspend fun pollStatuses() {
