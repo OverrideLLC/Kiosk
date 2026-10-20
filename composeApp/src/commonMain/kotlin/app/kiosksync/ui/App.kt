@@ -30,7 +30,6 @@ import app.kiosksync.feature.playback.PlaybackStateHolder
 import app.kiosksync.feature.role.AppConfig
 import app.kiosksync.feature.role.RoleSelectionScreen
 import app.kiosksync.feature.role.RoleStateHolder
-import java.util.UUID
 
 @Composable
 fun App(
@@ -41,7 +40,7 @@ fun App(
 ) {
     val coroutineScope = rememberCoroutineScope()
     val existingConfig = remember { container.localStorage.loadConfig() }
-    val initialDeviceId = remember { existingConfig?.deviceId ?: UUID.randomUUID().toString() }
+    val initialDeviceId = remember { existingConfig?.deviceId ?: container.newDeviceId() }
     val effectivePort = container.args.port ?: existingConfig?.port ?: DEFAULT_PORT
     val pairingManager: PairingManager = container.pairingManager
 

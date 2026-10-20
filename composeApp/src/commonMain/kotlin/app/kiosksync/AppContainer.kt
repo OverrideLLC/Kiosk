@@ -35,6 +35,7 @@ class AppContainer(
     val emitterClient: EmitterClient,
     val receiverStatusTracker: ReceiverStatusTracker,
     val receiverPlaylistBridge: ReceiverPlaylistBridge,
+    val newDeviceId: () -> String,
     val pickImageFiles: suspend () -> List<String>,
     val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
     val serviceDispatcher: CoroutineDispatcher = backgroundDispatcher

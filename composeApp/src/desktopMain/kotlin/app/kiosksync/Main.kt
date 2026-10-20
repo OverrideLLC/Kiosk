@@ -30,6 +30,7 @@ import java.awt.Toolkit
 import java.awt.image.BufferedImage
 import java.io.File
 import java.net.InetAddress
+import java.util.UUID
 import java.util.concurrent.Executors
 import javax.swing.SwingUtilities
 import kotlinx.coroutines.Dispatchers
@@ -109,6 +110,7 @@ fun main(args: Array<String>) {
         emitterClient = emitterClient,
         receiverStatusTracker = statusTracker,
         receiverPlaylistBridge = playlistBridge,
+        newDeviceId = { UUID.randomUUID().toString() },
         pickImageFiles = pickImageFiles,
         backgroundDispatcher = Dispatchers.IO,
         serviceDispatcher = serviceDispatcher
