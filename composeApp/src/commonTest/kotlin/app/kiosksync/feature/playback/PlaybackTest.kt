@@ -1,17 +1,21 @@
 package app.kiosksync.feature.playback
 
+import androidx.compose.ui.graphics.ImageBitmap
 import app.kiosksync.FakeLocalStorage
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.MAX_DURATION_SEC
 import app.kiosksync.core.MIN_DURATION_SEC
 import app.kiosksync.feature.playlist.Playlist
 import app.kiosksync.feature.playlist.PlaylistItem
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class TestLogger : AppLogger {
@@ -82,7 +86,12 @@ class PlaybackTest {
         )
         val logger = TestLogger()
 
-        val stateHolder = PlaybackStateHolder(storage, logger, this)
+        val stateHolder = PlaybackStateHolder(
+            storage,
+            logger,
+            this,
+            backgroundDispatcher = Dispatchers.Unconfined
+        )
         stateHolder.start()
         runCurrent()
 
@@ -91,6 +100,45 @@ class PlaybackTest {
         assertTrue(state.hasItems)
         assertEquals("healthy", state.currentItem?.mediaId)
         assertEquals(dummyBitmap, state.currentBitmap)
+
+        stateHolder.stop()
+    }
+
+    @Test
+    fun testPlaybackLoopReusesBitmapForRepeatedContent() = runTest {
+        val dummyBitmap = ImageBitmap(1, 1)
+        val storage = FakeLocalStorage(
+            playlist = Playlist(
+                version = 1,
+                items = listOf(
+                    PlaylistItem("first", "first.png", "same-sha", 3),
+                    PlaylistItem("second", "second.png", "same-sha", 3)
+                )
+            ),
+            availableBitmaps = mutableMapOf(
+                "first" to dummyBitmap,
+                "second" to dummyBitmap
+            )
+        )
+
+        val stateHolder = PlaybackStateHolder(
+            storage,
+            TestLogger(),
+            this,
+            backgroundDispatcher = Dispatchers.Unconfined
+        )
+        stateHolder.start()
+        runCurrent()
+
+        val firstBitmap = stateHolder.uiState.value.currentBitmap
+        assertEquals(1, storage.loadMediaBitmapCount)
+
+        advanceTimeBy(3_000)
+        runCurrent()
+
+        assertEquals("second", stateHolder.uiState.value.currentItem?.mediaId)
+        assertSame(firstBitmap, stateHolder.uiState.value.currentBitmap)
+        assertEquals(1, storage.loadMediaBitmapCount)
 
         stateHolder.stop()
     }

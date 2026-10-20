@@ -24,11 +24,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.kiosksync.core.Strings
+
+private data class DisplayedImage(
+    val contentKey: String,
+    val bitmap: ImageBitmap
+)
 
 @Composable
 fun CarouselScreen(
@@ -38,25 +44,27 @@ fun CarouselScreen(
 ) {
     val uiState by stateHolder.uiState.collectAsState()
 
+    val displayedImage = uiState.currentItem?.let { item ->
+        uiState.currentBitmap?.let { bitmap -> DisplayedImage(item.sha256, bitmap) }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black),
         contentAlignment = Alignment.Center
     ) {
-        if (uiState.hasItems && uiState.currentBitmap != null) {
+        if (uiState.hasItems && displayedImage != null) {
             Crossfade(
-                targetState = uiState.currentBitmap,
+                targetState = displayedImage,
                 animationSpec = tween(durationMillis = 500)
-            ) { bitmap ->
-                if (bitmap != null) {
-                    Image(
-                        bitmap = bitmap,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Fit
-                    )
-                }
+            ) { image ->
+                Image(
+                    bitmap = image.bitmap,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Fit
+                )
             }
         } else {
             // No playlist or all images unreadable

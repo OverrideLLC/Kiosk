@@ -20,6 +20,7 @@ class FakeLocalStorage(
     var emitterPairedDevices: List<EmitterPairedDevice> = emptyList()
     var clearConfigCalled = false
     var clearPairingCalled = false
+    var loadMediaBitmapCount = 0
     val storedMedia: MutableMap<String, StoredMedia> = mutableMapOf()
     val mediaBytes: MutableMap<String, ByteArray> = mutableMapOf()
 
@@ -67,8 +68,10 @@ class FakeLocalStorage(
         this.playlist = playlist
     }
 
-    override fun loadMediaBitmap(mediaId: String, fileName: String): ImageBitmap? =
-        availableBitmaps[mediaId]
+    override fun loadMediaBitmap(mediaId: String, fileName: String): ImageBitmap? {
+        loadMediaBitmapCount++
+        return availableBitmaps[mediaId]
+    }
 
     override fun importMedia(sourcePath: String): MediaImportResult =
         MediaImportResult.Failure(app.kiosksync.platform.MediaImportError.UNREADABLE)
