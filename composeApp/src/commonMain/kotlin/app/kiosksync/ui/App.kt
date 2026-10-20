@@ -85,7 +85,8 @@ fun App(
             localStorage = container.localStorage,
             logger = container.logger,
             scope = coroutineScope,
-            statusTracker = container.receiverStatusTracker
+            statusTracker = container.receiverStatusTracker,
+            backgroundDispatcher = container.backgroundDispatcher
         )
     }
 
@@ -113,7 +114,8 @@ fun App(
 
     fun resetRole() {
         roleStateHolder.confirmChangeRole()
-        pairingManager.checkInitialPairing()
+        // Pairing is initialized only when the Receiver role is confirmed again,
+        // so changing role does not generate an unused code on the UI thread.
         showReceiverOptions = false
         showUnpairConfirm = false
         currentScreen = Screen.RoleSelection

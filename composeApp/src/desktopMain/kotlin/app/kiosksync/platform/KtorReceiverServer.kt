@@ -63,6 +63,7 @@ class KtorReceiverServer(
     override var boundPort: Int = 0
         private set
 
+    @Synchronized
     override fun start(port: Int, deviceId: String, deviceName: String): Int {
         stop()
         this.deviceId = deviceId
@@ -94,6 +95,7 @@ class KtorReceiverServer(
         throw IllegalStateException("No available port found starting at $port", lastError)
     }
 
+    @Synchronized
     override fun stop() {
         server?.let { running ->
             runCatching { running.stop(500, 1000) }

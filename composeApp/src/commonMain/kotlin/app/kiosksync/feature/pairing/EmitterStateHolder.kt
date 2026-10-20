@@ -16,7 +16,9 @@ import app.kiosksync.feature.sync.LocalMediaMissingException
 import app.kiosksync.platform.DeviceDiscovery
 import app.kiosksync.platform.EmitterClient
 import app.kiosksync.platform.LocalStorage
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +27,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class EmitterDeviceUi(
     val deviceId: String,
@@ -78,7 +81,9 @@ class EmitterStateHolder(
     private val logger: AppLogger,
     private val emitterId: String,
     private val emitterName: String,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    private val serviceScope: CoroutineScope,
+    private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
     private val _uiState = MutableStateFlow(EmitterUiState())
     val uiState: StateFlow<EmitterUiState> = _uiState.asStateFlow()
@@ -106,14 +111,16 @@ class EmitterStateHolder(
         }
         jobs += scope.launch { pollStatuses() }
 
-        discovery.startDiscovery()
+        // mDNS initialization can block; the serial service worker keeps it off
+        // the UI and ordered with the receiver server lifecycle.
+        serviceScope.launch { discovery.startDiscovery() }
         rebuild()
     }
 
     fun stop() {
         jobs.forEach { it.cancel() }
         jobs.clear()
-        discovery.stopDiscovery()
+        serviceScope.launch { discovery.stopDiscovery() }
         logger.info("Emitter discovery stopped")
     }
 
@@ -154,13 +161,16 @@ class EmitterStateHolder(
 
         scope.launch {
             _uiState.update { it.copy(isPairing = true, pairingError = null) }
-            client.pair(
-                host = device.host,
-                port = device.port,
-                emitterId = emitterId,
-                emitterName = emitterName,
-                code = state.pairingCode
-            ).fold(
+            val result = withContext(backgroundDispatcher) {
+                client.pair(
+                    host = device.host,
+                    port = device.port,
+                    emitterId = emitterId,
+                    emitterName = emitterName,
+                    code = state.pairingCode
+                )
+            }
+            result.fold(
                 onSuccess = { response ->
                     storage.addEmitterPairedDevice(
                         EmitterPairedDevice(
@@ -221,7 +231,10 @@ class EmitterStateHolder(
                 _uiState.update { it.copy(statusMessage = Strings.UNPAIR_ERROR, statusIsError = true) }
                 return@launch
             }
-            client.unpair(target.first, target.second, emitterId, storedDevice.token).fold(
+            val result = withContext(backgroundDispatcher) {
+                client.unpair(target.first, target.second, emitterId, storedDevice.token)
+            }
+            result.fold(
                 onSuccess = {
                     storage.removeEmitterPairedDevice(device.deviceId)
                     storedDevices = storage.loadEmitterPairedDevices()
@@ -280,7 +293,10 @@ class EmitterStateHolder(
         val (host, port) = parsed
         scope.launch {
             _uiState.update { it.copy(isManualIpLoading = true, manualIpError = null) }
-            client.getInfo(host, port).fold(
+            val result = withContext(backgroundDispatcher) {
+                client.getInfo(host, port)
+            }
+            result.fold(
                 onSuccess = { info ->
                     if (info.role != "receiver") {
                         _uiState.update {
@@ -382,27 +398,30 @@ class EmitterStateHolder(
                     DeviceSyncUi(SyncUiStatus.UPLOADING)
                 }
 
-                syncService.sync(
-                    device = stored,
-                    host = target.first,
-                    port = target.second,
-                    emitterId = emitterId,
-                    playlist = playlist,
-                    onUploadProgress = { progress ->
-                        updateDeviceSync(device.deviceId) {
-                            DeviceSyncUi(
-                                status = SyncUiStatus.UPLOADING,
-                                uploaded = progress.uploaded,
-                                total = progress.total
-                            )
+                val syncResult = withContext(backgroundDispatcher) {
+                    syncService.sync(
+                        device = stored,
+                        host = target.first,
+                        port = target.second,
+                        emitterId = emitterId,
+                        playlist = playlist,
+                        onUploadProgress = { progress ->
+                            updateDeviceSync(device.deviceId) {
+                                DeviceSyncUi(
+                                    status = SyncUiStatus.UPLOADING,
+                                    uploaded = progress.uploaded,
+                                    total = progress.total
+                                )
+                            }
+                        },
+                        onApplying = {
+                            updateDeviceSync(device.deviceId) {
+                                it.copy(status = SyncUiStatus.APPLYING)
+                            }
                         }
-                    },
-                    onApplying = {
-                        updateDeviceSync(device.deviceId) {
-                            it.copy(status = SyncUiStatus.APPLYING)
-                        }
-                    }
-                ).fold(
+                    )
+                }
+                syncResult.fold(
                     onSuccess = { summary ->
                         successCount++
                         updateDeviceSync(device.deviceId) {
@@ -463,7 +482,10 @@ class EmitterStateHolder(
                     registerFailure(device.deviceId)
                     continue
                 }
-                client.getStatus(target.first, target.second, emitterId, device.token)
+                val statusResult = withContext(backgroundDispatcher) {
+                    client.getStatus(target.first, target.second, emitterId, device.token)
+                }
+                statusResult
                     .onSuccess {
                         failedChecks[device.deviceId] = 0
                         onlineStatus[device.deviceId] = true

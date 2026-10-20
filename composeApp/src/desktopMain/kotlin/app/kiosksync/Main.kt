@@ -30,8 +30,10 @@ import java.awt.Toolkit
 import java.awt.image.BufferedImage
 import java.io.File
 import java.net.InetAddress
+import java.util.concurrent.Executors
 import javax.swing.SwingUtilities
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.withContext
 
 fun main(args: Array<String>) {
@@ -88,6 +90,13 @@ fun main(args: Array<String>) {
         }
     }
 
+    // Server shutdown, JmDNS close and registration may block for hundreds of
+    // milliseconds. A dedicated serial worker keeps them off the UI thread and
+    // guarantees that a start never races with the previous stop.
+    val serviceDispatcher = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "KioskSync-services").apply { isDaemon = true }
+    }.asCoroutineDispatcher()
+
     val container = AppContainer(
         args = appArgs,
         dataDirPath = effectiveDataDir.absolutePath,
@@ -100,7 +109,9 @@ fun main(args: Array<String>) {
         emitterClient = emitterClient,
         receiverStatusTracker = statusTracker,
         receiverPlaylistBridge = playlistBridge,
-        pickImageFiles = pickImageFiles
+        pickImageFiles = pickImageFiles,
+        backgroundDispatcher = Dispatchers.IO,
+        serviceDispatcher = serviceDispatcher
     )
 
     application {

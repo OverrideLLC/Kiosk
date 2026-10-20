@@ -26,7 +26,9 @@ fun EmitterHomeScreen(
             logger = container.logger,
             emitterId = config.deviceId,
             emitterName = container.deviceName,
-            scope = scope
+            scope = scope,
+            serviceScope = container.serviceScope,
+            backgroundDispatcher = container.backgroundDispatcher
         )
     }
 

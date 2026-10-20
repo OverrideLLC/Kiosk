@@ -5,9 +5,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import app.kiosksync.AppContainer
 import app.kiosksync.core.Strings
 import app.kiosksync.feature.pairing.PairingCodeScreen
@@ -15,6 +13,15 @@ import app.kiosksync.feature.pairing.PairingManager
 import app.kiosksync.feature.playback.CarouselScreen
 import app.kiosksync.feature.playback.PlaybackStateHolder
 import app.kiosksync.feature.role.AppConfig
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+private data class ReceiverRuntimeUi(
+    val port: Int,
+    val isReady: Boolean = false,
+    val error: String? = null
+)
 
 @Composable
 fun ReceiverHomeScreen(
@@ -26,37 +33,49 @@ fun ReceiverHomeScreen(
     onChangeRoleRequested: () -> Unit
 ) {
     val pairingState by pairingManager.uiState.collectAsState()
-    var boundPort by remember(config.deviceId) { mutableStateOf(config.port) }
-    var serviceError by remember { mutableStateOf<String?>(null) }
+    val runtimeState = remember(config.deviceId, config.port) {
+        MutableStateFlow(ReceiverRuntimeUi(port = config.port))
+    }
+    val runtime by runtimeState.collectAsState()
 
+    // Starting Ktor and mDNS can block for a while. Keep both operations on the
+    // serial service worker so the UI appears instantly and start/stop never race.
     DisposableEffect(config.deviceId, config.port) {
-        val port = try {
-            container.receiverServer.start(config.port, config.deviceId, container.deviceName)
-        } catch (error: Exception) {
-            container.logger.error("Could not start the receiver server", error)
-            serviceError = Strings.SERVER_START_ERROR
-            config.port
+        container.serviceScope.launch {
+            try {
+                val port = container.receiverServer.start(
+                    port = config.port,
+                    deviceId = config.deviceId,
+                    deviceName = container.deviceName
+                )
+                runtimeState.value = ReceiverRuntimeUi(port = port, isReady = true)
+            } catch (error: Exception) {
+                container.logger.error("Could not start the receiver server", error)
+                runtimeState.value = ReceiverRuntimeUi(
+                    port = config.port,
+                    error = Strings.SERVER_START_ERROR
+                )
+            }
         }
-        boundPort = port
-        container.discovery.registerService(
-            deviceName = container.deviceName,
-            port = port,
-            deviceId = config.deviceId,
-            isPaired = pairingManager.uiState.value.isPaired
-        )
+
         onDispose {
-            container.discovery.unregisterService()
-            container.receiverServer.stop()
+            container.serviceScope.launch {
+                runCatching { container.discovery.unregisterService() }
+                runCatching { container.receiverServer.stop() }
+            }
         }
     }
 
-    LaunchedEffect(pairingState.isPaired, boundPort) {
-        container.discovery.registerService(
-            deviceName = container.deviceName,
-            port = boundPort,
-            deviceId = config.deviceId,
-            isPaired = pairingState.isPaired
-        )
+    LaunchedEffect(pairingState.isPaired, runtime.port, runtime.isReady) {
+        if (!runtime.isReady) return@LaunchedEffect
+        withContext(container.serviceDispatcher) {
+            container.discovery.registerService(
+                deviceName = container.deviceName,
+                port = runtime.port,
+                deviceId = config.deviceId,
+                isPaired = pairingState.isPaired
+            )
+        }
     }
 
     if (pairingState.isPaired) {
@@ -68,7 +87,7 @@ fun ReceiverHomeScreen(
     } else {
         PairingCodeScreen(
             pairingManager = pairingManager,
-            serviceError = serviceError,
+            serviceError = runtime.error,
             onExitRequested = onExitRequested,
             onChangeRoleRequested = onChangeRoleRequested
         )
