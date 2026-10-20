@@ -30,6 +30,9 @@ import java.awt.Toolkit
 import java.awt.image.BufferedImage
 import java.io.File
 import java.net.InetAddress
+import javax.swing.SwingUtilities
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 fun main(args: Array<String>) {
     val appArgs = AppArgs.parse(args)
@@ -77,10 +80,12 @@ fun main(args: Array<String>) {
         statusProvider = { statusTracker.snapshot() }
     )
     val emitterClient = KtorEmitterClient(logger)
-    val pickImageFiles: () -> List<String> = {
-        runCatching { showImagePicker() }
-            .onFailure { logger.warn("Could not open the image picker: ${it.message}") }
-            .getOrDefault(emptyList())
+    val pickImageFiles: suspend () -> List<String> = {
+        withContext(Dispatchers.IO) {
+            runCatching { showImagePicker() }
+                .onFailure { logger.warn("Could not open the image picker: ${it.message}") }
+                .getOrDefault(emptyList())
+        }
     }
 
     val container = AppContainer(
@@ -164,6 +169,26 @@ fun main(args: Array<String>) {
 }
 
 private fun showImagePicker(): List<String> {
+    // Never open the modal dialog inside Compose's FlushCoroutineDispatcher: the nested
+    // event loop re-enters rendering and corrupts snapshot continuations.
+    if (SwingUtilities.isEventDispatchThread()) {
+        return showImagePickerOnEventDispatchThread()
+    }
+
+    var files: List<String> = emptyList()
+    var failure: Throwable? = null
+    SwingUtilities.invokeAndWait {
+        try {
+            files = showImagePickerOnEventDispatchThread()
+        } catch (error: Throwable) {
+            failure = error
+        }
+    }
+    failure?.let { throw it }
+    return files
+}
+
+private fun showImagePickerOnEventDispatchThread(): List<String> {
     val dialog = FileDialog(null as Frame?, "Agregar imágenes", FileDialog.LOAD)
     dialog.isMultipleMode = true
     dialog.file = "*.jpg;*.jpeg;*.png;*.webp"

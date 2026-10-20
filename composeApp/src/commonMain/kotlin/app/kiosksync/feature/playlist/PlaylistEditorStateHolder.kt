@@ -29,7 +29,7 @@ class PlaylistEditorStateHolder(
     private val storage: LocalStorage,
     private val logger: AppLogger,
     private val scope: CoroutineScope,
-    private val pickImageFiles: () -> List<String>
+    private val pickImageFiles: suspend () -> List<String>
 ) {
     private val _uiState = MutableStateFlow(PlaylistEditorUiState())
     val uiState: StateFlow<PlaylistEditorUiState> = _uiState.asStateFlow()

@@ -26,7 +26,7 @@ class AppContainer(
     val emitterClient: EmitterClient,
     val receiverStatusTracker: ReceiverStatusTracker,
     val receiverPlaylistBridge: ReceiverPlaylistBridge,
-    val pickImageFiles: () -> List<String>
+    val pickImageFiles: suspend () -> List<String>
 ) {
     fun shutdown() {
         runCatching { discovery.unregisterService() }
