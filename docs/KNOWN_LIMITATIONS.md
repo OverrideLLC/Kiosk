@@ -1,0 +1,94 @@
+# Límites conocidos
+
+Lista honesta de lo que el MVP **no** hace o hace con limitaciones. Úsala antes de
+prometer funciones o de instalar la app en un comercio real.
+
+## Plataforma y empaquetado
+
+- **Windows 10/11 es la plataforma objetivo.** El desarrollo y las pruebas de esta
+  versión se hicieron en Linux; el hook de teclado nativo de Windows no se pudo
+  probar aquí.
+- El instalador `.exe`/`.msi` requiere **WiX Toolset** en la máquina que compila.
+  Sin WiX solo se genera la carpeta portable.
+- `jpackage` **no** produce un único `.exe` autocontenido: la versión portable es
+  una carpeta con un `.exe` dentro, comprimible en `.zip`.
+- No hay actualización automática ni instalador silencioso.
+- No hay versión para Android, iOS, macOS ni Linux empaquetada.
+
+## Pantalla y reproducción
+
+- **La Pantalla se limpia al arrancar.** Por diseño, cada inicio borra contenido,
+  bloqueo y vinculación para no reproducir material viejo. Consecuencia: tras un
+  corte de luz o un reinicio, la pantalla queda en negro esperando que el
+  Controlador la vuelva a vincular y enviar. La reproducción sin red funciona
+  **mientras el proceso sigue vivo**, no después de reiniciar.
+- Solo hay **una playlist activa** por Controlador. No hay varias playlists por
+  pantalla ni programación por horarios.
+- No hay video, audio, PDF ni animaciones. Solo JPG, PNG y WEBP de hasta 25 MB.
+- La transición es un fundido de 500 ms. No hay efectos configurionales.
+- Las imágenes dañadas o ausentes se omiten con un log; si todas fallan, la
+  Pantalla muestra el estado vacío.
+- El carrusel no recuerda en qué imagen iba tras reiniciar; empieza de nuevo (y,
+  de hecho, arranca en blanco por la limpieza anterior).
+
+## Bloqueo kiosco
+
+- `Ctrl+Alt+Del` no se puede interceptar.
+- El hook de teclado de bajo nivel solo existe en Windows y no está probado en
+  Linux.
+- En `--windowed` o en Linux, el bloqueo usa el manejo de teclas de Compose y no
+  bloquea atajos del sistema.
+- La frase de recuperación es universal y está compilada en la app; no es un
+  secreto.
+- La contraseña se guarda con SHA-256 sin sal ni derivación lenta.
+- No hay bloqueo por inactividad ni por horario; la Pantalla se bloquea al
+  arrancar y al salir del diálogo de opciones.
+
+## Red y descubrimiento
+
+- mDNS puede fallar en redes con aislamiento de clientes, VLANs o firewalls
+  estrictos. El plan B es **Agregar por IP**.
+- El firewall de Windows debe permitir la app en la **red privada** la primera vez.
+- Solo hay un Controlador vinculado por Pantalla a la vez.
+- No hay reconexión cifrada, ni TLS, ni autenticación de mDNS.
+- El Controlador consulta el estado cada 5 segundos; una pantalla puede tardar
+  hasta ~15 segundos en marcarse como desconectada.
+- La sincronización es secuencial por pantalla. Con muchas imágenes y varias
+  pantallas, el envío puede tardar; no hay reanudación de una subida cortada (la
+  siguiente ejecución vuelve a subir solo lo que falte).
+
+## UI y accesibilidad
+
+- El tema claro/oscuro y el movimiento reducido se guardan en `config.json`.
+- La Pantalla (pairing y reproducción) es siempre negra por diseño; el tema
+  afecta al Controlador y a los diálogos.
+- El catálogo de componentes (`--ui-catalog`) es una herramienta de desarrollo, no
+  una pantalla de producto.
+- La navegación por teclado cubre Tab/Enter/Esc y flechas en las tarjetas de rol,
+  pero no se probó con todos los lectores de pantalla de Windows.
+- No hay internacionalización completa: los textos están en español y
+  centralizados en `Strings.kt` para traducirlos más adelante.
+- No hay temas visuales personalizados ni perfiles de usuario.
+
+## Datos y operación
+
+- Sin base de datos: archivos JSON y una carpeta de imágenes.
+- Sin copia de seguridad automática. Si se borra `%APPDATA%\KioskSync\`, se pierde
+  la vinculación y la playlist local.
+- El log rota a 5 archivos de 1 MB. No incluye tokens ni códigos, pero sí nombres
+  de equipos e ids.
+- No hay telemetría, ni informes de error remotos, ni nube.
+- La app no se cierra sola por una excepción: la registra y sigue. Si el error es
+  fatal para una operación, la UI lo muestra; no hay recuperación automática de
+  una playlist corrupta (se ignora y se muestra el estado vacío).
+
+## Fuera del alcance actual
+
+- Jerarquía en árbol de contenido.
+- Plantillas de fichas técnicas.
+- Varias playlists por pantalla.
+- Programación por horarios.
+- Arranque automático con Windows (se puede agregar con el Programador de tareas).
+- Firma/cifrado de peticiones (diseñado, no implementado).
+- Actualización automática.
+- Cuentas de usuario.

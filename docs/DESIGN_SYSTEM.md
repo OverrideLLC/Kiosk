@@ -169,7 +169,7 @@ La Pantalla en reproducción no tiene movimiento decorativo.
 | `AppSelectableCard` | `AppSelectableCard.kt` | tarjeta con rol radio/check, foco y “morph” |
 | `AppStatusChip` | `AppStatusChip.kt` | estados con tono semántico |
 | `AppListItem` | `AppListItem.kt` | fila con miniatura y acciones |
-| `AppDialog` | `AppDialog.kt` | diálogo 480 dp con ícono y acciones |
+| `AppDialog` | `AppDialog.kt` | diálogo 480 dp (640 dp en el de seguridad) con ícono y acciones |
 | `AppDropdownMenu` | `AppDropdownMenu.kt` | menú de desbordamiento |
 | `AppSnackbarHost` | `AppSnackbar.kt` | aviso con “Deshacer” |
 | `AppLoadingIndicator` | `AppLoadingIndicator.kt` | puntos ondulados |
@@ -179,7 +179,17 @@ La Pantalla en reproducción no tiene movimiento decorativo.
 | `AppTooltip` | `AppTooltip.kt` | atajos y motivos |
 | `AppIcon` | `AppIcon.kt` | único punto de dibujo de íconos |
 
-### Accesibilidad
+## Pantallas
+
+| Pantalla | Composición | Notas |
+| --- | --- | --- |
+| Selección de rol | Marca + titular 32 sp + dos tarjetas grandes + “Salir” | Flechas mueven la selección; Enter confirma. |
+| Pantalla sin vincular | Fondo negro, código agrupado (“685 853”) a 104 sp, texto de apoyo ≥ 24 sp | Sin menús visibles; acciones de administración discretas. |
+| Pantalla bloqueada | Tarjeta tonal, ícono de candado, puntos de contraseña, pista de recuperación 24 sp | No revela la secuencia. |
+| Controlador | Cabecera con marca, rol, estado de bloqueo y menú; dos paneles (≥ 1100 dp) o pestañas | Pantallas, playlist, barra de envío fija. |
+| Reproducción | Imagen `ContentScale.Fit` sobre negro, fundido de 500 ms | Sin movimiento decorativo; estado vacío con marca. |
+
+## Accesibilidad
 
 - Los controles interactivos usan `Role` y `contentDescription`.
 - Las tarjetas y grupos exponen selección (`selectable` / `selectableGroup`).
@@ -205,3 +215,5 @@ Abre una ventana de desarrollo (no forma parte del flujo de usuario) con:
 
 El test `CatalogRenderTest` renderiza el catálogo fuera de pantalla en ambos
 temas y deja capturas en `composeApp/build/reports/ui/` para revisión visual.
+`ControllerRenderTest` y `ScreenRenderTest` hacen lo mismo con el Controlador
+(oscuro, claro, compacto y diálogos) y con la selección de rol y la reproducción.

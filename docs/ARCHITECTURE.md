@@ -1,0 +1,222 @@
+# Arquitectura
+
+## Vista general
+
+KioskSync es **un solo ejecutable** con dos roles que se eligen la primera vez:
+
+- **Controlador (Emitter)**: cliente HTTP. Descubre pantallas, las vincula, edita la
+  playlist y envía el contenido. **No abre puertos.**
+- **Pantalla (Receiver)**: servidor HTTP. Se anuncia por mDNS, recibe imágenes y
+  reproduce la playlist desde su copia local.
+
+La topología es en estrella: solo existen conexiones Controlador → Pantalla. Dos
+Controladores nunca se ven entre sí porque solo la Pantalla publica un servicio
+mDNS.
+
+```
+┌──────────────────┐        mDNS (_kiosksync._tcp)        ┌──────────────────┐
+│   Controlador    │ ───────────────────────────────────► │     Pantalla     │
+│  Ktor Client     │                                      │  Ktor Server     │
+│  JmDNS browser   │ ──── HTTP + token (LAN) ───────────► │  JmDNS publish   │
+└──────────────────┘                                      └──────────────────┘
+                                                                   │
+                                                          playlist.json + media/
+                                                                   │
+                                                          reproducción local
+```
+
+Todo el tráfico es HTTP en texto plano dentro de la LAN. La seguridad se apoya en
+el código de vinculación, un token y la validación de headers; los riesgos
+aceptados están en [SECURITY.md](SECURITY.md).
+
+## Módulo y capas
+
+Hay **un único módulo Gradle** (`composeApp`) con dos source sets:
+
+| Source set | Contenido |
+| --- | --- |
+| `commonMain` | Modelos y DTOs, lógica pura (`PairingManager`, `SyncPlanner`, reproducción), estado de UI, pantallas Compose, sistema de diseño. |
+| `desktopMain` | Servidor y cliente Ktor, JmDNS, archivos, ventana a pantalla completa, argumentos y arranque. |
+
+```
+composeApp/src/
+├── commonMain/kotlin/app/kiosksync/
+│   ├── core/            # APP_NAME, constantes, Strings.kt, modelos, DTOs
+│   ├── designsystem/    # tema M3, tipografía, iconos, componentes
+│   ├── feature/
+│   │   ├── pairing/     # PairingManager + pantallas del Controlador y la Pantalla
+│   │   ├── sync/        # SyncPlanner, EmitterSyncService, petición de playlist
+│   │   ├── playlist/    # Playlist, PlaylistItem, editor y biblioteca
+│   │   ├── playback/    # PlaybackStateHolder, CarouselScreen, idle
+│   │   ├── projection/  # proyección del Controlador a sus propias pantallas
+│   │   ├── kiosk/       # bloqueo, secuencia y recuperación
+│   │   └── role/        # selección y persistencia del rol
+│   ├── platform/        # interfaces: DeviceDiscovery, ReceiverServer,
+│   │                    # EmitterClient, LocalStorage
+│   ├── ui/              # App.kt, navegación y pantallas por rol
+│   └── AppContainer.kt  # inyección manual
+└── desktopMain/kotlin/app/kiosksync/
+    ├── platform/        # JmDnsDiscovery, KtorReceiverServer, KtorEmitterClient,
+    │                    # FileLocalStorage, WindowsKioskLock
+    └── Main.kt          # argumentos, logger, composición y ventana
+```
+
+Las dependencias apuntan hacia `commonMain`: la lógica y la UI solo conocen las
+interfaces de `platform/`. Una interfaz existe únicamente cuando hay una
+implementación específica de JVM detrás.
+
+## Dependencias principales
+
+| Aspecto | Elección |
+| --- | --- |
+| UI | Compose Multiplatform Desktop + Material 3 |
+| Red | Ktor Server/Client con motor CIO |
+| Serialización | kotlinx.serialization JSON |
+| Asincronía | Coroutines + `StateFlow` |
+| Descubrimiento | JmDNS (mDNS/Zeroconf) |
+| Imágenes | Skia (`org.jetbrains.skia.Image`) → `ImageBitmap` |
+| Selector de archivos | `java.awt.FileDialog` |
+| Pruebas | `kotlin.test` + render offscreen con `ImageComposeScene` |
+
+## Composición de la aplicación
+
+`AppContainer` construye una sola vez las implementaciones y los objetos de
+dominio:
+
+- `FileLocalStorage`, `FileAppLogger`.
+- `JmDnsDiscovery`.
+- `KtorEmitterClient` (Controlador) o `KtorReceiverServer` (Pantalla).
+- `PairingManager`, `KioskLockManager`, `ReceiverStatusTracker`,
+  `ReceiverPlaylistBridge`, `ProjectionController`.
+
+`Main.kt` lee los argumentos, crea el contenedor y abre la ventana. Si el rol es
+Pantalla y no se pasó `--windowed`, la ventana es fullscreen, sin bordes y siempre
+encima.
+
+## Flujos
+
+### 1. Descubrimiento y vinculación
+
+1. La Pantalla arranca el servidor en el primer puerto libre desde `8765` y publica
+   `_kiosksync._tcp.local.` con `deviceId`, `deviceName`, `role=receiver` y
+   `paired`.
+2. El Controlador escucha mDNS y muestra las pantallas. El plan B es **Agregar por
+   IP**, que llama a `GET /info` y comprueba `role == "receiver"`.
+3. La Pantalla sin vincular muestra un código de 6 dígitos (5 minutos, 5 intentos,
+   30 segundos de bloqueo). El Controlador envía `POST /pair`.
+4. Si el código es correcto, la Pantalla genera un token de 32 bytes (hex) y lo
+   guarda en `paired.json`; el Controlador lo guarda asociado al `deviceId`.
+5. A partir de ahí, todas las rutas salvo `/info` y `/pair` exigen
+   `X-Emitter-Id` + `X-Auth-Token`.
+
+La vinculación se guarda por `deviceId`, no por IP. Si la Pantalla cambia de IP,
+mDNS la vuelve a ubicar.
+
+### 2. Sincronización
+
+`EmitterSyncService` ejecuta el mismo plan para cada pantalla seleccionada:
+
+1. `GET /sync/state` → versión actual y lista de `mediaId` + SHA-256.
+2. `SyncPlanner.plan()` compara la playlist local con ese estado y devuelve:
+   - imágenes a subir (no existen o cambió el hash),
+   - imágenes huérfanas a borrar,
+   - cuántas ya coinciden.
+3. `PUT /media/{mediaId}` por cada imagen faltante, con el SHA-256 en
+   `X-Content-Sha256`. La Pantalla verifica el hash antes de guardar.
+4. `PUT /playlist` con el manifiesto completo. La Pantalla comprueba que **todas**
+   las imágenes existan y tengan el hash correcto; si falta alguna responde
+   `409` y conserva la playlist anterior.
+5. Si todo está completo, guarda `playlist.json`, borra las imágenes huérfanas y
+   avisa al reproductor. El carrusel cambia de versión sin cortar la imagen actual.
+
+La playlist local del Controlador es la fuente de verdad. Un segundo envío sin
+cambios no sube ninguna imagen.
+
+### 3. Reproducción
+
+`PlaybackStateHolder` carga `playlist.json`, resuelve cada `mediaId` a un archivo
+de `media/` y mantiene un bucle:
+
+- muestra la imagen con `ContentScale.Fit` sobre negro,
+- espera la duración efectiva (por imagen o la de por defecto),
+- avanza al siguiente índice y vuelve al inicio al terminar,
+- omite con un log las imágenes dañadas o ausentes.
+
+La reproducción **no usa la red**. Si la Pantalla se queda sin conexión sigue con
+su copia local. Al arrancar, la Pantalla se limpia a propósito (ver
+[KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md)) y espera un envío nuevo.
+
+### 4. Estado en línea
+
+El Controlador consulta `GET /status` cada 5 segundos a cada pantalla vinculada.
+Tras 3 fallos consecutivos la marca como desconectada y sigue intentando. La
+Pantalla no cambia su comportamiento por estar desconectada.
+
+### 5. Bloqueo tipo kiosco
+
+La Pantalla arranca bloqueada. En Windows se instala un hook de teclado de bajo
+nivel; en Linux o con `--windowed` se usa el manejo de teclas de Compose. La
+secuencia de desbloqueo (solo Shift/Ctrl/Alt) se configura desde el Controlador y
+se envía con la playlist o con `PUT /lock`. Si hay contraseña, después de la
+secuencia se pide. Hay 5 intentos y 30 segundos de bloqueo. La recuperación usa
+una frase universal compilada en la app; ver [KIOSK_UNLOCK.md](KIOSK_UNLOCK.md) y
+los riesgos en [SECURITY.md](SECURITY.md).
+
+## Persistencia
+
+Sin base de datos. Archivos JSON y una carpeta de imágenes en
+`%APPDATA%\KioskSync\` (o `--data-dir`):
+
+| Archivo | Contenido |
+| --- | --- |
+| `config.json` | Rol, `deviceId`, nombre, puerto, tema, movimiento reducido. |
+| `paired.json` | Pantalla: `emitterId` + token. Controlador: lista de pantallas. |
+| `playlist.json` | Playlist vigente de la Pantalla. |
+| `playlists.json` | Biblioteca de playlists del Controlador. |
+| `lock.json` | Contraseña (hash), secuencia y recuperación. |
+| `media\` | Imágenes nombradas por `mediaId` + extensión. |
+| `logs\app.log` | Log con rotación (5 archivos de 1 MB). |
+
+Las escrituras usan archivo temporal + rename cuando el contenido debe ser
+atómico. Los errores de disco se registran y se muestran en la UI cuando afectan
+a una acción del usuario.
+
+## UI y estado
+
+- Una clase `XxxStateHolder` por pantalla, con `StateFlow<XxxState>` y funciones
+  públicas para los eventos. No hay ViewModels de AndroidX.
+- Navegación con `sealed interface Screen` y un `when` en `App.kt`.
+- El sistema de diseño está en `designsystem/`: tema claro/oscuro, tipografía
+  Sora/Inter, iconos Material Symbols y componentes propios. Ver
+  [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md).
+- Todos los textos visibles están en `core/Strings.kt`.
+- El Controlador usa un layout de dos paneles en anchos ≥1100 dp y pestañas
+  Pantallas/Playlist en anchos menores.
+
+## Errores y logs
+
+- Las rutas del servidor capturan excepciones y responden JSON con un código de
+  error; nunca tumban el proceso.
+- Las tareas en segundo plano capturan y registran sus fallos.
+- `Main.kt` instala un `Thread.setDefaultUncaughtExceptionHandler` como última
+  red: cualquier excepción no capturada se escribe en `logs/app.log`.
+- La UI muestra el error junto al elemento que lo produjo, con una causa y una
+  acción cuando se conoce.
+- El log nunca incluye tokens ni códigos de vinculación.
+
+## Pruebas
+
+- `commonTest`: lógica pura (`PairingManager`, `SyncPlanner`, serialización,
+  playlist, carrusel, bloqueo).
+- `desktopTest`: render offscreen de las pantallas a PNG
+  (`build/reports/ui/`) para revisar tipografía, espaciado y estados vacíos.
+- Comando: `.\gradlew.bat build`.
+
+## Decisiones de diseño
+
+Las notas cortas están en [decisions/](decisions/):
+
+- [Topología en estrella](decisions/ADR-001-star-topology.md)
+- [Vinculación por código](decisions/ADR-002-pairing-code.md)
+- [Caché local en la Pantalla](decisions/ADR-003-local-cache.md)
+- [Sin base de datos](decisions/ADR-004-no-database.md)
