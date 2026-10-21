@@ -59,6 +59,8 @@ object Strings {
     const val PAIR_DIALOG_TITLE = "Vincular pantalla"
     const val PAIR_DIALOG_INSTRUCTION = "Escribe el código de 6 dígitos que aparece en la pantalla."
     const val PAIR_CODE_FIELD = "Código"
+    const val PAIR_CODE_PLACEHOLDER = "000000"
+    const val PAIR_CODE_REQUIRED = "Escribe los 6 dígitos que aparecen en la Pantalla."
     const val PAIR_DIALOG_CONFIRM = "Vincular"
     const val PAIR_DIALOG_CANCEL = "Cancelar"
     const val PAIRING_IN_PROGRESS = "Vinculando…"
@@ -91,6 +93,23 @@ object Strings {
     const val CONTINUE_BUTTON = "Continuar"
     const val EXIT_APP_CONFIRM = "Salir de la aplicación"
 
+    // Controller chrome and settings
+    const val MORE_OPTIONS = "Más opciones"
+    const val SETTINGS_TITLE = "Ajustes"
+    const val SETTINGS_THEME = "Tema"
+    const val SETTINGS_THEME_HINT = "Se guarda para este equipo y se recuerda al abrir la app."
+    const val SETTINGS_REDUCE_MOTION = "Reducir movimiento"
+    const val SETTINGS_REDUCE_MOTION_HINT = "Desactiva las animaciones decorativas."
+    const val THEME_DARK = "Oscuro"
+    const val THEME_LIGHT = "Claro"
+    const val SECURITY_STATUS_PROTECTED = "Bloqueo activo"
+    const val SECURITY_STATUS_NONE = "Sin contraseña"
+    const val EMPTY_SCREENS_TITLE = "Todavía no hay pantallas"
+    const val EMPTY_PLAYLIST_TITLE = "Esta playlist está vacía"
+    const val SELECT_SCREEN = "Seleccionar pantalla"
+
+    fun selectScreen(name: String): String = "Seleccionar pantalla $name"
+
     // Playlist editor
     const val PLAYLIST_TITLE = "Playlist"
     const val PLAYLIST_SUBTITLE = "Ordena las imágenes y ajusta cuánto tiempo se muestra cada una."
@@ -118,7 +137,12 @@ object Strings {
     const val MOVE_UP = "Subir"
     const val MOVE_DOWN = "Bajar"
     const val REMOVE_ITEM = "Quitar"
+    const val REMOVE_ITEM_TITLE = "Quitar imagen"
+    const val REMOVE_ITEM_CONFIRM =
+        "¿Seguro que deseas quitar esta imagen de la playlist? No se borra el archivo ni cambia en otras playlists."
     const val ITEM_DEFAULT_DURATION = "Por defecto"
+    const val ITEM_DURATION_LABEL = "Duración de la imagen"
+    const val PLAYLIST_ACTIVE_STATE = "Activa"
     const val PLAYLIST_IMPORTED = "Imágenes agregadas"
     const val PLAYLIST_REJECTED = "Archivos rechazados"
     const val PLAYLIST_IMPORT_NONE = "No se agregó ninguna imagen. Solo se admiten JPG, PNG o WEBP de hasta 25 MB."
@@ -169,6 +193,9 @@ object Strings {
     // Security dialog (controller)
     const val SECURITY_TITLE = "Seguridad"
     const val SECURITY_PASSWORD_SECTION = "Contraseña de bloqueo"
+    const val SECURITY_TAB_PASSWORD = "Contraseña"
+    const val SECURITY_TAB_SEQUENCE = "Secuencia"
+    const val SECURITY_TAB_RECOVERY = "Recuperación"
     const val SECURITY_PASSWORD_SECTION_HINT =
         "Protege el teclado de este equipo y de las pantallas que reciban contenido."
     const val SECURITY_SEQUENCE_SECTION = "Secuencia de desbloqueo"

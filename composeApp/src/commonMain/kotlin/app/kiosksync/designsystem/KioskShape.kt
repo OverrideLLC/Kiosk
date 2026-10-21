@@ -49,8 +49,22 @@ object Space {
 object Sizes {
     val minTouchTarget = 40.dp
     val contentMaxWidth = 960.dp
+    val wideLayoutBreakpoint = 1100.dp
     val dialogMaxWidth = 480.dp
+    val dialogWideMaxWidth = 600.dp
     val dialogMinWidth = 320.dp
+    val dialogBodyMaxHeight = 440.dp
+    val avatar = 44.dp
+    val iconBubbleSmall = 40.dp
+    val durationFieldWidth = 84.dp
+    val stackedListMaxHeight = 320.dp
+    val playlistRowMinHeight = 72.dp
+    val securityDivider = 1.dp
+    val selectionBorder = 2.dp
+    val hairline = 1.dp
+    val stepperWidth = 200.dp
+    val emptyStateMinHeight = 220.dp
+    val loadingDotSmall = 6.dp
 
     val iconSmall = 16.dp
     val iconCompact = 20.dp

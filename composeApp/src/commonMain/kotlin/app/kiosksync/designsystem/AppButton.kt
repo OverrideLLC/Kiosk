@@ -103,7 +103,12 @@ fun AppButton(
         if (loading || icon != null) {
             Spacer(Modifier.width(Space.xs))
         }
-        Text(text = text, style = textStyle, maxLines = 1)
+        Text(
+            text = text,
+            style = textStyle,
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+        )
     }
 
     val button: @Composable () -> Unit = {

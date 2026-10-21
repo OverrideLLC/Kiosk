@@ -6,6 +6,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import app.kiosksync.AppContainer
+import app.kiosksync.core.AppTheme
 import app.kiosksync.feature.pairing.EmitterScreen
 import app.kiosksync.feature.pairing.EmitterStateHolder
 import app.kiosksync.feature.playlist.PlaylistEditorStateHolder
@@ -16,7 +17,11 @@ fun EmitterHomeScreen(
     config: AppConfig,
     container: AppContainer,
     onExitRequested: () -> Unit,
-    onRoleReset: () -> Unit
+    onRoleReset: () -> Unit,
+    theme: AppTheme = AppTheme.DARK,
+    reduceMotion: Boolean = false,
+    onThemeChange: (AppTheme) -> Unit = {},
+    onReduceMotionChange: (Boolean) -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
     val stateHolder = remember(config.deviceId) {
@@ -62,6 +67,10 @@ fun EmitterHomeScreen(
         playlistStateHolder = playlistStateHolder,
         storage = container.localStorage,
         onExitRequested = onExitRequested,
-        onRoleReset = onRoleReset
+        onRoleReset = onRoleReset,
+        theme = theme,
+        reduceMotion = reduceMotion,
+        onThemeChange = onThemeChange,
+        onReduceMotionChange = onReduceMotionChange
     )
 }

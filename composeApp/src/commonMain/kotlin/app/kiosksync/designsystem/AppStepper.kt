@@ -32,7 +32,7 @@ import app.kiosksync.core.Strings
 fun AppStepper(
     value: Int,
     onValueChange: (Int) -> Unit,
-    label: String,
+    label: String? = null,
     modifier: Modifier = Modifier,
     range: IntRange = 1..600,
     unit: String? = null,
@@ -45,12 +45,14 @@ fun AppStepper(
     val borderColor = if (error != null) colors.error else colors.outlineVariant
 
     Column(modifier = modifier) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = colors.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(Space.xs))
+        if (label != null) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = colors.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(Space.xs))
+        }
         Surface(
             shape = KioskShape.chip,
             color = if (enabled) colors.surfaceContainerHigh else extra.disabledContainer,

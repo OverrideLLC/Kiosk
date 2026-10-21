@@ -20,7 +20,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 fun AppTextField(
     value: String,
     onValueChange: (String) -> Unit,
-    label: String,
+    label: String? = null,
     modifier: Modifier = Modifier,
     placeholder: String? = null,
     helper: String? = null,
@@ -44,7 +44,7 @@ fun AppTextField(
         modifier = modifier.fillMaxWidth(),
         enabled = enabled,
         readOnly = readOnly,
-        label = { Text(label) },
+        label = label?.let { { Text(it) } },
         placeholder = placeholder?.let { { Text(it) } },
         leadingIcon = leadingIcon,
         trailingIcon = trailingIcon,
