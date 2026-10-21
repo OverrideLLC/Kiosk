@@ -25,16 +25,6 @@ Las próximas veces basta con abrir la app: la pantalla se anuncia sola y el
 Controlador la vuelve a encontrar aunque cambie de IP. Si la red no permite mDNS,
 usa **Agregar por IP** (`192.168.1.40:8765`).
 
-## Descarga
-
-Las versiones empaquetadas se publican en
-[GitHub Releases](https://github.com/Drinity/OverrideKiosk/releases). Descarga el
-`.zip` portable, descomprímelo en la PC de destino y ejecuta `KioskSync.exe`. No
-requiere JDK, instalador ni permisos de administrador.
-
-Si todavía no hay una versión publicada, genera la carpeta portable siguiendo
-[Empaquetado para Windows](docs/PACKAGING.md).
-
 ## Requisitos
 
 - Windows 10 u 11 (incluida la edición Home) para el uso normal.
@@ -44,7 +34,9 @@ Si todavía no hay una versión publicada, genera la carpeta portable siguiendo
 
 ## Descarga
 
-Todavía no hay una versión publicada en GitHub Releases. Mientras tanto:
+Todavía no hay una versión publicada en
+[GitHub Releases](https://github.com/Drinity/OverrideKiosk/releases). Mientras
+tanto:
 
 - **Usuarios finales**: pide la carpeta portable `KioskSync` (o el instalador
   `.msi`/`.exe`) generada con las instrucciones de
