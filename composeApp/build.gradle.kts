@@ -63,12 +63,33 @@ compose.desktop {
     application {
         mainClass = "app.kiosksync.MainKt"
 
+        // Windows 10/11 may use a legacy ANSI code page for the JVM. The app
+        // writes Spanish text and JSON, so force UTF-8 in the packaged runtime.
+        jvmArgs += listOf("-Dfile.encoding=UTF-8")
+
         nativeDistributions {
-            targetFormats(TargetFormat.Msi)
+            // Msi and Exe are produced by jpackage on Windows. Both require WiX
+            // Toolset 3.x installed and on PATH; createDistributable does not.
+            targetFormats(TargetFormat.Msi, TargetFormat.Exe)
             packageName = "KioskSync"
             packageVersion = "1.0.0"
-            description = "KioskSync Digital Signage Carousel"
+            description = "KioskSync: carrusel de imágenes para la red local"
             vendor = "KioskSync"
+            copyright = "© 2026 KioskSync"
+
+            // Keep the bundled runtime small. java.desktop, java.base,
+            // java.logging and java.prefs are added by the Compose plugin.
+            modules("java.naming", "jdk.unsupported")
+
+            windows {
+                iconFile.set(project.file("src/desktopMain/resources/icon.ico"))
+                menuGroup = "KioskSync"
+                shortcut = true
+                dirChooser = true
+                // No administrator rights: required for Windows Home.
+                perUserInstall = true
+                upgradeUuid = "c8945362-54e5-4a20-a7e8-0d58f5030508"
+            }
         }
     }
 }
