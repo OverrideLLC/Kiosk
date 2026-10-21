@@ -72,12 +72,29 @@ object Strings {
     const val SAVE_BUTTON = "Guardar"
     const val OPTIONS_TITLE = "Opciones de Pantalla"
     const val OPTIONS_MESSAGE = "¿Deseas cambiar de rol o salir del programa?"
+    const val RECEIVER_UNLOCKED_MESSAGE =
+        "Equipo desbloqueado temporalmente. Puedes cambiar de rol, salir del programa o volver a bloquear la pantalla."
+    const val RELOCK_BUTTON = "Volver a bloquear"
     const val CONTINUE_BUTTON = "Continuar"
     const val EXIT_APP_CONFIRM = "Salir de la aplicación"
 
     // Playlist editor
     const val PLAYLIST_TITLE = "Playlist"
     const val PLAYLIST_SUBTITLE = "Ordena las imágenes y ajusta cuánto tiempo se muestra cada una."
+    const val PLAYLIST_SELECTOR_LABEL = "Playlist activa"
+    const val PLAYLIST_DEFAULT_NAME = "Mi playlist"
+    const val PLAYLIST_NEW = "Nueva"
+    const val PLAYLIST_RENAME = "Renombrar"
+    const val PLAYLIST_DELETE = "Eliminar"
+    const val PLAYLIST_NEW_TITLE = "Nueva playlist"
+    const val PLAYLIST_RENAME_TITLE = "Renombrar playlist"
+    const val PLAYLIST_DELETE_TITLE = "Eliminar playlist"
+    const val PLAYLIST_NAME_FIELD = "Nombre"
+    const val PLAYLIST_NAME_HINT = "Por ejemplo: Anuncios, Especificaciones"
+    const val PLAYLIST_NAME_REQUIRED = "Escribe un nombre para la playlist."
+    const val PLAYLIST_NAME_EXISTS = "Ya existe una playlist con ese nombre."
+    const val PLAYLIST_DELETE_CONFIRM = "¿Seguro que deseas eliminar esta playlist? Las imágenes compartidas con otras playlists no se borran."
+    const val PLAYLIST_DELETE_LAST_ERROR = "Debe quedar al menos una playlist."
     const val ADD_IMAGES = "Agregar imágenes"
     const val ADDING_IMAGES = "Agregando…"
     const val PLAYLIST_EMPTY = "Todavía no hay imágenes. Agrega archivos JPG, PNG o WEBP."
@@ -94,9 +111,42 @@ object Strings {
     const val PLAYLIST_IMPORT_NONE = "No se agregó ninguna imagen. Solo se admiten JPG, PNG o WEBP de hasta 25 MB."
     const val PLAYLIST_IMPORT_ERROR = "Algunas imágenes no se pudieron agregar. Revisa el formato y el tamaño."
 
+    // Kiosk lock
+    const val KIOSK_LOCKED_TITLE = "Equipo bloqueado"
+    const val KIOSK_UNLOCK_HINT = "Shift + Shift + Ctrl y escribe la contraseña"
+    const val KIOSK_RECOVERY_HINT = "Si olvidaste la contraseña, usa la frase de recuperación universal."
+    const val KIOSK_WRONG_PASSWORD = "Contraseña incorrecta."
+    const val KIOSK_ATTEMPTS_LEFT = "Intentos restantes:"
+    const val KIOSK_LOCKED_OUT = "Demasiados intentos fallidos. Espera antes de volver a intentarlo."
+    const val KIOSK_PASSWORD_TITLE = "Contraseña de bloqueo"
+    const val KIOSK_PASSWORD_INSTRUCTION =
+        "Esta contraseña bloqueará el teclado de esta PC y de las pantallas que reciban contenido. " +
+            "Para desbloquear: Shift + Shift + Ctrl y luego la contraseña."
+    const val KIOSK_PASSWORD_FIELD = "Contraseña"
+    const val KIOSK_PASSWORD_CONFIRM_FIELD = "Repite la contraseña"
+    const val KIOSK_PASSWORD_RULE = "Entre 4 y 64 caracteres. Solo letras y números."
+    const val KIOSK_PASSWORD_MISMATCH = "Las contraseñas no coinciden."
+    const val KIOSK_PASSWORD_INVALID = "Usa entre 4 y 64 letras o números."
+    const val KIOSK_PASSWORD_SAVED = "Contraseña de bloqueo guardada."
+    const val KIOSK_PASSWORD_APPLIES_NEXT_SEND =
+        "Si la cambias, las pantallas la recibirán en el próximo envío de contenido."
+    const val KIOSK_SECURITY_BUTTON = "Seguridad"
+    const val KIOSK_PASSWORD_CHANGE_TITLE = "Cambiar contraseña de bloqueo"
+    const val KIOSK_UNIVERSAL_HINT =
+        "La frase de recuperación universal está documentada en el manual del proyecto."
+    const val KIOSK_LOCK_ACTIVE_HINT = "El equipo quedará bloqueado hasta que se introduzca la contraseña."
+    const val KIOSK_RECOVERY_USED = "Bloqueo liberado con la frase de recuperación universal."
+
+    // Projection (controller as a display)
+    const val PROJECT_BUTTON = "Proyectar"
+    const val PROJECT_STOP = "Dejar de proyectar"
+    const val PROJECT_HINT = "Muestra la playlist activa a pantalla completa en este equipo."
+    const val PROJECT_NO_PLAYLIST = "Agrega al menos una imagen antes de proyectar."
+    const val PROJECT_SHORTCUT_HINT = "Atajo: Win (Super) + V"
+
     // Sending content
     const val SEND_TITLE = "Enviar"
-    const val SEND_SUBTITLE = "Envía la playlist actual a las pantallas seleccionadas."
+    const val SEND_SUBTITLE = "Envía la playlist activa a las pantallas seleccionadas."
     const val SEND_BUTTON = "Enviar a pantallas seleccionadas"
     const val SENDING = "Enviando…"
     const val SEND_NO_SCREENS = "Selecciona al menos una pantalla vinculada."
@@ -131,6 +181,9 @@ object Strings {
         1 -> "1 pantalla seleccionada."
         else -> "$count pantallas seleccionadas."
     }
+
+    fun kioskLockoutSeconds(seconds: Int): String =
+        "Demasiados intentos fallidos. Espera $seconds s."
 
     // Skeleton indicator for Phase 0
     const val SKELETON_READY = "KioskSync - Fase 0 inicializada correctamente"

@@ -1,6 +1,11 @@
 package app.kiosksync.ui
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.unit.dp
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
@@ -25,6 +30,7 @@ import app.kiosksync.AppContainer
 import app.kiosksync.core.AppRole
 import app.kiosksync.core.DEFAULT_PORT
 import app.kiosksync.core.Strings
+import app.kiosksync.feature.kiosk.KioskUnlockOverlay
 import app.kiosksync.feature.pairing.PairingManager
 import app.kiosksync.feature.playback.PlaybackStateHolder
 import app.kiosksync.feature.role.AppConfig
@@ -108,11 +114,26 @@ fun App(
     }
 
     val pairingState by pairingManager.uiState.collectAsState()
+    val lockState by container.kioskLockManager.uiState.collectAsState()
     var showReceiverOptions by remember { mutableStateOf(false) }
     var showUnpairConfirm by remember { mutableStateOf(false) }
+    var wasLocked by remember { mutableStateOf(lockState.isLocked) }
+
+    fun relockReceiverIfNeeded() {
+        if (currentScreen is Screen.ReceiverHome && !container.args.windowed) {
+            container.kioskLockManager.lock()
+        }
+    }
+
+    fun closeReceiverOptions() {
+        showReceiverOptions = false
+        relockReceiverIfNeeded()
+    }
 
     fun resetRole() {
         roleStateHolder.confirmChangeRole()
+        container.kioskLockManager.release()
+        container.projectionController.stop()
         // Pairing is initialized only when the Receiver role is confirmed again,
         // so changing role does not generate an unused code on the UI thread.
         showReceiverOptions = false
@@ -120,14 +141,43 @@ fun App(
         currentScreen = Screen.RoleSelection
     }
 
+    // The screen role is always a kiosk: lock the keyboard as soon as the
+    // receiver UI is shown, unless --windowed was passed for debugging.
+    LaunchedEffect(currentScreen) {
+        when (currentScreen) {
+            is Screen.ReceiverHome -> {
+                if (!container.args.windowed) {
+                    container.kioskLockManager.lock()
+                }
+            }
+
+            is Screen.RoleSelection -> container.kioskLockManager.release()
+            is Screen.EmitterHome -> {
+                if (!container.projectionController.isProjecting) {
+                    container.kioskLockManager.release()
+                }
+            }
+        }
+    }
+
+    // Unlocking the receiver temporarily opens the admin dialog. Closing it
+    // re-engages the lock.
+    LaunchedEffect(lockState.isLocked) {
+        val previous = wasLocked
+        wasLocked = lockState.isLocked
+        if (previous && !lockState.isLocked && currentScreen is Screen.ReceiverHome) {
+            showReceiverOptions = true
+        }
+    }
+
     LaunchedEffect(currentScreen, pairingState.isPaired) {
         if (currentScreen is Screen.ReceiverHome) {
             registerEscHandler {
-                if (pairingState.isPaired) {
-                    playbackStateHolder.requestExitDialog()
-                } else {
-                    showReceiverOptions = true
+                if (container.kioskLockManager.uiState.value.isLocked) {
+                    // Keys are swallowed while locked; do not open dialogs.
+                    return@registerEscHandler
                 }
+                showReceiverOptions = true
             }
         } else {
             registerEscHandler(null)
@@ -155,78 +205,97 @@ fun App(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colors.background
         ) {
-            when (val screen = currentScreen) {
-                is Screen.RoleSelection -> {
-                    RoleSelectionScreen(
-                        stateHolder = roleStateHolder,
-                        onRoleConfirmed = { confirmedConfig ->
-                            if (confirmedConfig.role == AppRole.RECEIVER) {
-                                pairingManager.checkInitialPairing()
-                            }
-                            currentScreen = when (confirmedConfig.role) {
-                                AppRole.EMITTER -> Screen.EmitterHome(confirmedConfig)
-                                AppRole.RECEIVER -> Screen.ReceiverHome(confirmedConfig)
-                            }
-                        },
-                        deviceId = initialDeviceId,
-                        deviceName = container.deviceName,
-                        port = effectivePort,
-                        onExitRequested = onExitRequested
-                    )
+            Box(modifier = Modifier.fillMaxSize()) {
+                when (val screen = currentScreen) {
+                    is Screen.RoleSelection -> {
+                        RoleSelectionScreen(
+                            stateHolder = roleStateHolder,
+                            onRoleConfirmed = { confirmedConfig ->
+                                if (confirmedConfig.role == AppRole.RECEIVER) {
+                                    pairingManager.checkInitialPairing()
+                                }
+                                currentScreen = when (confirmedConfig.role) {
+                                    AppRole.EMITTER -> Screen.EmitterHome(confirmedConfig)
+                                    AppRole.RECEIVER -> Screen.ReceiverHome(confirmedConfig)
+                                }
+                            },
+                            deviceId = initialDeviceId,
+                            deviceName = container.deviceName,
+                            port = effectivePort,
+                            onExitRequested = onExitRequested
+                        )
+                    }
+
+                    is Screen.EmitterHome -> {
+                        EmitterHomeScreen(
+                            config = screen.config,
+                            container = container,
+                            onExitRequested = onExitRequested,
+                            onRoleReset = { resetRole() }
+                        )
+                    }
+
+                    is Screen.ReceiverHome -> {
+                        ReceiverHomeScreen(
+                            config = screen.config,
+                            container = container,
+                            pairingManager = pairingManager,
+                            playbackStateHolder = playbackStateHolder,
+                            onExitRequested = onExitRequested,
+                            onChangeRoleRequested = { resetRole() }
+                        )
+                    }
                 }
 
-                is Screen.EmitterHome -> {
-                    EmitterHomeScreen(
-                        config = screen.config,
-                        container = container,
-                        onExitRequested = onExitRequested,
-                        onRoleReset = { resetRole() }
-                    )
-                }
-
-                is Screen.ReceiverHome -> {
-                    ReceiverHomeScreen(
-                        config = screen.config,
-                        container = container,
-                        pairingManager = pairingManager,
-                        playbackStateHolder = playbackStateHolder,
-                        onExitRequested = onExitRequested,
-                        onChangeRoleRequested = { resetRole() }
-                    )
-                }
+                KioskUnlockOverlay(lockState)
             }
         }
     }
 
     if (showReceiverOptions) {
         AlertDialog(
-            onDismissRequest = { showReceiverOptions = false },
+            onDismissRequest = { closeReceiverOptions() },
             title = {
                 Text(Strings.OPTIONS_TITLE, color = Color.White, fontWeight = FontWeight.Bold)
             },
             text = {
-                Text(Strings.OPTIONS_MESSAGE, color = Color(0xFFCCCCCC))
+                Text(
+                    if (currentScreen is Screen.ReceiverHome) {
+                        Strings.RECEIVER_UNLOCKED_MESSAGE
+                    } else {
+                        Strings.OPTIONS_MESSAGE
+                    },
+                    color = Color(0xFFCCCCCC)
+                )
             },
             confirmButton = {
-                Button(
-                    onClick = { resetRole() },
-                    colors = ButtonDefaults.buttonColors(
-                        backgroundColor = Color(0xFF333333),
-                        contentColor = Color.White
-                    )
-                ) {
-                    Text(Strings.CHANGE_ROLE)
-                }
-            },
-            dismissButton = {
-                OutlinedButton(
-                    onClick = {
-                        showReceiverOptions = false
-                        onExitRequested()
-                    },
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFE57373))
-                ) {
-                    Text(Strings.EXIT_APP)
+                Row {
+                    OutlinedButton(
+                        onClick = { resetRole() },
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+                    ) {
+                        Text(Strings.CHANGE_ROLE)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = {
+                            showReceiverOptions = false
+                            onExitRequested()
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            backgroundColor = Color(0xFFD32F2F),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Text(Strings.EXIT_APP)
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    OutlinedButton(
+                        onClick = { closeReceiverOptions() },
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF9EC1FF))
+                    ) {
+                        Text(Strings.RELOCK_BUTTON)
+                    }
                 }
             },
             backgroundColor = Color(0xFF242424)
@@ -235,7 +304,10 @@ fun App(
 
     if (showUnpairConfirm) {
         AlertDialog(
-            onDismissRequest = { showUnpairConfirm = false },
+            onDismissRequest = {
+                showUnpairConfirm = false
+                relockReceiverIfNeeded()
+            },
             title = {
                 Text(Strings.UNPAIR_RECEIVER_TITLE, color = Color.White, fontWeight = FontWeight.Bold)
             },
@@ -247,6 +319,7 @@ fun App(
                     onClick = {
                         pairingManager.unpair()
                         showUnpairConfirm = false
+                        relockReceiverIfNeeded()
                     },
                     colors = ButtonDefaults.buttonColors(
                         backgroundColor = Color(0xFFD32F2F),
@@ -258,7 +331,10 @@ fun App(
             },
             dismissButton = {
                 OutlinedButton(
-                    onClick = { showUnpairConfirm = false },
+                    onClick = {
+                        showUnpairConfirm = false
+                        relockReceiverIfNeeded()
+                    },
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
                 ) {
                     Text(Strings.CANCEL_BUTTON)

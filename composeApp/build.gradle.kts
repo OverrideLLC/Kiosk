@@ -40,6 +40,9 @@ kotlin {
 
                 // JmDNS (Discovery)
                 implementation(libs.jmdns)
+
+                // Windows low-level keyboard hook (kiosk lock)
+                implementation(libs.jna.platform)
             }
         }
 

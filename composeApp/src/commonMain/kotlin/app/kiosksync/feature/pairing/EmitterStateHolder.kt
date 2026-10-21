@@ -4,13 +4,17 @@ import app.kiosksync.core.AppLogger
 import app.kiosksync.core.DEFAULT_PORT
 import app.kiosksync.core.DiscoveredDevice
 import app.kiosksync.core.EmitterPairedDevice
+import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.PairError
 import app.kiosksync.core.PairRejectedException
 import app.kiosksync.core.PlaylistRejectedException
 import app.kiosksync.core.STATUS_FAILURE_THRESHOLD
 import app.kiosksync.core.STATUS_POLL_INTERVAL_MS
 import app.kiosksync.core.Strings
+import app.kiosksync.core.isValidKioskPassword
+import app.kiosksync.feature.kiosk.KioskLockManager
 import app.kiosksync.feature.playlist.Playlist
+import app.kiosksync.feature.projection.ProjectionController
 import app.kiosksync.feature.sync.EmitterSyncService
 import app.kiosksync.feature.sync.LocalMediaMissingException
 import app.kiosksync.platform.DeviceDiscovery
@@ -56,6 +60,20 @@ data class DeviceSyncUi(
     val message: String? = null
 )
 
+enum class EmitterPendingAction {
+    SEND,
+    PROJECT,
+    CONFIGURE
+}
+
+data class KioskPasswordDialogUi(
+    val action: EmitterPendingAction,
+    val playlist: Playlist? = null,
+    val draft: String = "",
+    val confirmDraft: String = "",
+    val error: String? = null
+)
+
 data class EmitterUiState(
     val devices: List<EmitterDeviceUi> = emptyList(),
     val isSearching: Boolean = true,
@@ -71,7 +89,9 @@ data class EmitterUiState(
     val statusMessage: String? = null,
     val statusIsError: Boolean = false,
     val syncByDevice: Map<String, DeviceSyncUi> = emptyMap(),
-    val isSending: Boolean = false
+    val isSending: Boolean = false,
+    val passwordDialog: KioskPasswordDialogUi? = null,
+    val hasKioskPassword: Boolean = false
 )
 
 class EmitterStateHolder(
@@ -83,9 +103,14 @@ class EmitterStateHolder(
     private val emitterName: String,
     private val scope: CoroutineScope,
     private val serviceScope: CoroutineScope,
+    private val kioskLockManager: KioskLockManager,
+    private val projectionController: ProjectionController,
+    private val passwordHasher: (String) -> String,
     private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
-    private val _uiState = MutableStateFlow(EmitterUiState())
+    private val _uiState = MutableStateFlow(
+        EmitterUiState(hasKioskPassword = storage.loadKioskLock()?.enabled == true)
+    )
     val uiState: StateFlow<EmitterUiState> = _uiState.asStateFlow()
 
     private val syncService = EmitterSyncService(client, storage, logger)
@@ -360,6 +385,134 @@ class EmitterStateHolder(
             return
         }
 
+        val lock = storage.loadKioskLock()?.takeIf { it.enabled }
+        if (lock == null) {
+            openPasswordDialog(EmitterPendingAction.SEND, playlist)
+            return
+        }
+        performSend(playlist, lock)
+    }
+
+    fun requestProjection(playlist: Playlist) {
+        if (_uiState.value.isSending || projectionController.isProjecting) return
+        if (playlist.items.isEmpty()) {
+            _uiState.update {
+                it.copy(statusMessage = Strings.PROJECT_NO_PLAYLIST, statusIsError = true)
+            }
+            return
+        }
+
+        val lock = storage.loadKioskLock()?.takeIf { it.enabled }
+        if (lock == null) {
+            openPasswordDialog(EmitterPendingAction.PROJECT, playlist)
+            return
+        }
+        startProjection(playlist, lock)
+    }
+
+    fun openChangePasswordDialog() {
+        openPasswordDialog(EmitterPendingAction.CONFIGURE, null)
+    }
+
+    fun updatePasswordDraft(value: String) {
+        _uiState.update { state ->
+            val dialog = state.passwordDialog ?: return@update state
+            state.copy(
+                passwordDialog = dialog.copy(
+                    draft = value.take(64),
+                    error = null
+                )
+            )
+        }
+    }
+
+    fun updatePasswordConfirmDraft(value: String) {
+        _uiState.update { state ->
+            val dialog = state.passwordDialog ?: return@update state
+            state.copy(
+                passwordDialog = dialog.copy(
+                    confirmDraft = value.take(64),
+                    error = null
+                )
+            )
+        }
+    }
+
+    fun dismissPasswordDialog() {
+        _uiState.update { it.copy(passwordDialog = null) }
+    }
+
+    fun confirmPassword() {
+        val state = _uiState.value
+        val dialog = state.passwordDialog ?: return
+        val password = dialog.draft
+        if (!isValidKioskPassword(password)) {
+            _uiState.update {
+                it.copy(
+                    passwordDialog = dialog.copy(error = Strings.KIOSK_PASSWORD_INVALID)
+                )
+            }
+            return
+        }
+        if (password != dialog.confirmDraft) {
+            _uiState.update {
+                it.copy(
+                    passwordDialog = dialog.copy(error = Strings.KIOSK_PASSWORD_MISMATCH)
+                )
+            }
+            return
+        }
+
+        val config = KioskLockConfig(
+            passwordHash = passwordHasher(password),
+            passwordLength = password.length
+        )
+        storage.saveKioskLock(config)
+        kioskLockManager.setConfig(config)
+        _uiState.update {
+            it.copy(
+                passwordDialog = null,
+                hasKioskPassword = true,
+                statusMessage = Strings.KIOSK_PASSWORD_SAVED,
+                statusIsError = false
+            )
+        }
+        logger.info("Kiosk password configured from the controller")
+
+        when (dialog.action) {
+            EmitterPendingAction.SEND -> dialog.playlist?.let { performSend(it, config) }
+            EmitterPendingAction.PROJECT -> dialog.playlist?.let { startProjection(it, config) }
+            EmitterPendingAction.CONFIGURE -> Unit
+        }
+    }
+
+    private fun openPasswordDialog(action: EmitterPendingAction, playlist: Playlist?) {
+        _uiState.update {
+            it.copy(
+                passwordDialog = KioskPasswordDialogUi(
+                    action = action,
+                    playlist = playlist
+                )
+            )
+        }
+    }
+
+    private fun startProjection(playlist: Playlist, lock: KioskLockConfig) {
+        kioskLockManager.setConfig(lock)
+        projectionController.start(playlist)
+        kioskLockManager.lock()
+        logger.info("Projection started with playlist '${playlist.name}'")
+    }
+
+    private fun performSend(playlist: Playlist, lock: KioskLockConfig) {
+        val selected = _uiState.value.devices.filter { it.isSelected && it.isPairedToThisEmitter }
+        if (selected.isEmpty()) {
+            _uiState.update {
+                it.copy(statusMessage = Strings.SEND_NO_SCREENS, statusIsError = true)
+            }
+            return
+        }
+
         scope.launch {
             _uiState.update {
                 it.copy(
@@ -405,6 +558,7 @@ class EmitterStateHolder(
                         port = target.second,
                         emitterId = emitterId,
                         playlist = playlist,
+                        lock = lock,
                         onUploadProgress = { progress ->
                             updateDeviceSync(device.deviceId) {
                                 DeviceSyncUi(

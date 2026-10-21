@@ -1,6 +1,7 @@
 package app.kiosksync.platform
 
 import app.kiosksync.core.DeviceInfo
+import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.MediaUploadResponse
 import app.kiosksync.core.PairResponse
 import app.kiosksync.core.PlaylistApplyResponse
@@ -36,7 +37,8 @@ interface EmitterClient {
         port: Int,
         emitterId: String,
         token: String,
-        playlist: Playlist
+        playlist: Playlist,
+        lock: KioskLockConfig? = null
     ): Result<PlaylistApplyResponse>
 
     fun close()

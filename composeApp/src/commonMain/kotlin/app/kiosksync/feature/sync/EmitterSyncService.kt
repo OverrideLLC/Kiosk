@@ -2,6 +2,7 @@ package app.kiosksync.feature.sync
 
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.EmitterPairedDevice
+import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.PlaylistRejectedException
 import app.kiosksync.feature.playlist.Playlist
 import app.kiosksync.platform.EmitterClient
@@ -40,6 +41,7 @@ class EmitterSyncService(
         port: Int,
         emitterId: String,
         playlist: Playlist,
+        lock: KioskLockConfig? = null,
         onUploadProgress: (SyncProgress) -> Unit = {},
         onApplying: () -> Unit = {}
     ): Result<SyncSummary> {
@@ -75,9 +77,9 @@ class EmitterSyncService(
                 port = port,
                 emitterId = emitterId,
                 token = device.token,
-                playlist = playlist.copy(version = newVersion)
+                playlist = playlist.copy(version = newVersion),
+                lock = lock
             ).getOrThrow()
-
             if (!response.applied) {
                 throw PlaylistRejectedException(response.missingMediaIds)
             }

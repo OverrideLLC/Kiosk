@@ -8,6 +8,7 @@ import app.kiosksync.core.HEADER_AUTH_TOKEN
 import app.kiosksync.core.HEADER_CONTENT_SHA256
 import app.kiosksync.core.HEADER_EMITTER_ID
 import app.kiosksync.core.ImageFormat
+import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.MAX_DURATION_SEC
 import app.kiosksync.core.MAX_IMAGE_SIZE_BYTES
 import app.kiosksync.core.MIN_DURATION_SEC
@@ -22,6 +23,8 @@ import app.kiosksync.feature.pairing.PairResult
 import app.kiosksync.feature.pairing.PairingManager
 import app.kiosksync.feature.playback.ReceiverPlaylistBridge
 import app.kiosksync.feature.playlist.Playlist
+import app.kiosksync.feature.sync.PlaylistUpdateRequest
+import app.kiosksync.feature.kiosk.KioskLockManager
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
@@ -48,6 +51,7 @@ class KtorReceiverServer(
     private val logger: AppLogger,
     private val storage: LocalStorage,
     private val playlistBridge: ReceiverPlaylistBridge,
+    private val kioskLockManager: KioskLockManager,
     private val statusProvider: () -> ReceiverStatusResponse
 ) : ReceiverServer {
 
@@ -277,9 +281,16 @@ class KtorReceiverServer(
             put("/playlist") {
                 if (!call.requireAuthorization()) return@put
 
-                val playlist = runCatching { call.receive<Playlist>() }.getOrNull()
-                if (playlist == null || !playlist.isValid()) {
+                val request = runCatching { call.receive<PlaylistUpdateRequest>() }.getOrNull()
+                val playlist = request?.playlist
+                if (request == null || playlist == null || !playlist.isValid()) {
                     call.respond(HttpStatusCode.BadRequest, ErrorResponse("invalid_playlist"))
+                    return@put
+                }
+
+                val lock = request.lock
+                if (lock != null && !lock.isValid()) {
+                    call.respond(HttpStatusCode.BadRequest, ErrorResponse("invalid_lock"))
                     return@put
                 }
 
@@ -305,6 +316,11 @@ class KtorReceiverServer(
                 }
 
                 storage.savePlaylist(playlist)
+                if (lock != null) {
+                    storage.saveKioskLock(lock)
+                    kioskLockManager.setConfig(lock)
+                    logger.info("Kiosk lock updated from the controller")
+                }
                 val referenced = playlist.items.map { it.mediaId }.toSet()
                 storedById.values
                     .filterNot { it.mediaId in referenced }
@@ -338,6 +354,12 @@ class KtorReceiverServer(
                 (item.durationSec == null || item.durationSec in MIN_DURATION_SEC..MAX_DURATION_SEC)
         }
     }
+
+    private fun KioskLockConfig.isValid(): Boolean =
+        enabled &&
+            passwordLength in 4..64 &&
+            passwordHash.length == 64 &&
+            passwordHash.all { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' }
 
     private suspend fun ApplicationCall.requireAuthorization(): Boolean {
         val emitterId = request.headers[HEADER_EMITTER_ID]

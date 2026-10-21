@@ -1,0 +1,221 @@
+package app.kiosksync.feature.kiosk
+
+import app.kiosksync.core.AppLogger
+import app.kiosksync.core.KioskLockConfig
+import app.kiosksync.core.MAX_UNLOCK_ATTEMPTS
+import app.kiosksync.core.Strings
+import app.kiosksync.core.UNLOCK_LOCKOUT_SECONDS
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+data class KioskLockUiState(
+    val isLocked: Boolean = false,
+    val hasPassword: Boolean = false,
+    val showUnlockHint: Boolean = false,
+    val typedLength: Int = 0,
+    val message: String? = null,
+    val failedAttempts: Int = 0,
+    val lockoutRemainingSec: Int = 0
+)
+
+/**
+ * Owns the kiosk lock state and the unlock attempts. The platform keyboard
+ * guard feeds key events while the device is locked.
+ */
+class KioskLockManager(
+    private val logger: AppLogger,
+    private val passwordHasher: (String) -> String,
+    private val scope: CoroutineScope,
+    val platformLockAvailable: Boolean = true
+) {
+    private val _uiState = MutableStateFlow(KioskLockUiState())
+    val uiState: StateFlow<KioskLockUiState> = _uiState.asStateFlow()
+
+    private var config: KioskLockConfig? = null
+    private var detector: KioskUnlockDetector? = null
+    private var messageJob: Job? = null
+    private var hintJob: Job? = null
+    private var lockoutJob: Job? = null
+
+    fun setConfig(newConfig: KioskLockConfig?) {
+        config = newConfig?.takeIf { it.enabled }
+        _uiState.update { it.copy(hasPassword = config != null) }
+        if (_uiState.value.isLocked) {
+            detector = newDetector()
+        }
+    }
+
+    fun lock() {
+        if (_uiState.value.isLocked || !platformLockAvailable) return
+        detector = newDetector()
+        _uiState.update {
+            it.copy(
+                isLocked = true,
+                hasPassword = config != null,
+                showUnlockHint = false,
+                typedLength = 0,
+                message = null,
+                failedAttempts = 0,
+                lockoutRemainingSec = 0
+            )
+        }
+        logger.info(
+            "Kiosk lock engaged (password configured: ${config != null})"
+        )
+    }
+
+    /** Releases the lock without a password (role change or shutdown). */
+    fun release() {
+        cancelJobs()
+        detector = null
+        _uiState.update {
+            KioskLockUiState(hasPassword = config != null)
+        }
+    }
+
+    fun onKey(event: KioskKeyEvent) {
+        val state = _uiState.value
+        if (!state.isLocked || state.lockoutRemainingSec > 0) return
+
+        val activeDetector = detector ?: newDetector().also { detector = it }
+        when (activeDetector.feed(event)) {
+            KioskUnlockResult.Ignored -> Unit
+
+            KioskUnlockResult.ChordProgress, KioskUnlockResult.Typing -> {
+                scheduleHintHide()
+                _uiState.update {
+                    it.copy(
+                        showUnlockHint = true,
+                        typedLength = activeDetector.typedLength,
+                        message = null
+                    )
+                }
+            }
+
+            KioskUnlockResult.Accepted -> unlock(recovered = false)
+            KioskUnlockResult.UniversalAccepted -> unlock(recovered = true)
+            KioskUnlockResult.Rejected -> registerFailure()
+        }
+    }
+
+    private fun unlock(recovered: Boolean) {
+        cancelJobs()
+        detector = null
+        _uiState.update {
+            it.copy(
+                isLocked = false,
+                showUnlockHint = false,
+                typedLength = 0,
+                message = null,
+                failedAttempts = 0,
+                lockoutRemainingSec = 0
+            )
+        }
+        logger.info(
+            if (recovered) {
+                "Kiosk unlocked with the universal recovery phrase"
+            } else {
+                "Kiosk unlocked with the configured password"
+            }
+        )
+    }
+
+    private fun registerFailure() {
+        val failed = _uiState.value.failedAttempts + 1
+        detector?.reset()
+
+        if (failed >= MAX_UNLOCK_ATTEMPTS) {
+            startLockout()
+            return
+        }
+
+        _uiState.update {
+            it.copy(
+                showUnlockHint = true,
+                typedLength = 0,
+                failedAttempts = failed,
+                message = "${Strings.KIOSK_WRONG_PASSWORD} " +
+                    "${Strings.KIOSK_ATTEMPTS_LEFT} ${MAX_UNLOCK_ATTEMPTS - failed}"
+            )
+        }
+        logger.warn("Failed kiosk unlock attempt $failed/$MAX_UNLOCK_ATTEMPTS")
+        scheduleMessageClear()
+    }
+
+    private fun startLockout() {
+        lockoutJob?.cancel()
+        _uiState.update {
+            it.copy(
+                showUnlockHint = true,
+                typedLength = 0,
+                failedAttempts = MAX_UNLOCK_ATTEMPTS,
+                message = Strings.KIOSK_LOCKED_OUT,
+                lockoutRemainingSec = UNLOCK_LOCKOUT_SECONDS
+            )
+        }
+        logger.warn("Kiosk unlock locked out for $UNLOCK_LOCKOUT_SECONDS seconds")
+        lockoutJob = scope.launch {
+            var remaining = UNLOCK_LOCKOUT_SECONDS
+            while (remaining > 0) {
+                _uiState.update { it.copy(lockoutRemainingSec = remaining) }
+                delay(1000)
+                remaining--
+            }
+            detector?.reset()
+            _uiState.update {
+                it.copy(
+                    lockoutRemainingSec = 0,
+                    failedAttempts = 0,
+                    message = null,
+                    showUnlockHint = false,
+                    typedLength = 0
+                )
+            }
+        }
+    }
+
+    private fun scheduleMessageClear() {
+        messageJob?.cancel()
+        messageJob = scope.launch {
+            delay(4000)
+            _uiState.update {
+                if (it.lockoutRemainingSec > 0) it else it.copy(message = null)
+            }
+        }
+    }
+
+    private fun scheduleHintHide() {
+        hintJob?.cancel()
+        hintJob = scope.launch {
+            delay(6000)
+            _uiState.update {
+                if (it.lockoutRemainingSec > 0) {
+                    it
+                } else {
+                    it.copy(showUnlockHint = false, typedLength = 0)
+                }
+            }
+        }
+    }
+
+    private fun cancelJobs() {
+        messageJob?.cancel()
+        messageJob = null
+        hintJob?.cancel()
+        hintJob = null
+        lockoutJob?.cancel()
+        lockoutJob = null
+    }
+
+    private fun newDetector(): KioskUnlockDetector = KioskUnlockDetector(
+        passwordHash = config?.passwordHash,
+        passwordLength = config?.passwordLength ?: 0,
+        passwordHasher = passwordHasher
+    )
+}

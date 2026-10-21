@@ -15,6 +15,8 @@ data class PlaylistItem(
 
 @Serializable
 data class Playlist(
+    val id: String = "",
+    val name: String = "",
     val version: Int = 1,
     val defaultDurationSec: Int = DEFAULT_DURATION_SEC,
     val items: List<PlaylistItem> = emptyList()

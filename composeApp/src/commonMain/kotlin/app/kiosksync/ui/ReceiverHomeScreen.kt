@@ -33,6 +33,7 @@ fun ReceiverHomeScreen(
     onChangeRoleRequested: () -> Unit
 ) {
     val pairingState by pairingManager.uiState.collectAsState()
+    val lockState by container.kioskLockManager.uiState.collectAsState()
     val runtimeState = remember(config.deviceId, config.port) {
         MutableStateFlow(ReceiverRuntimeUi(port = config.port))
     }
@@ -89,7 +90,8 @@ fun ReceiverHomeScreen(
             pairingManager = pairingManager,
             serviceError = runtime.error,
             onExitRequested = onExitRequested,
-            onChangeRoleRequested = onChangeRoleRequested
+            onChangeRoleRequested = onChangeRoleRequested,
+            showAdminActions = !lockState.isLocked
         )
     }
 }

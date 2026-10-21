@@ -2,11 +2,14 @@ package app.kiosksync
 
 import app.kiosksync.core.AppArgs
 import app.kiosksync.core.AppLogger
+import app.kiosksync.feature.kiosk.KioskLockManager
 import app.kiosksync.feature.pairing.PairingManager
 import app.kiosksync.feature.playback.ReceiverPlaylistBridge
 import app.kiosksync.feature.playback.ReceiverStatusTracker
+import app.kiosksync.feature.projection.ProjectionController
 import app.kiosksync.platform.DeviceDiscovery
 import app.kiosksync.platform.EmitterClient
+import app.kiosksync.platform.KioskKeyboardGuard
 import app.kiosksync.platform.LocalStorage
 import app.kiosksync.platform.ReceiverServer
 import kotlinx.coroutines.CoroutineDispatcher
@@ -35,6 +38,10 @@ class AppContainer(
     val emitterClient: EmitterClient,
     val receiverStatusTracker: ReceiverStatusTracker,
     val receiverPlaylistBridge: ReceiverPlaylistBridge,
+    val kioskLockManager: KioskLockManager,
+    val kioskKeyboardGuard: KioskKeyboardGuard,
+    val projectionController: ProjectionController,
+    val passwordHasher: (String) -> String,
     val newDeviceId: () -> String,
     val pickImageFiles: suspend () -> List<String>,
     val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
@@ -47,6 +54,7 @@ class AppContainer(
      * the operating system releases the port if the process ends before cleanup.
      */
     fun shutdown() {
+        runCatching { kioskKeyboardGuard.stop() }
         serviceScope.launch {
             runCatching { discovery.unregisterService() }
             runCatching { discovery.stopDiscovery() }

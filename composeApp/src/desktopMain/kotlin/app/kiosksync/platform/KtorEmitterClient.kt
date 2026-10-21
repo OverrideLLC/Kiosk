@@ -7,6 +7,7 @@ import app.kiosksync.core.HEADER_AUTH_TOKEN
 import app.kiosksync.core.HEADER_CONTENT_SHA256
 import app.kiosksync.core.HEADER_EMITTER_ID
 import app.kiosksync.core.HTTP_TIMEOUT_MS
+import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.MediaUploadResponse
 import app.kiosksync.core.PairError
 import app.kiosksync.core.PairRejectedException
@@ -19,6 +20,7 @@ import app.kiosksync.core.SYNC_TIMEOUT_MS
 import app.kiosksync.core.SyncStateResponse
 import app.kiosksync.core.UPLOAD_TIMEOUT_MS
 import app.kiosksync.feature.playlist.Playlist
+import app.kiosksync.feature.sync.PlaylistUpdateRequest
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
@@ -183,13 +185,14 @@ class KtorEmitterClient(
         port: Int,
         emitterId: String,
         token: String,
-        playlist: Playlist
+        playlist: Playlist,
+        lock: KioskLockConfig?
     ): Result<PlaylistApplyResponse> = runCatching {
         val response = client.put("${baseUrl(host, port)}/playlist") {
             header(HEADER_EMITTER_ID, emitterId)
             header(HEADER_AUTH_TOKEN, token)
             contentType(ContentType.Application.Json)
-            setBody(playlist)
+            setBody(PlaylistUpdateRequest(playlist = playlist, lock = lock))
             timeout { requestTimeoutMillis = SYNC_TIMEOUT_MS }
         }
         when (response.status) {

@@ -31,7 +31,8 @@ fun PairingCodeScreen(
     pairingManager: PairingManager,
     serviceError: String?,
     onExitRequested: () -> Unit,
-    onChangeRoleRequested: () -> Unit
+    onChangeRoleRequested: () -> Unit,
+    showAdminActions: Boolean = true
 ) {
     val state by pairingManager.uiState.collectAsState()
 
@@ -113,25 +114,27 @@ fun PairingCodeScreen(
             }
         }
 
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            OutlinedButton(
-                onClick = onChangeRoleRequested,
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF555555)),
-                modifier = Modifier.height(34.dp)
+        if (showAdminActions) {
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(Strings.CHANGE_ROLE, fontSize = 11.sp)
-            }
-            OutlinedButton(
-                onClick = onExitRequested,
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF555555)),
-                modifier = Modifier.height(34.dp)
-            ) {
-                Text(Strings.EXIT_APP, fontSize = 11.sp)
+                OutlinedButton(
+                    onClick = onChangeRoleRequested,
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF555555)),
+                    modifier = Modifier.height(34.dp)
+                ) {
+                    Text(Strings.CHANGE_ROLE, fontSize = 11.sp)
+                }
+                OutlinedButton(
+                    onClick = onExitRequested,
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF555555)),
+                    modifier = Modifier.height(34.dp)
+                ) {
+                    Text(Strings.EXIT_APP, fontSize = 11.sp)
+                }
             }
         }
     }

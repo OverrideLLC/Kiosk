@@ -2,6 +2,7 @@ package app.kiosksync.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import app.kiosksync.AppContainer
@@ -28,6 +29,9 @@ fun EmitterHomeScreen(
             emitterName = container.deviceName,
             scope = scope,
             serviceScope = container.serviceScope,
+            kioskLockManager = container.kioskLockManager,
+            projectionController = container.projectionController,
+            passwordHasher = container.passwordHasher,
             backgroundDispatcher = container.backgroundDispatcher
         )
     }
@@ -37,8 +41,15 @@ fun EmitterHomeScreen(
             storage = container.localStorage,
             logger = container.logger,
             scope = scope,
-            pickImageFiles = container.pickImageFiles
+            pickImageFiles = container.pickImageFiles,
+            newPlaylistId = container.newDeviceId
         )
+    }
+
+    LaunchedEffect(stateHolder, playlistStateHolder) {
+        container.projectionController.toggleRequests.collect {
+            stateHolder.requestProjection(playlistStateHolder.currentPlaylist())
+        }
     }
 
     DisposableEffect(stateHolder) {

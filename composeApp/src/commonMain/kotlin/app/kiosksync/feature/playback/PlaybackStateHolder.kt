@@ -33,7 +33,8 @@ class PlaybackStateHolder(
     private val logger: AppLogger,
     private val scope: CoroutineScope,
     private val statusTracker: ReceiverStatusTracker? = null,
-    private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default
+    private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val loadFromStorage: Boolean = true
 ) {
     private val _uiState = MutableStateFlow(PlaybackUiState())
     val uiState: StateFlow<PlaybackUiState> = _uiState.asStateFlow()
@@ -72,12 +73,18 @@ class PlaybackStateHolder(
     }
 
     private suspend fun runPlaybackLoop() {
-        activePlaylist.value = withContext(backgroundDispatcher) { localStorage.loadPlaylist() }
+        if (loadFromStorage) {
+            activePlaylist.value = withContext(backgroundDispatcher) { localStorage.loadPlaylist() }
+        }
         var index = 0
 
         while (scope.isActive) {
             val playlist = activePlaylist.value
-                ?: withContext(backgroundDispatcher) { localStorage.loadPlaylist() }
+                ?: if (loadFromStorage) {
+                    withContext(backgroundDispatcher) { localStorage.loadPlaylist() }
+                } else {
+                    null
+                }
             if (playlist == null || playlist.items.isEmpty()) {
                 _uiState.update {
                     it.copy(

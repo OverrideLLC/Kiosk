@@ -3,8 +3,10 @@ package app.kiosksync.platform
 import androidx.compose.ui.graphics.ImageBitmap
 import app.kiosksync.core.EmitterPairedDevice
 import app.kiosksync.core.ImageFormat
+import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.ReceiverPairedInfo
 import app.kiosksync.feature.playlist.Playlist
+import app.kiosksync.feature.playlist.PlaylistLibrary
 import app.kiosksync.feature.role.AppConfig
 
 data class StoredMedia(
@@ -44,6 +46,16 @@ interface LocalStorage {
     // Playlist and media
     fun loadPlaylist(): Playlist?
     fun savePlaylist(playlist: Playlist)
+
+    // Emitter named playlists (playlists.json)
+    fun loadPlaylistLibrary(): PlaylistLibrary?
+    fun savePlaylistLibrary(library: PlaylistLibrary)
+
+    // Kiosk lock (lock.json)
+    fun loadKioskLock(): KioskLockConfig?
+    fun saveKioskLock(config: KioskLockConfig)
+    fun clearKioskLock()
+
     fun loadMediaBitmap(mediaId: String, fileName: String): ImageBitmap?
 
     // Emitter media import

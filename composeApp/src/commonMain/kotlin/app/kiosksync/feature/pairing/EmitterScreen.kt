@@ -26,6 +26,8 @@ import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Card
 import androidx.compose.material.Checkbox
 import androidx.compose.material.CheckboxDefaults
+import androidx.compose.material.DropdownMenu
+import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.OutlinedButton
 import androidx.compose.material.OutlinedTextField
@@ -43,6 +45,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -51,6 +54,7 @@ import app.kiosksync.core.Strings
 import app.kiosksync.feature.playlist.PlaylistEditorStateHolder
 import app.kiosksync.feature.playlist.PlaylistEditorUiState
 import app.kiosksync.feature.playlist.PlaylistItem
+import app.kiosksync.feature.playlist.PlaylistNameDialogMode
 import app.kiosksync.platform.LocalStorage
 
 @Composable
@@ -71,7 +75,6 @@ fun EmitterScreen(
         selectedCount == 0 -> Strings.SEND_NO_SCREENS
         else -> Strings.selectedScreens(selectedCount)
     }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -97,6 +100,21 @@ fun EmitterScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
+            Text(
+                text = if (state.hasKioskPassword) "🔒 ${Strings.KIOSK_SECURITY_BUTTON}" else Strings.KIOSK_SECURITY_BUTTON,
+                color = Color(0xFF9EC1FF),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            OutlinedButton(
+                onClick = { stateHolder.openChangePasswordDialog() },
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF9EC1FF)),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(Strings.KIOSK_SECURITY_BUTTON, fontSize = 13.sp)
+            }
+            Spacer(modifier = Modifier.width(10.dp))
             OutlinedButton(
                 onClick = { showChangeRoleConfirm = true },
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFE57373)),
@@ -156,9 +174,69 @@ fun EmitterScreen(
             canSend = !state.isSending &&
                 selectedCount > 0 &&
                 editorState.playlist.items.isNotEmpty(),
+            canProject = !state.isSending && editorState.playlist.items.isNotEmpty(),
             onSend = {
                 stateHolder.sendToSelected(playlistStateHolder.currentPlaylist())
+            },
+            onProject = {
+                stateHolder.requestProjection(playlistStateHolder.currentPlaylist())
             }
+        )
+    }
+
+    state.passwordDialog?.let { dialog ->
+        KioskPasswordDialog(
+            dialog = dialog,
+            onDraftChange = { stateHolder.updatePasswordDraft(it) },
+            onConfirmDraftChange = { stateHolder.updatePasswordConfirmDraft(it) },
+            onConfirm = { stateHolder.confirmPassword() },
+            onDismiss = { stateHolder.dismissPasswordDialog() }
+        )
+    }
+
+    editorState.nameDialogMode?.let { mode ->
+        PlaylistNameDialog(
+            mode = mode,
+            draft = editorState.nameDraft,
+            error = editorState.nameError,
+            onDraftChange = { playlistStateHolder.updateNameDraft(it) },
+            onConfirm = { playlistStateHolder.confirmNameDialog() },
+            onDismiss = { playlistStateHolder.dismissNameDialog() }
+        )
+    }
+
+    if (editorState.showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { playlistStateHolder.dismissDeletePlaylist() },
+            title = {
+                Text(Strings.PLAYLIST_DELETE_TITLE, color = Color.White, fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Text(
+                    text = "${Strings.PLAYLIST_DELETE_CONFIRM}\n\n${editorState.playlist.name}",
+                    color = Color(0xFFCCCCCC)
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { playlistStateHolder.confirmDeletePlaylist() },
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = Color(0xFFD32F2F),
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text(Strings.PLAYLIST_DELETE)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { playlistStateHolder.dismissDeletePlaylist() },
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+                ) {
+                    Text(Strings.CANCEL_BUTTON)
+                }
+            },
+            backgroundColor = Color(0xFF242424)
         )
     }
 
@@ -479,6 +557,13 @@ private fun PlaylistPanel(
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        PlaylistSelectorRow(
+            state = state,
+            stateHolder = stateHolder
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -709,11 +794,219 @@ private fun SmallButton(
 }
 
 @Composable
+private fun PlaylistSelectorRow(
+    state: PlaylistEditorUiState,
+    stateHolder: PlaylistEditorStateHolder
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = Strings.PLAYLIST_SELECTOR_LABEL,
+            fontSize = 11.sp,
+            color = Color(0xFF999999)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Box {
+            OutlinedButton(
+                onClick = { expanded = true },
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF9EC1FF)),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = "${state.playlist.name}  ▾",
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                state.playlists.forEach { playlist ->
+                    DropdownMenuItem(
+                        onClick = {
+                            expanded = false
+                            stateHolder.selectPlaylist(playlist.id)
+                        }
+                    ) {
+                        Text(
+                            text = if (playlist.id == state.activePlaylistId) {
+                                "● ${playlist.name}"
+                            } else {
+                                playlist.name
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        SmallButton(label = "+", onClick = { stateHolder.openCreatePlaylistDialog() })
+        Spacer(modifier = Modifier.width(4.dp))
+        SmallButton(label = "✎", onClick = { stateHolder.openRenamePlaylistDialog() })
+        Spacer(modifier = Modifier.width(4.dp))
+        SmallButton(
+            label = "×",
+            color = Color(0xFFE57373),
+            onClick = { stateHolder.requestDeletePlaylist() }
+        )
+    }
+}
+
+@Composable
+private fun PlaylistNameDialog(
+    mode: PlaylistNameDialogMode,
+    draft: String,
+    error: String?,
+    onDraftChange: (String) -> Unit,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = if (mode == PlaylistNameDialogMode.CREATE) {
+                    Strings.PLAYLIST_NEW_TITLE
+                } else {
+                    Strings.PLAYLIST_RENAME_TITLE
+                },
+                color = Color.White,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = draft,
+                    onValueChange = onDraftChange,
+                    label = { Text(Strings.PLAYLIST_NAME_FIELD) },
+                    placeholder = { Text(Strings.PLAYLIST_NAME_HINT, color = Color(0xFF777777)) },
+                    singleLine = true
+                )
+                error?.let {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(it, color = Color(0xFFE57373), fontSize = 12.sp)
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = Color(0xFF3D7AF5),
+                    contentColor = Color.White
+                )
+            ) {
+                Text(Strings.SAVE_BUTTON)
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+            ) {
+                Text(Strings.CANCEL_BUTTON)
+            }
+        },
+        backgroundColor = Color(0xFF242424)
+    )
+}
+
+@Composable
+private fun KioskPasswordDialog(
+    dialog: KioskPasswordDialogUi,
+    onDraftChange: (String) -> Unit,
+    onConfirmDraftChange: (String) -> Unit,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val title = if (dialog.action == EmitterPendingAction.CONFIGURE) {
+        Strings.KIOSK_PASSWORD_CHANGE_TITLE
+    } else {
+        Strings.KIOSK_PASSWORD_TITLE
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(title, color = Color.White, fontWeight = FontWeight.Bold)
+        },
+        text = {
+            Column {
+                Text(Strings.KIOSK_PASSWORD_INSTRUCTION, color = Color(0xFFCCCCCC), fontSize = 12.sp)
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(Strings.KIOSK_PASSWORD_RULE, color = Color(0xFF999999), fontSize = 11.sp)
+                Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = dialog.draft,
+                    onValueChange = onDraftChange,
+                    label = { Text(Strings.KIOSK_PASSWORD_FIELD) },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation()
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = dialog.confirmDraft,
+                    onValueChange = onConfirmDraftChange,
+                    label = { Text(Strings.KIOSK_PASSWORD_CONFIRM_FIELD) },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation()
+                )
+                dialog.error?.let {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(it, color = Color(0xFFE57373), fontSize = 12.sp)
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(Strings.KIOSK_LOCK_ACTIVE_HINT, color = Color(0xFFFFB74D), fontSize = 11.sp)
+                if (dialog.action == EmitterPendingAction.CONFIGURE) {
+                    Text(
+                        Strings.KIOSK_PASSWORD_APPLIES_NEXT_SEND,
+                        color = Color(0xFFFFB74D),
+                        fontSize = 10.sp
+                    )
+                }
+                Text(Strings.KIOSK_UNIVERSAL_HINT, color = Color(0xFF777777), fontSize = 10.sp)
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = Color(0xFF3D7AF5),
+                    contentColor = Color.White
+                )
+            ) {
+                Text(Strings.SAVE_BUTTON)
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+            ) {
+                Text(Strings.CANCEL_BUTTON)
+            }
+        },
+        backgroundColor = Color(0xFF242424)
+    )
+}
+
+@Composable
 private fun SendPanel(
     hint: String,
     isSending: Boolean,
     canSend: Boolean,
-    onSend: () -> Unit
+    canProject: Boolean,
+    onSend: () -> Unit,
+    onProject: () -> Unit
 ) {
     Card(
         backgroundColor = Color(0xFF1E1E1E),
@@ -740,7 +1033,24 @@ private fun SendPanel(
                     color = Color(0xFF999999),
                     fontSize = 11.sp
                 )
+                Text(
+                    text = Strings.PROJECT_SHORTCUT_HINT,
+                    color = Color(0xFF666666),
+                    fontSize = 10.sp
+                )
             }
+            OutlinedButton(
+                onClick = onProject,
+                enabled = canProject,
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = Color(0xFF9EC1FF),
+                    disabledContentColor = Color(0xFF555555)
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(Strings.PROJECT_BUTTON, fontSize = 13.sp)
+            }
+            Spacer(modifier = Modifier.width(8.dp))
             Button(
                 onClick = onSend,
                 enabled = canSend,

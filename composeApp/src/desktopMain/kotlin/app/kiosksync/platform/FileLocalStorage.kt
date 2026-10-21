@@ -4,8 +4,10 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.toComposeImageBitmap
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.ImageFormat
+import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.MAX_IMAGE_SIZE_BYTES
 import app.kiosksync.feature.playlist.Playlist
+import app.kiosksync.feature.playlist.PlaylistLibrary
 import app.kiosksync.feature.role.AppConfig
 import kotlinx.serialization.json.Json
 import org.jetbrains.skia.Image
@@ -22,6 +24,8 @@ class FileLocalStorage(
     private val configFile = File(dataDir, "config.json")
     private val pairedFile = File(dataDir, "paired.json")
     private val playlistFile = File(dataDir, "playlist.json")
+    private val playlistsFile = File(dataDir, "playlists.json")
+    private val lockFile = File(dataDir, "lock.json")
     private val mediaDir = File(dataDir, "media")
 
     private val json = Json {
@@ -66,6 +70,7 @@ class FileLocalStorage(
                 logger.info("Deleted config.json")
             }
             clearPairing()
+            clearKioskLock()
         } catch (e: Exception) {
             logger.error("Error clearing configuration", e)
         }
@@ -184,6 +189,61 @@ class FileLocalStorage(
             logger.info("Playlist saved with version ${playlist.version} (${playlist.items.size} items)")
         } catch (e: Exception) {
             logger.error("Error saving playlist.json", e)
+        }
+    }
+
+    override fun loadPlaylistLibrary(): PlaylistLibrary? {
+        if (!playlistsFile.exists()) return null
+        return try {
+            json.decodeFromString<PlaylistLibrary>(playlistsFile.readText(Charsets.UTF_8))
+        } catch (e: Exception) {
+            logger.error("Error reading playlists.json", e)
+            null
+        }
+    }
+
+    override fun savePlaylistLibrary(library: PlaylistLibrary) {
+        try {
+            dataDir.mkdirs()
+            val content = json.encodeToString(PlaylistLibrary.serializer(), library)
+            writeAtomically(playlistsFile, content)
+            logger.info(
+                "Playlist library saved with ${library.playlists.size} playlists " +
+                    "(active='${library.activePlaylist()?.name.orEmpty()}')"
+            )
+        } catch (e: Exception) {
+            logger.error("Error saving playlists.json", e)
+        }
+    }
+
+    override fun loadKioskLock(): KioskLockConfig? {
+        if (!lockFile.exists()) return null
+        return try {
+            json.decodeFromString<KioskLockConfig>(lockFile.readText(Charsets.UTF_8))
+        } catch (e: Exception) {
+            logger.error("Error reading lock.json", e)
+            null
+        }
+    }
+
+    override fun saveKioskLock(config: KioskLockConfig) {
+        try {
+            dataDir.mkdirs()
+            writeAtomically(lockFile, json.encodeToString(KioskLockConfig.serializer(), config))
+            logger.info("Kiosk lock configuration saved")
+        } catch (e: Exception) {
+            logger.error("Error saving lock.json", e)
+        }
+    }
+
+    override fun clearKioskLock() {
+        try {
+            if (lockFile.exists()) {
+                lockFile.delete()
+                logger.info("Deleted lock.json")
+            }
+        } catch (e: Exception) {
+            logger.error("Error deleting lock.json", e)
         }
     }
 
@@ -313,6 +373,25 @@ class FileLocalStorage(
             }
         }
         return deleted
+    }
+
+    private fun writeAtomically(target: File, content: String) {
+        val tempFile = File(target.parentFile, "${target.name}.tmp")
+        tempFile.writeText(content, Charsets.UTF_8)
+        try {
+            Files.move(
+                tempFile.toPath(),
+                target.toPath(),
+                StandardCopyOption.REPLACE_EXISTING,
+                StandardCopyOption.ATOMIC_MOVE
+            )
+        } catch (_: Exception) {
+            Files.move(
+                tempFile.toPath(),
+                target.toPath(),
+                StandardCopyOption.REPLACE_EXISTING
+            )
+        }
     }
 
     private fun findMediaFile(mediaId: String, fileName: String): File? {

@@ -6,6 +6,9 @@ import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
@@ -14,15 +17,20 @@ import androidx.compose.ui.window.rememberWindowState
 import app.kiosksync.core.APP_NAME
 import app.kiosksync.core.AppArgs
 import app.kiosksync.core.AppRole
+import app.kiosksync.feature.kiosk.KioskLockManager
 import app.kiosksync.feature.pairing.PairingManager
 import app.kiosksync.feature.playback.ReceiverPlaylistBridge
 import app.kiosksync.feature.playback.ReceiverStatusTracker
+import app.kiosksync.feature.projection.ProjectionController
 import app.kiosksync.platform.FileAppLogger
 import app.kiosksync.platform.FileLocalStorage
 import app.kiosksync.platform.JmDnsDiscovery
 import app.kiosksync.platform.KtorEmitterClient
 import app.kiosksync.platform.KtorReceiverServer
+import app.kiosksync.platform.Sha256
+import app.kiosksync.platform.createKioskKeyboardGuard
 import app.kiosksync.ui.App
+import app.kiosksync.ui.ProjectionScreen
 import java.awt.FileDialog
 import java.awt.Frame
 import java.awt.Point
@@ -33,7 +41,9 @@ import java.net.InetAddress
 import java.util.UUID
 import java.util.concurrent.Executors
 import javax.swing.SwingUtilities
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.withContext
 
@@ -72,6 +82,32 @@ fun main(args: Array<String>) {
         initializePairingMode = activeRole == AppRole.RECEIVER,
         loadStoredPairingOnInit = activeRole == AppRole.RECEIVER
     )
+    val passwordHasher: (String) -> String = { input ->
+        Sha256.hex(input.toByteArray(Charsets.UTF_8))
+    }
+    val isWindows = System.getProperty("os.name").orEmpty()
+        .startsWith("Windows", ignoreCase = true)
+    val kioskLockAvailable = isWindows && !appArgs.windowed
+    val kioskLockManager = KioskLockManager(
+        logger = logger,
+        passwordHasher = passwordHasher,
+        scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+        platformLockAvailable = kioskLockAvailable
+    )
+    kioskLockManager.setConfig(localStorage.loadKioskLock())
+    if (activeRole == AppRole.RECEIVER) {
+        kioskLockManager.lock()
+    }
+
+    val projectionController = ProjectionController()
+    val keyboardGuard = createKioskKeyboardGuard(
+        enabled = kioskLockAvailable,
+        isLocked = { kioskLockManager.uiState.value.isLocked },
+        onKey = { kioskLockManager.onKey(it) },
+        onProjectionToggle = { projectionController.requestToggle() },
+        logger = logger
+    )
+
     val statusTracker = ReceiverStatusTracker()
     val playlistBridge = ReceiverPlaylistBridge()
     val discovery = JmDnsDiscovery(logger)
@@ -80,6 +116,7 @@ fun main(args: Array<String>) {
         logger = logger,
         storage = localStorage,
         playlistBridge = playlistBridge,
+        kioskLockManager = kioskLockManager,
         statusProvider = { statusTracker.snapshot() }
     )
     val emitterClient = KtorEmitterClient(logger)
@@ -110,11 +147,17 @@ fun main(args: Array<String>) {
         emitterClient = emitterClient,
         receiverStatusTracker = statusTracker,
         receiverPlaylistBridge = playlistBridge,
+        kioskLockManager = kioskLockManager,
+        kioskKeyboardGuard = keyboardGuard,
+        projectionController = projectionController,
+        passwordHasher = passwordHasher,
         newDeviceId = { UUID.randomUUID().toString() },
         pickImageFiles = pickImageFiles,
         backgroundDispatcher = Dispatchers.IO,
         serviceDispatcher = serviceDispatcher
     )
+
+    keyboardGuard.start()
 
     application {
         val windowState = rememberWindowState(
@@ -122,6 +165,22 @@ fun main(args: Array<String>) {
             width = 900.dp,
             height = 650.dp
         )
+
+        val projectionPlaylist by projectionController.playlist.collectAsState()
+        val lockState by kioskLockManager.uiState.collectAsState()
+
+        LaunchedEffect(projectionPlaylist != null) {
+            // Hide the management window while projecting so a mouse cannot
+            // reach the admin actions behind the fullscreen projection.
+            windowState.isMinimized = projectionPlaylist != null
+        }
+
+        LaunchedEffect(lockState.isLocked) {
+            if (!lockState.isLocked && projectionController.isProjecting) {
+                logger.info("Projection stopped after unlocking the controller")
+                projectionController.stop()
+            }
+        }
 
         var escHandler: (() -> Unit)? = null
         var unpairHandler: (() -> Unit)? = null
@@ -138,6 +197,10 @@ fun main(args: Array<String>) {
             alwaysOnTop = isFullscreenReceiver,
             onKeyEvent = { keyEvent ->
                 when {
+                    // The native hook already swallows keys on Windows. This is a
+                    // second barrier so Compose cannot open dialogs while locked.
+                    kioskLockManager.uiState.value.isLocked -> true
+
                     keyEvent.type == KeyEventType.KeyDown &&
                         keyEvent.isCtrlPressed &&
                         keyEvent.isShiftPressed &&
@@ -156,12 +219,7 @@ fun main(args: Array<String>) {
             }
         ) {
             if (isFullscreenReceiver) {
-                // Hide cursor in fullscreen receiver mode
-                window.cursor = Toolkit.getDefaultToolkit().createCustomCursor(
-                    BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB),
-                    Point(0, 0),
-                    "blank cursor"
-                )
+                window.cursor = blankCursor()
             }
 
             App(
@@ -178,8 +236,47 @@ fun main(args: Array<String>) {
                 }
             )
         }
+
+        projectionPlaylist?.let { playlist ->
+            Window(
+                onCloseRequest = {
+                    // Closing the projection is only possible after unlocking.
+                    projectionController.stop()
+                },
+                title = "$APP_NAME · Proyección",
+                state = rememberWindowState(placement = WindowPlacement.Fullscreen),
+                undecorated = true,
+                alwaysOnTop = true,
+                resizable = false,
+                onKeyEvent = { event ->
+                    if (
+                        event.type == KeyEventType.KeyDown &&
+                        event.key == Key.Escape &&
+                        !kioskLockManager.uiState.value.isLocked
+                    ) {
+                        projectionController.stop()
+                        true
+                    } else {
+                        false
+                    }
+                }
+            ) {
+                window.cursor = blankCursor()
+                ProjectionScreen(
+                    playlist = playlist,
+                    container = container,
+                    lockState = lockState
+                )
+            }
+        }
     }
 }
+
+private fun blankCursor() = Toolkit.getDefaultToolkit().createCustomCursor(
+    BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB),
+    Point(0, 0),
+    "blank cursor"
+)
 
 private fun showImagePicker(): List<String> {
     // Never open the modal dialog inside Compose's FlushCoroutineDispatcher: the nested

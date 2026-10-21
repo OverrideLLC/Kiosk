@@ -4,8 +4,10 @@ import androidx.compose.ui.graphics.ImageBitmap
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.EmitterPairedDevice
 import app.kiosksync.core.ImageFormat
+import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.ReceiverPairedInfo
 import app.kiosksync.feature.playlist.Playlist
+import app.kiosksync.feature.playlist.PlaylistLibrary
 import app.kiosksync.feature.role.AppConfig
 import app.kiosksync.platform.LocalStorage
 import app.kiosksync.platform.MediaImportResult
@@ -21,6 +23,9 @@ class FakeLocalStorage(
     var clearConfigCalled = false
     var clearPairingCalled = false
     var loadMediaBitmapCount = 0
+    var playlistLibrary: PlaylistLibrary? = null
+    var kioskLock: KioskLockConfig? = null
+    var clearKioskLockCalled = false
     val storedMedia: MutableMap<String, StoredMedia> = mutableMapOf()
     val mediaBytes: MutableMap<String, ByteArray> = mutableMapOf()
 
@@ -34,6 +39,7 @@ class FakeLocalStorage(
         clearConfigCalled = true
         savedConfig = null
         clearPairing()
+        clearKioskLock()
     }
 
     override fun clearPairing() {
@@ -66,6 +72,23 @@ class FakeLocalStorage(
 
     override fun savePlaylist(playlist: Playlist) {
         this.playlist = playlist
+    }
+
+    override fun loadPlaylistLibrary(): PlaylistLibrary? = playlistLibrary
+
+    override fun savePlaylistLibrary(library: PlaylistLibrary) {
+        playlistLibrary = library
+    }
+
+    override fun loadKioskLock(): KioskLockConfig? = kioskLock
+
+    override fun saveKioskLock(config: KioskLockConfig) {
+        kioskLock = config
+    }
+
+    override fun clearKioskLock() {
+        clearKioskLockCalled = true
+        kioskLock = null
     }
 
     override fun loadMediaBitmap(mediaId: String, fileName: String): ImageBitmap? {
