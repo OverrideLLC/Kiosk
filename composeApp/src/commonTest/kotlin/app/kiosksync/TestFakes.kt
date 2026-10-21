@@ -22,6 +22,7 @@ class FakeLocalStorage(
     var emitterPairedDevices: List<EmitterPairedDevice> = emptyList()
     var clearConfigCalled = false
     var clearPairingCalled = false
+    var clearReceiverDataCalled = false
     var loadMediaBitmapCount = 0
     var playlistLibrary: PlaylistLibrary? = null
     var kioskLock: KioskLockConfig? = null
@@ -46,6 +47,15 @@ class FakeLocalStorage(
         clearPairingCalled = true
         receiverPairedInfo = null
         emitterPairedDevices = emptyList()
+    }
+
+    override fun clearReceiverData() {
+        clearReceiverDataCalled = true
+        playlist = null
+        receiverPairedInfo = null
+        kioskLock = null
+        storedMedia.clear()
+        mediaBytes.clear()
     }
 
     override fun loadReceiverPairedInfo(): ReceiverPairedInfo? = receiverPairedInfo

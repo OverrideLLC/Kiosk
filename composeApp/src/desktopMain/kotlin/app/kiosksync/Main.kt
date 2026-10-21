@@ -73,6 +73,13 @@ fun main(args: Array<String>) {
     val existingConfig = localStorage.loadConfig()
     val activeRole = appArgs.role ?: existingConfig?.role
 
+    if (activeRole == AppRole.RECEIVER) {
+        // A screen always starts blank: wipe any content, blocking password and
+        // pairing left by a previous session so it never replays stale content.
+        // The Controller role keeps all of its data untouched.
+        localStorage.clearReceiverData()
+    }
+
     val isFullscreenReceiver = !appArgs.windowed && activeRole == AppRole.RECEIVER
     val deviceName = try {
         System.getenv("COMPUTERNAME") ?: InetAddress.getLocalHost().hostName ?: "WindowsPC"

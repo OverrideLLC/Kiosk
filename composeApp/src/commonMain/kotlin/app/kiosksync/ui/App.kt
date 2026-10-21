@@ -213,6 +213,8 @@ fun App(
                             stateHolder = roleStateHolder,
                             onRoleConfirmed = { confirmedConfig ->
                                 if (confirmedConfig.role == AppRole.RECEIVER) {
+                                    // Entering the Screen role always starts blank.
+                                    container.localStorage.clearReceiverData()
                                     pairingManager.checkInitialPairing()
                                 }
                                 currentScreen = when (confirmedConfig.role) {

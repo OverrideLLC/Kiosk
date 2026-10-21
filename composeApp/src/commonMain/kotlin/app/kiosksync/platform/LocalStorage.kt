@@ -33,6 +33,17 @@ interface LocalStorage {
     fun clearConfig()
     fun clearPairing()
 
+    /**
+     * Wipes everything that belongs to the Screen role (the active playlist, the
+     * stored images, the blocking password and the pairing) so that a screen
+     * always starts blank instead of replaying content from a previous session.
+     *
+     * It deliberately keeps `config.json`, so the device remembers that it is a
+     * screen. It is never called for the Controller role, which keeps all of its
+     * data (playlist library, paired screens, password).
+     */
+    fun clearReceiverData()
+
     // Receiver pairing (paired.json on receiver)
     fun loadReceiverPairedInfo(): ReceiverPairedInfo?
     fun saveReceiverPairedInfo(info: ReceiverPairedInfo)

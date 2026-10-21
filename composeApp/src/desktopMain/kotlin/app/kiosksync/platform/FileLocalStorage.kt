@@ -87,6 +87,32 @@ class FileLocalStorage(
         }
     }
 
+    override fun clearReceiverData() {
+        try {
+            deleteFile(playlistFile)
+            deleteFile(File(dataDir, "playlist.json.tmp"))
+            deleteFile(lockFile)
+            deleteFile(File(dataDir, "lock.json.tmp"))
+            deleteFile(pairedFile)
+            val mediaCount = mediaDir.listFiles()?.count { it.isFile && it.delete() } ?: 0
+            logger.info(
+                "Receiver data cleared: content, password and pairing " +
+                    "($mediaCount media file(s) removed)"
+            )
+        } catch (e: Exception) {
+            logger.error("Error clearing receiver data", e)
+        }
+    }
+
+    private fun deleteFile(file: File) {
+        if (!file.exists()) return
+        if (file.delete()) {
+            logger.info("Deleted ${file.name}")
+        } else {
+            logger.warn("Could not delete ${file.name}")
+        }
+    }
+
     override fun loadReceiverPairedInfo(): app.kiosksync.core.ReceiverPairedInfo? {
         if (!pairedFile.exists()) return null
         return try {

@@ -124,6 +124,13 @@ class EmitterStateHolder(
     private val onlineStatus = mutableMapOf<String, Boolean>()
     private val failedChecks = mutableMapOf<String, Int>()
     private var selectedIds = emptySet<String>()
+
+    /**
+     * Screens paired in this session. mDNS takes a moment to report them as
+     * paired, so they are exempt from the "forget unpaired screens" cleanup
+     * until the network confirms them.
+     */
+    private val justPairedIds = mutableSetOf<String>()
     private val jobs = mutableListOf<Job>()
 
     fun start() {
@@ -236,6 +243,7 @@ class EmitterStateHolder(
                     failedChecks[device.deviceId] = 0
                     onlineStatus[device.deviceId] = true
                     selectedIds = selectedIds + device.deviceId
+                    justPairedIds += device.deviceId
                     logger.info("Screen '${device.deviceName}' paired successfully")
                     val existingLock = storage.loadKioskLock()?.takeIf { it.enabled }
                     _uiState.update {
@@ -749,7 +757,33 @@ class EmitterStateHolder(
 
     private fun rebuild() {
         val discoveredById = allDiscovered().associateBy { it.deviceId }
-        val storedById = storedDevices.associateBy { it.deviceId }
+        var storedById = storedDevices.associateBy { it.deviceId }
+
+        // A screen always starts blank and forgets its pairing. When the network
+        // reports a stored screen as unpaired, drop the stale pairing so the user
+        // can pair it again with a fresh code instead of being stuck with a token
+        // the screen no longer knows.
+        val staleIds = discoveredById.values
+            .filter { live -> live.deviceId in storedById.keys }
+            .filter { live -> !live.paired && live.deviceId !in justPairedIds }
+            .map { it.deviceId }
+
+        if (staleIds.isNotEmpty()) {
+            staleIds.forEach { storage.removeEmitterPairedDevice(it) }
+            storedDevices = storage.loadEmitterPairedDevices()
+            storedById = storedDevices.associateBy { it.deviceId }
+            staleIds.forEach { id ->
+                onlineStatus.remove(id)
+                failedChecks.remove(id)
+                selectedIds = selectedIds - id
+            }
+            logger.info("Forgot ${staleIds.size} screen(s) that are no longer paired: $staleIds")
+        }
+
+        // Once mDNS confirms the pairing, the exemption is no longer needed.
+        discoveredById.values
+            .filter { it.paired }
+            .forEach { justPairedIds.remove(it.deviceId) }
 
         val devices = (storedById.keys + discoveredById.keys).mapNotNull { id ->
             val stored = storedById[id]
