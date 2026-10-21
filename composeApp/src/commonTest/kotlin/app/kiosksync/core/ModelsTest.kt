@@ -2,6 +2,7 @@ package app.kiosksync.core
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class ModelsTest {
@@ -12,7 +13,8 @@ class ModelsTest {
             "--data-dir=C:\\custom\\data",
             "--role=receiver",
             "--port=9000",
-            "--windowed"
+            "--windowed",
+            "--ui-catalog"
         )
         val parsed = AppArgs.parse(args)
 
@@ -20,6 +22,13 @@ class ModelsTest {
         assertEquals(AppRole.RECEIVER, parsed.role)
         assertEquals(9000, parsed.port)
         assertTrue(parsed.windowed)
+        assertTrue(parsed.uiCatalog)
+    }
+
+    @Test
+    fun testUiCatalogIsFalseByDefault() {
+        val parsed = AppArgs.parse(arrayOf("--role=emitter"))
+        assertFalse(parsed.uiCatalog)
     }
 
     @Test

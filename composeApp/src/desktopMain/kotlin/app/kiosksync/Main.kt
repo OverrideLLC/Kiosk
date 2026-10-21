@@ -19,6 +19,7 @@ import androidx.compose.ui.window.rememberWindowState
 import app.kiosksync.core.APP_NAME
 import app.kiosksync.core.AppArgs
 import app.kiosksync.core.AppRole
+import app.kiosksync.designsystem.catalog.CatalogScreen
 import app.kiosksync.feature.kiosk.KioskKeyEvent
 import app.kiosksync.feature.kiosk.KioskKeyKind
 import app.kiosksync.feature.kiosk.KioskLockManager
@@ -53,6 +54,11 @@ import kotlinx.coroutines.withContext
 
 fun main(args: Array<String>) {
     val appArgs = AppArgs.parse(args)
+
+    if (appArgs.uiCatalog) {
+        launchUiCatalog()
+        return
+    }
 
     val defaultDataDir = File(
         System.getenv("APPDATA") ?: System.getProperty("user.home"),
@@ -360,4 +366,20 @@ private fun showImagePickerOnEventDispatchThread(): List<String> {
     dialog.file = "*.jpg;*.jpeg;*.png;*.webp"
     dialog.isVisible = true
     return dialog.files?.map { it.absolutePath }.orEmpty()
+}
+
+/**
+ * Development-only component gallery. It needs no data directory, server or
+ * logger, so it can be opened with `--ui-catalog` on any machine.
+ */
+private fun launchUiCatalog() {
+    application {
+        Window(
+            onCloseRequest = ::exitApplication,
+            title = "$APP_NAME · Catálogo de UI",
+            state = rememberWindowState(width = 1280.dp, height = 900.dp),
+        ) {
+            CatalogScreen()
+        }
+    }
 }

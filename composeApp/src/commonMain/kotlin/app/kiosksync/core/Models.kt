@@ -18,7 +18,8 @@ data class AppArgs(
     val dataDir: String? = null,
     val role: AppRole? = null,
     val port: Int? = null,
-    val windowed: Boolean = false
+    val windowed: Boolean = false,
+    val uiCatalog: Boolean = false
 ) {
     companion object {
         fun parse(args: Array<String>): AppArgs {
@@ -26,6 +27,7 @@ data class AppArgs(
             var role: AppRole? = null
             var port: Int? = null
             var windowed = false
+            var uiCatalog = false
 
             for (arg in args) {
                 when {
@@ -42,6 +44,9 @@ data class AppArgs(
                     arg == "--windowed" -> {
                         windowed = true
                     }
+                    arg == "--ui-catalog" -> {
+                        uiCatalog = true
+                    }
                 }
             }
 
@@ -49,7 +54,8 @@ data class AppArgs(
                 dataDir = dataDir,
                 role = role,
                 port = port,
-                windowed = windowed
+                windowed = windowed,
+                uiCatalog = uiCatalog
             )
         }
     }

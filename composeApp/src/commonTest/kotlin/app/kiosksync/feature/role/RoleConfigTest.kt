@@ -3,6 +3,7 @@ package app.kiosksync.feature.role
 import app.kiosksync.FakeLocalStorage
 import app.kiosksync.NoOpLogger
 import app.kiosksync.core.AppRole
+import app.kiosksync.core.AppTheme
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -30,6 +31,36 @@ class RoleConfigTest {
         assertEquals(config.deviceId, decoded.deviceId)
         assertEquals(config.deviceName, decoded.deviceName)
         assertEquals(config.port, decoded.port)
+    }
+
+    @Test
+    fun testThemePreferenceSerialization() {
+        val config = AppConfig(
+            role = AppRole.RECEIVER,
+            deviceId = "device",
+            deviceName = "Screen",
+            theme = AppTheme.LIGHT
+        )
+        val decoded = json.decodeFromString<AppConfig>(
+            json.encodeToString(AppConfig.serializer(), config)
+        )
+
+        assertEquals(AppTheme.LIGHT, decoded.theme)
+    }
+
+    @Test
+    fun testLegacyConfigWithoutThemeDefaultsToDark() {
+        val legacy = """
+            {
+              "role": "EMITTER",
+              "deviceId": "device",
+              "deviceName": "Controller",
+              "port": 8765
+            }
+        """.trimIndent()
+        val decoded = json.decodeFromString<AppConfig>(legacy)
+
+        assertEquals(AppTheme.DARK, decoded.theme)
     }
 
     @Test
