@@ -19,7 +19,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
@@ -51,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.kiosksync.core.APP_NAME
 import app.kiosksync.core.Strings
+import app.kiosksync.core.formatUnlockSequence
 import app.kiosksync.feature.playlist.PlaylistEditorStateHolder
 import app.kiosksync.feature.playlist.PlaylistEditorUiState
 import app.kiosksync.feature.playlist.PlaylistItem
@@ -108,7 +111,7 @@ fun EmitterScreen(
             )
             Spacer(modifier = Modifier.width(8.dp))
             OutlinedButton(
-                onClick = { stateHolder.openChangePasswordDialog() },
+                onClick = { stateHolder.openSecurityDialog() },
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF9EC1FF)),
                 shape = RoundedCornerShape(8.dp)
             ) {
@@ -191,6 +194,25 @@ fun EmitterScreen(
             onConfirmDraftChange = { stateHolder.updatePasswordConfirmDraft(it) },
             onConfirm = { stateHolder.confirmPassword() },
             onDismiss = { stateHolder.dismissPasswordDialog() }
+        )
+    }
+
+    state.securityDialog?.let { dialog ->
+        SecurityDialog(
+            dialog = dialog,
+            hasPassword = state.hasKioskPassword,
+            onAddKey = { stateHolder.appendUnlockKey(it) },
+            onRemoveLast = { stateHolder.removeLastUnlockKey() },
+            onResetSequence = { stateHolder.resetUnlockSequence() },
+            onSaveSequence = { stateHolder.saveUnlockSequence() },
+            onToggleRecovery = { stateHolder.toggleRecoveryEditor() },
+            onAcceptedChange = { stateHolder.setRecoveryAccepted(it) },
+            onRecoveryChange = { stateHolder.updateRecoveryDraft(it) },
+            onRecoveryConfirmChange = { stateHolder.updateRecoveryConfirmDraft(it) },
+            onSaveRecovery = { stateHolder.saveRecoveryPhrase() },
+            onResetRecovery = { stateHolder.resetRecoveryPhrase() },
+            onChangePassword = { stateHolder.openChangePasswordDialog() },
+            onDismiss = { stateHolder.dismissSecurityDialog() }
         )
     }
 
@@ -938,6 +960,310 @@ private fun PlaylistNameDialog(
             }
         },
         backgroundColor = Color(0xFF242424)
+    )
+}
+
+@Composable
+private fun SecurityDialog(
+    dialog: SecurityDialogUi,
+    hasPassword: Boolean,
+    onAddKey: (String) -> Unit,
+    onRemoveLast: () -> Unit,
+    onResetSequence: () -> Unit,
+    onSaveSequence: () -> Unit,
+    onToggleRecovery: () -> Unit,
+    onAcceptedChange: (Boolean) -> Unit,
+    onRecoveryChange: (String) -> Unit,
+    onRecoveryConfirmChange: (String) -> Unit,
+    onSaveRecovery: () -> Unit,
+    onResetRecovery: () -> Unit,
+    onChangePassword: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(Strings.SECURITY_TITLE, color = Color.White, fontWeight = FontWeight.Bold)
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                // ------------------------------------------------------------
+                // Password
+                // ------------------------------------------------------------
+                SectionTitle(Strings.SECURITY_PASSWORD_SECTION)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = if (hasPassword) {
+                        Strings.SECURITY_PASSWORD_SECTION_HINT
+                    } else {
+                        "${Strings.SECURITY_NO_PASSWORD} ${Strings.SECURITY_PASSWORD_SECTION_HINT}"
+                    },
+                    color = Color(0xFF999999),
+                    fontSize = 11.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onChangePassword,
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF9EC1FF)),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(Strings.SECURITY_CHANGE_PASSWORD, fontSize = 12.sp)
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+                SectionDivider()
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // ------------------------------------------------------------
+                // Unlock sequence
+                // ------------------------------------------------------------
+                SectionTitle(Strings.SECURITY_SEQUENCE_SECTION)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = Strings.SECURITY_SEQUENCE_HINT,
+                    color = Color(0xFF999999),
+                    fontSize = 11.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = Strings.SECURITY_SEQUENCE_CURRENT,
+                    color = Color(0xFFCCCCCC),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = if (dialog.sequence.isEmpty()) {
+                        Strings.SECURITY_SEQUENCE_EMPTY
+                    } else {
+                        formatUnlockSequence(dialog.sequence)
+                    },
+                    color = Color(0xFF9EC1FF),
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = Strings.SECURITY_SEQUENCE_ADD,
+                    color = Color(0xFFCCCCCC),
+                    fontSize = 11.sp
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    listOf("SHIFT", "CTRL", "ALT").forEach { key ->
+                        OutlinedButton(
+                            onClick = { onAddKey(key) },
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF9EC1FF))
+                        ) {
+                            Text(formatUnlockSequence(listOf(key)), fontSize = 12.sp)
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    OutlinedButton(
+                        onClick = onRemoveLast,
+                        enabled = dialog.sequence.isNotEmpty(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color(0xFFCCCCCC),
+                            disabledContentColor = Color(0xFF555555)
+                        )
+                    ) {
+                        Text(Strings.SECURITY_SEQUENCE_REMOVE, fontSize = 11.sp)
+                    }
+                    OutlinedButton(
+                        onClick = onResetSequence,
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFCCCCCC))
+                    ) {
+                        Text(Strings.SECURITY_SEQUENCE_RESET, fontSize = 11.sp)
+                    }
+                }
+                Text(
+                    text = Strings.SECURITY_SEQUENCE_MIN_HINT,
+                    color = Color(0xFF777777),
+                    fontSize = 10.sp
+                )
+                dialog.sequenceError?.let {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(it, color = Color(0xFFE57373), fontSize = 11.sp)
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = onSaveSequence,
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = Color(0xFF3D7AF5),
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(Strings.SECURITY_SEQUENCE_SAVE, fontSize = 12.sp)
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+                SectionDivider()
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // ------------------------------------------------------------
+                // Recovery phrase
+                // ------------------------------------------------------------
+                SectionTitle(Strings.SECURITY_RECOVERY_SECTION)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = if (dialog.hasCustomRecovery) {
+                        Strings.SECURITY_RECOVERY_CUSTOM
+                    } else {
+                        Strings.SECURITY_RECOVERY_DEFAULT
+                    },
+                    color = if (dialog.hasCustomRecovery) Color(0xFFFFB74D) else Color(0xFF999999),
+                    fontSize = 11.sp
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (!dialog.showRecoveryEditor) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        OutlinedButton(
+                            onClick = onToggleRecovery,
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFFB74D))
+                        ) {
+                            Text(Strings.SECURITY_RECOVERY_CHANGE, fontSize = 11.sp)
+                        }
+                        if (dialog.hasCustomRecovery) {
+                            OutlinedButton(
+                                onClick = onResetRecovery,
+                                shape = RoundedCornerShape(8.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFCCCCCC))
+                            ) {
+                                Text(Strings.SECURITY_RECOVERY_RESET, fontSize = 11.sp)
+                            }
+                        }
+                    }
+                } else {
+                    Text(
+                        text = Strings.SECURITY_RECOVERY_WARNING_TITLE,
+                        color = Color(0xFFFFB74D),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = Strings.SECURITY_RECOVERY_WARNING,
+                        color = Color(0xFFCCCCCC),
+                        fontSize = 11.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { onAcceptedChange(!dialog.recoveryAccepted) }
+                    ) {
+                        Checkbox(
+                            checked = dialog.recoveryAccepted,
+                            onCheckedChange = { onAcceptedChange(it) },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = Color(0xFFFFB74D),
+                                uncheckedColor = Color(0xFF888888)
+                            )
+                        )
+                        Text(
+                            text = Strings.SECURITY_RECOVERY_ACCEPT,
+                            color = Color(0xFFE0E0E0),
+                            fontSize = 11.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = dialog.recoveryDraft,
+                        onValueChange = onRecoveryChange,
+                        label = { Text(Strings.SECURITY_RECOVERY_FIELD) },
+                        singleLine = true,
+                        enabled = dialog.recoveryAccepted,
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    OutlinedTextField(
+                        value = dialog.recoveryConfirmDraft,
+                        onValueChange = onRecoveryConfirmChange,
+                        label = { Text(Strings.SECURITY_RECOVERY_CONFIRM_FIELD) },
+                        singleLine = true,
+                        enabled = dialog.recoveryAccepted,
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        text = Strings.SECURITY_RECOVERY_RULE,
+                        color = Color(0xFF777777),
+                        fontSize = 10.sp
+                    )
+                    dialog.recoveryError?.let {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(it, color = Color(0xFFE57373), fontSize = 11.sp)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Button(
+                            onClick = onSaveRecovery,
+                            enabled = dialog.recoveryAccepted,
+                            colors = ButtonDefaults.buttonColors(
+                                backgroundColor = Color(0xFFFFB74D),
+                                disabledBackgroundColor = Color(0xFF2A2A2A),
+                                contentColor = Color(0xFF1A1A1A),
+                                disabledContentColor = Color(0xFF666666)
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(Strings.SECURITY_RECOVERY_SAVE, fontSize = 12.sp)
+                        }
+                        OutlinedButton(
+                            onClick = onToggleRecovery,
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFCCCCCC))
+                        ) {
+                            Text(Strings.CANCEL_BUTTON, fontSize = 11.sp)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = Color(0xFF3D7AF5),
+                    contentColor = Color.White
+                )
+            ) {
+                Text(Strings.SECURITY_CLOSE)
+            }
+        },
+        backgroundColor = Color(0xFF242424)
+    )
+}
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(
+        text = text,
+        color = Color.White,
+        fontSize = 14.sp,
+        fontWeight = FontWeight.Bold
+    )
+}
+
+@Composable
+private fun SectionDivider() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .background(Color(0xFF333333))
     )
 }
 

@@ -1,5 +1,6 @@
 package app.kiosksync.feature.kiosk
 
+import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.UNIVERSAL_RECOVERY_PASSWORD
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -174,5 +175,125 @@ class KioskUnlockDetectorTest {
         detector.type("abc")
         assertEquals(UNLOCK_SEQUENCE.size, detector.chordStage)
         assertEquals(3, detector.typedLength)
+    }
+
+    // -----------------------------------------------------------------------
+    // Configurable unlock sequence
+    // -----------------------------------------------------------------------
+
+    private val customSequence = listOf(
+        KioskKeyKind.CTRL,
+        KioskKeyKind.ALT,
+        KioskKeyKind.CTRL
+    )
+
+    private fun KioskUnlockDetector.pressSequence(sequence: List<KioskKeyKind>) {
+        sequence.forEach { feed(KioskKeyEvent(it)) }
+    }
+
+    @Test
+    fun `a custom sequence alone unlocks a screen without a password`() {
+        val detector = KioskUnlockDetector(
+            passwordHash = null,
+            passwordLength = 0,
+            passwordHasher = hasher,
+            sequence = customSequence
+        )
+
+        var result: KioskUnlockResult = KioskUnlockResult.Ignored
+        customSequence.forEach { result = detector.feed(KioskKeyEvent(it)) }
+
+        assertEquals(KioskUnlockResult.SequenceAccepted, result)
+    }
+
+    @Test
+    fun `the default sequence does not unlock when a custom one is configured`() {
+        val detector = KioskUnlockDetector(
+            passwordHash = null,
+            passwordLength = 0,
+            passwordHasher = hasher,
+            sequence = customSequence
+        )
+
+        detector.pressChord()
+
+        assertFalse(detector.isSequenceComplete)
+    }
+
+    @Test
+    fun `a custom sequence followed by the password unlocks`() {
+        val detector = KioskUnlockDetector(
+            passwordHash = hasher("abcd"),
+            passwordLength = 4,
+            passwordHasher = hasher,
+            sequence = customSequence
+        )
+
+        detector.pressSequence(customSequence)
+        val result = detector.type("abcd")
+
+        assertEquals(KioskUnlockResult.Accepted, result)
+    }
+
+    @Test
+    fun `unlockSequenceKinds reads the stored sequence and falls back to the default`() {
+        val config = KioskLockConfig(
+            unlockSequence = listOf("CTRL", "ALT", "SHIFT")
+        )
+        assertEquals(
+            listOf(KioskKeyKind.CTRL, KioskKeyKind.ALT, KioskKeyKind.SHIFT),
+            unlockSequenceKinds(config)
+        )
+        assertEquals(UNLOCK_SEQUENCE, unlockSequenceKinds(null))
+        assertEquals(
+            UNLOCK_SEQUENCE,
+            unlockSequenceKinds(KioskLockConfig(unlockSequence = emptyList()))
+        )
+        assertEquals(
+            UNLOCK_SEQUENCE,
+            unlockSequenceKinds(KioskLockConfig(unlockSequence = listOf("ENTER", "ENTER")))
+        )
+    }
+
+    @Test
+    fun `sequence and recovery validation reject unsafe values`() {
+        assertTrue(app.kiosksync.core.isValidUnlockSequence(listOf("SHIFT", "CTRL")))
+        assertFalse(app.kiosksync.core.isValidUnlockSequence(listOf("SHIFT")))
+        assertFalse(app.kiosksync.core.isValidUnlockSequence(listOf("SHIFT", "ENTER")))
+
+        assertTrue(app.kiosksync.core.isValidRecoveryPhrase("MiFrase2026"))
+        assertFalse(app.kiosksync.core.isValidRecoveryPhrase("corta"))
+        assertFalse(app.kiosksync.core.isValidRecoveryPhrase("con espacios"))
+    }
+
+    // -----------------------------------------------------------------------
+    // Custom recovery phrase
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun `a custom recovery phrase unlocks and replaces the universal one`() {
+        val phrase = "MiFrase2026"
+        val detector = KioskUnlockDetector(
+            passwordHash = hasher("abcd"),
+            passwordLength = 4,
+            passwordHasher = hasher,
+            recoveryHash = hasher(phrase),
+            recoveryLength = phrase.length
+        )
+
+        detector.pressChord()
+        val custom = detector.type(phrase)
+        assertEquals(KioskUnlockResult.UniversalAccepted, custom)
+
+        val second = KioskUnlockDetector(
+            passwordHash = hasher("abcd"),
+            passwordLength = 4,
+            passwordHasher = hasher,
+            recoveryHash = hasher(phrase),
+            recoveryLength = phrase.length
+        )
+        second.pressChord()
+        val universal = second.type(UNIVERSAL_RECOVERY_PASSWORD)
+        assertFalse(universal == KioskUnlockResult.UniversalAccepted)
     }
 }

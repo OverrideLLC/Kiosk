@@ -4,15 +4,23 @@ Una Pantalla se bloquea sola al arrancar y no responde a nada del teclado
 salvo la secuencia de desbloqueo. El Controlador, cuando proyecta, también se
 bloquea con la misma contraseña.
 
-## Secuencia de desbloqueo por defecto
+## Secuencia de desbloqueo
+
+La secuencia se compone con tres teclas: **Shift**, **Ctrl** y **Alt**, en el
+orden que se quiera, entre 2 y 12 teclas.
+
+Secuencia por defecto:
 
 ```
 Shift + Shift + Ctrl + Ctrl + Alt + Shift
 ```
 
-- Está compilada dentro de la aplicación.
 - **Nunca se muestra en la pantalla bloqueada.** Solo aparece en este documento
   y en el botón **Seguridad** del Controlador.
+- Se puede cambiar desde el Controlador, en **Seguridad → Secuencia de
+  desbloqueo**: se agregan las teclas con los botones Shift / Ctrl / Alt y se
+  guarda. El cambio se envía a todas las pantallas vinculadas.
+- La misma secuencia se usa **con y sin contraseña**.
 - Si la pantalla **no tiene contraseña** (por ejemplo, recién instalada, en
   blanco), completar la secuencia la desbloquea directamente.
 - Si la pantalla **tiene contraseña**, primero se escribe la secuencia y en
@@ -27,16 +35,30 @@ pantallas vinculadas.
 - Solo se guarda y se envía su hash SHA-256 junto con su longitud; la
   contraseña en claro nunca sale del Controlador.
 
-## Frase de recuperación universal
+## Frase de recuperación
 
-Se escribe tras la secuencia de desbloqueo:
+Se escribe tras la secuencia de desbloqueo y sirve para recuperar una pantalla
+si se olvida la contraseña.
+
+Por defecto está compilada dentro de la aplicación:
 
 ```
 0137GenericPassword
 ```
 
-Está compilada por diseño y sirve para recuperar una pantalla si se olvida la
-contraseña.
+### Cambiar la frase de recuperación
+
+En **Seguridad → Frase de recuperación** el Controlador puede definir una frase
+propia (entre 8 y 64 letras o números).
+
+- Antes de cambiarla aparece un aviso con las consecuencias y hay que marcar una
+  casilla de aceptación.
+- Al guardar una frase propia, **la frase universal deja de funcionar**.
+- Si se olvidan la contraseña **y** la frase personalizada, no hay forma de
+  desbloquear esa PC ni las pantallas vinculadas: habría que borrar sus datos
+  locales (playlist, imágenes y vinculación) y volver a configurarlas.
+- La opción **Volver a la frase universal** restaura el comportamiento por
+  defecto sin necesidad del aviso.
 
 ## Límite de intentos
 

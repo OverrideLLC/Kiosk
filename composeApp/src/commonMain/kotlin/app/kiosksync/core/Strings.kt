@@ -122,7 +122,7 @@ object Strings {
     // Kiosk lock
     const val KIOSK_LOCKED_TITLE = "Equipo bloqueado"
     const val KIOSK_UNLOCK_HINT = "Introduce el código de desbloqueo"
-    const val KIOSK_RECOVERY_HINT = "Si olvidaste la contraseña, usa la frase de recuperación universal."
+    const val KIOSK_RECOVERY_HINT = "Si olvidaste la contraseña, usa tu frase de recuperación."
     const val KIOSK_WRONG_PASSWORD = "Contraseña incorrecta."
     const val KIOSK_ATTEMPTS_LEFT = "Intentos restantes:"
     const val KIOSK_LOCKED_OUT = "Demasiados intentos fallidos. Espera antes de volver a intentarlo."
@@ -131,13 +131,12 @@ object Strings {
 
     /**
      * Only shown in the controller's "Seguridad" dialog, never on a locked
-     * screen. It documents the default unlock sequence.
+     * screen.
      */
     const val KIOSK_DEFAULT_SEQUENCE_HINT =
-        "Sin contraseña, la pantalla se desbloquea con la secuencia por defecto: " +
-            "Shift + Shift + Ctrl + Ctrl + Alt + Shift. " +
-            "Con contraseña, primero esa secuencia y después la contraseña. " +
-            "La secuencia también está en la documentación del proyecto."
+        "La pantalla se desbloquea con la secuencia configurada en Seguridad y, " +
+            "si hay contraseña, después la contraseña. " +
+            "La secuencia nunca se muestra en la pantalla bloqueada."
 
     const val KIOSK_PASSWORD_TITLE = "Contraseña de bloqueo"
     const val KIOSK_PASSWORD_INSTRUCTION =
@@ -156,9 +155,53 @@ object Strings {
     const val KIOSK_SECURITY_BUTTON = "Seguridad"
     const val KIOSK_PASSWORD_CHANGE_TITLE = "Cambiar contraseña de bloqueo"
     const val KIOSK_UNIVERSAL_HINT =
-        "La frase de recuperación universal está documentada en el manual del proyecto."
+        "La frase de recuperación se gestiona en Seguridad → Frase de recuperación."
     const val KIOSK_LOCK_ACTIVE_HINT = "El equipo quedará bloqueado hasta que se introduzca la contraseña."
     const val KIOSK_RECOVERY_USED = "Bloqueo liberado con la frase de recuperación universal."
+
+    // Security dialog (controller)
+    const val SECURITY_TITLE = "Seguridad"
+    const val SECURITY_PASSWORD_SECTION = "Contraseña de bloqueo"
+    const val SECURITY_PASSWORD_SECTION_HINT =
+        "Protege el teclado de este equipo y de las pantallas que reciban contenido."
+    const val SECURITY_SEQUENCE_SECTION = "Secuencia de desbloqueo"
+    const val SECURITY_SEQUENCE_HINT =
+        "Se escribe con las teclas Shift, Ctrl y Alt, en el orden que elijas. " +
+            "Funciona con y sin contraseña. Nunca se muestra en la pantalla bloqueada."
+    const val SECURITY_SEQUENCE_CURRENT = "Secuencia actual:"
+    const val SECURITY_SEQUENCE_EMPTY = "Aún no hay teclas. Agrega al menos 2."
+    const val SECURITY_SEQUENCE_ADD = "Agregar tecla:"
+    const val SECURITY_SEQUENCE_REMOVE = "Borrar última"
+    const val SECURITY_SEQUENCE_RESET = "Usar la secuencia por defecto"
+    const val SECURITY_SEQUENCE_SAVE = "Guardar secuencia"
+    const val SECURITY_SEQUENCE_MIN_HINT = "Entre 2 y 12 teclas."
+    const val SECURITY_SEQUENCE_INVALID = "La secuencia debe tener entre 2 y 12 teclas (Shift, Ctrl o Alt)."
+    const val SECURITY_SEQUENCE_SAVED = "Secuencia de desbloqueo guardada."
+    const val SECURITY_RECOVERY_SECTION = "Frase de recuperación"
+    const val SECURITY_RECOVERY_DEFAULT = "Se está usando la frase universal del manual."
+    const val SECURITY_RECOVERY_CUSTOM = "Se está usando una frase de recuperación personalizada."
+    const val SECURITY_RECOVERY_CHANGE = "Cambiar la frase de recuperación"
+    const val SECURITY_RECOVERY_RESET = "Volver a la frase universal"
+    const val SECURITY_RECOVERY_FIELD = "Nueva frase de recuperación"
+    const val SECURITY_RECOVERY_CONFIRM_FIELD = "Repite la frase"
+    const val SECURITY_RECOVERY_SAVE = "Guardar frase"
+    const val SECURITY_RECOVERY_RULE = "Entre 8 y 64 caracteres. Solo letras y números."
+    const val SECURITY_RECOVERY_WARNING_TITLE = "Antes de cambiar la frase de recuperación"
+    const val SECURITY_RECOVERY_WARNING =
+        "Si cambias la frase de recuperación y luego olvidas la contraseña y la frase, " +
+            "no habrá forma de desbloquear esta PC ni las pantallas vinculadas. " +
+            "La única salida sería borrar sus datos locales (playlist, imágenes y vinculación) " +
+            "y volver a configurarlas. La frase universal dejará de funcionar."
+    const val SECURITY_RECOVERY_ACCEPT =
+        "Entiendo las consecuencias y quiero cambiar la frase de recuperación."
+    const val SECURITY_RECOVERY_MUST_ACCEPT = "Marca la casilla de aceptación para continuar."
+    const val SECURITY_RECOVERY_INVALID = "Usa entre 8 y 64 letras o números."
+    const val SECURITY_RECOVERY_MISMATCH = "Las frases no coinciden."
+    const val SECURITY_RECOVERY_SAVED = "Frase de recuperación personalizada guardada."
+    const val SECURITY_RECOVERY_RESET_DONE = "Se volvió a la frase de recuperación universal."
+    const val SECURITY_CLOSE = "Cerrar"
+    const val SECURITY_CHANGE_PASSWORD = "Cambiar contraseña"
+    const val SECURITY_NO_PASSWORD = "Todavía no hay contraseña configurada."
 
     // Projection (controller as a display)
     const val PROJECT_BUTTON = "Proyectar"

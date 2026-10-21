@@ -11,7 +11,9 @@ import app.kiosksync.core.ImageFormat
 import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.MAX_DURATION_SEC
 import app.kiosksync.core.MAX_IMAGE_SIZE_BYTES
+import app.kiosksync.core.MAX_RECOVERY_PHRASE_LENGTH
 import app.kiosksync.core.MIN_DURATION_SEC
+import app.kiosksync.core.MIN_RECOVERY_PHRASE_LENGTH
 import app.kiosksync.core.MediaState
 import app.kiosksync.core.MediaUploadResponse
 import app.kiosksync.core.PairRequest
@@ -19,6 +21,7 @@ import app.kiosksync.core.PairResponse
 import app.kiosksync.core.PlaylistApplyResponse
 import app.kiosksync.core.ReceiverStatusResponse
 import app.kiosksync.core.SyncStateResponse
+import app.kiosksync.core.isValidUnlockSequence
 import app.kiosksync.feature.pairing.PairResult
 import app.kiosksync.feature.pairing.PairingManager
 import app.kiosksync.feature.playback.ReceiverPlaylistBridge
@@ -370,11 +373,31 @@ class KtorReceiverServer(
         }
     }
 
-    private fun KioskLockConfig.isValid(): Boolean =
-        enabled &&
-            passwordLength in 4..64 &&
-            passwordHash.length == 64 &&
-            passwordHash.all { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' }
+    private fun KioskLockConfig.isValid(): Boolean {
+        if (!enabled) return false
+        if (!isValidUnlockSequence(unlockSequence)) return false
+
+        // A configuration with no password is allowed: it only customizes the
+        // unlock sequence while the screen is blank.
+        if (passwordHash != null) {
+            if (passwordLength !in 4..64) return false
+            if (!passwordHash.isSha256Hex()) return false
+        } else if (passwordLength != 0) {
+            return false
+        }
+
+        if (recoveryHash != null) {
+            if (recoveryLength !in MIN_RECOVERY_PHRASE_LENGTH..MAX_RECOVERY_PHRASE_LENGTH) return false
+            if (!recoveryHash.isSha256Hex()) return false
+        } else if (recoveryLength != 0) {
+            return false
+        }
+
+        return true
+    }
+
+    private fun String.isSha256Hex(): Boolean =
+        length == 64 && all { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' }
 
     private suspend fun ApplicationCall.requireAuthorization(): Boolean {
         val emitterId = request.headers[HEADER_EMITTER_ID]

@@ -2,9 +2,12 @@ package app.kiosksync.feature.pairing
 
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.DEFAULT_PORT
+import app.kiosksync.core.DEFAULT_UNLOCK_SEQUENCE
 import app.kiosksync.core.DiscoveredDevice
 import app.kiosksync.core.EmitterPairedDevice
 import app.kiosksync.core.KioskLockConfig
+import app.kiosksync.core.MAX_RECOVERY_PHRASE_LENGTH
+import app.kiosksync.core.MAX_UNLOCK_SEQUENCE_LENGTH
 import app.kiosksync.core.PairError
 import app.kiosksync.core.PairRejectedException
 import app.kiosksync.core.PlaylistRejectedException
@@ -12,6 +15,8 @@ import app.kiosksync.core.STATUS_FAILURE_THRESHOLD
 import app.kiosksync.core.STATUS_POLL_INTERVAL_MS
 import app.kiosksync.core.Strings
 import app.kiosksync.core.isValidKioskPassword
+import app.kiosksync.core.isValidRecoveryPhrase
+import app.kiosksync.core.isValidUnlockSequence
 import app.kiosksync.feature.kiosk.KioskLockManager
 import app.kiosksync.feature.playlist.Playlist
 import app.kiosksync.feature.projection.ProjectionController
@@ -76,6 +81,17 @@ data class KioskPasswordDialogUi(
     val error: String? = null
 )
 
+data class SecurityDialogUi(
+    val sequence: List<String> = DEFAULT_UNLOCK_SEQUENCE,
+    val sequenceError: String? = null,
+    val hasCustomRecovery: Boolean = false,
+    val showRecoveryEditor: Boolean = false,
+    val recoveryAccepted: Boolean = false,
+    val recoveryDraft: String = "",
+    val recoveryConfirmDraft: String = "",
+    val recoveryError: String? = null
+)
+
 data class EmitterUiState(
     val devices: List<EmitterDeviceUi> = emptyList(),
     val isSearching: Boolean = true,
@@ -93,6 +109,7 @@ data class EmitterUiState(
     val syncByDevice: Map<String, DeviceSyncUi> = emptyMap(),
     val isSending: Boolean = false,
     val passwordDialog: KioskPasswordDialogUi? = null,
+    val securityDialog: SecurityDialogUi? = null,
     val hasKioskPassword: Boolean = false,
     val isRefreshing: Boolean = false
 )
@@ -112,7 +129,7 @@ class EmitterStateHolder(
     private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) {
     private val _uiState = MutableStateFlow(
-        EmitterUiState(hasKioskPassword = storage.loadKioskLock()?.enabled == true)
+        EmitterUiState(hasKioskPassword = storage.loadKioskLock()?.passwordHash != null)
     )
     val uiState: StateFlow<EmitterUiState> = _uiState.asStateFlow()
 
@@ -140,7 +157,8 @@ class EmitterStateHolder(
 
         // Make sure already-paired screens have the current lock. Screens that
         // were offline receive it as soon as they are reachable again.
-        val existingLock = storage.loadKioskLock()?.takeIf { it.enabled }
+        val existingLock = storage.loadKioskLock()
+            ?.takeIf { it.enabled && it.passwordHash != null }
         if (existingLock != null && storedDevices.isNotEmpty()) {
             pushLockToAllPaired(existingLock)
         }
@@ -245,7 +263,8 @@ class EmitterStateHolder(
                     selectedIds = selectedIds + device.deviceId
                     justPairedIds += device.deviceId
                     logger.info("Screen '${device.deviceName}' paired successfully")
-                    val existingLock = storage.loadKioskLock()?.takeIf { it.enabled }
+                    val existingLock = storage.loadKioskLock()
+            ?.takeIf { it.enabled && it.passwordHash != null }
                     _uiState.update {
                         it.copy(
                             pairingDevice = null,
@@ -434,7 +453,8 @@ class EmitterStateHolder(
             return
         }
 
-        val lock = storage.loadKioskLock()?.takeIf { it.enabled }
+        val lock = storage.loadKioskLock()
+            ?.takeIf { it.enabled && it.passwordHash != null }
         if (lock == null) {
             openPasswordDialog(EmitterPendingAction.SEND, playlist)
             return
@@ -451,7 +471,8 @@ class EmitterStateHolder(
             return
         }
 
-        val lock = storage.loadKioskLock()?.takeIf { it.enabled }
+        val lock = storage.loadKioskLock()
+            ?.takeIf { it.enabled && it.passwordHash != null }
         if (lock == null) {
             openPasswordDialog(EmitterPendingAction.PROJECT, playlist)
             return
@@ -460,7 +481,230 @@ class EmitterStateHolder(
     }
 
     fun openChangePasswordDialog() {
+        _uiState.update { it.copy(securityDialog = null) }
         openPasswordDialog(EmitterPendingAction.CONFIGURE, null)
+    }
+
+    fun openSecurityDialog() {
+        val config = storage.loadKioskLock()
+        _uiState.update {
+            it.copy(
+                securityDialog = SecurityDialogUi(
+                    sequence = config?.unlockSequence
+                        ?.takeIf { keys -> isValidUnlockSequence(keys) }
+                        ?: DEFAULT_UNLOCK_SEQUENCE,
+                    hasCustomRecovery = config?.recoveryHash != null
+                )
+            )
+        }
+    }
+
+    fun dismissSecurityDialog() {
+        _uiState.update { it.copy(securityDialog = null) }
+    }
+
+    fun appendUnlockKey(key: String) {
+        _uiState.update { state ->
+            val dialog = state.securityDialog ?: return@update state
+            if (dialog.sequence.size >= MAX_UNLOCK_SEQUENCE_LENGTH) return@update state
+            state.copy(
+                securityDialog = dialog.copy(
+                    sequence = dialog.sequence + key,
+                    sequenceError = null
+                )
+            )
+        }
+    }
+
+    fun removeLastUnlockKey() {
+        _uiState.update { state ->
+            val dialog = state.securityDialog ?: return@update state
+            if (dialog.sequence.isEmpty()) return@update state
+            state.copy(
+                securityDialog = dialog.copy(
+                    sequence = dialog.sequence.dropLast(1),
+                    sequenceError = null
+                )
+            )
+        }
+    }
+
+    fun resetUnlockSequence() {
+        _uiState.update { state ->
+            val dialog = state.securityDialog ?: return@update state
+            state.copy(
+                securityDialog = dialog.copy(
+                    sequence = DEFAULT_UNLOCK_SEQUENCE,
+                    sequenceError = null
+                )
+            )
+        }
+    }
+
+    fun saveUnlockSequence() {
+        val dialog = _uiState.value.securityDialog ?: return
+        if (!isValidUnlockSequence(dialog.sequence)) {
+            _uiState.update {
+                it.copy(
+                    securityDialog = dialog.copy(
+                        sequenceError = Strings.SECURITY_SEQUENCE_INVALID
+                    )
+                )
+            }
+            return
+        }
+
+        val previous = storage.loadKioskLock()
+        val config = (previous ?: KioskLockConfig()).copy(
+            enabled = true,
+            unlockSequence = dialog.sequence
+        )
+        storage.saveKioskLock(config)
+        kioskLockManager.setConfig(config)
+        _uiState.update {
+            it.copy(
+                hasKioskPassword = config.passwordHash != null,
+                securityDialog = it.securityDialog?.copy(sequenceError = null),
+                statusMessage = Strings.SECURITY_SEQUENCE_SAVED,
+                statusIsError = false
+            )
+        }
+        logger.info("Kiosk unlock sequence updated (${config.unlockSequence.size} keys)")
+        // A screen only receives a lock that includes a password; otherwise the
+        // push would erase its own password.
+        if (config.passwordHash != null) pushLockToAllPaired(config)
+    }
+
+    fun toggleRecoveryEditor() {
+        _uiState.update { state ->
+            val dialog = state.securityDialog ?: return@update state
+            state.copy(
+                securityDialog = dialog.copy(
+                    showRecoveryEditor = !dialog.showRecoveryEditor,
+                    recoveryError = null
+                )
+            )
+        }
+    }
+
+    fun setRecoveryAccepted(accepted: Boolean) {
+        _uiState.update { state ->
+            val dialog = state.securityDialog ?: return@update state
+            state.copy(
+                securityDialog = dialog.copy(
+                    recoveryAccepted = accepted,
+                    recoveryError = null
+                )
+            )
+        }
+    }
+
+    fun updateRecoveryDraft(value: String) {
+        _uiState.update { state ->
+            val dialog = state.securityDialog ?: return@update state
+            state.copy(
+                securityDialog = dialog.copy(
+                    recoveryDraft = value.take(MAX_RECOVERY_PHRASE_LENGTH),
+                    recoveryError = null
+                )
+            )
+        }
+    }
+
+    fun updateRecoveryConfirmDraft(value: String) {
+        _uiState.update { state ->
+            val dialog = state.securityDialog ?: return@update state
+            state.copy(
+                securityDialog = dialog.copy(
+                    recoveryConfirmDraft = value.take(MAX_RECOVERY_PHRASE_LENGTH),
+                    recoveryError = null
+                )
+            )
+        }
+    }
+
+    fun saveRecoveryPhrase() {
+        val dialog = _uiState.value.securityDialog ?: return
+        if (!dialog.recoveryAccepted) {
+            _uiState.update {
+                it.copy(
+                    securityDialog = dialog.copy(
+                        recoveryError = Strings.SECURITY_RECOVERY_MUST_ACCEPT
+                    )
+                )
+            }
+            return
+        }
+        val phrase = dialog.recoveryDraft
+        if (!isValidRecoveryPhrase(phrase)) {
+            _uiState.update {
+                it.copy(
+                    securityDialog = dialog.copy(
+                        recoveryError = Strings.SECURITY_RECOVERY_INVALID
+                    )
+                )
+            }
+            return
+        }
+        if (phrase != dialog.recoveryConfirmDraft) {
+            _uiState.update {
+                it.copy(
+                    securityDialog = dialog.copy(
+                        recoveryError = Strings.SECURITY_RECOVERY_MISMATCH
+                    )
+                )
+            }
+            return
+        }
+
+        val previous = storage.loadKioskLock() ?: KioskLockConfig()
+        val config = previous.copy(
+            enabled = true,
+            recoveryHash = passwordHasher(phrase),
+            recoveryLength = phrase.length
+        )
+        storage.saveKioskLock(config)
+        kioskLockManager.setConfig(config)
+        _uiState.update {
+            it.copy(
+                hasKioskPassword = config.passwordHash != null,
+                securityDialog = it.securityDialog?.copy(
+                    hasCustomRecovery = true,
+                    showRecoveryEditor = false,
+                    recoveryAccepted = false,
+                    recoveryDraft = "",
+                    recoveryConfirmDraft = "",
+                    recoveryError = null
+                ),
+                statusMessage = Strings.SECURITY_RECOVERY_SAVED,
+                statusIsError = false
+            )
+        }
+        logger.info("Custom kiosk recovery phrase configured")
+        if (config.passwordHash != null) pushLockToAllPaired(config)
+    }
+
+    fun resetRecoveryPhrase() {
+        val previous = storage.loadKioskLock() ?: return
+        val config = previous.copy(recoveryHash = null, recoveryLength = 0)
+        storage.saveKioskLock(config)
+        kioskLockManager.setConfig(config)
+        _uiState.update {
+            it.copy(
+                securityDialog = it.securityDialog?.copy(
+                    hasCustomRecovery = false,
+                    showRecoveryEditor = false,
+                    recoveryAccepted = false,
+                    recoveryDraft = "",
+                    recoveryConfirmDraft = "",
+                    recoveryError = null
+                ),
+                statusMessage = Strings.SECURITY_RECOVERY_RESET_DONE,
+                statusIsError = false
+            )
+        }
+        logger.info("Kiosk recovery phrase restored to the universal default")
+        if (config.passwordHash != null) pushLockToAllPaired(config)
     }
 
     fun updatePasswordDraft(value: String) {
@@ -512,15 +756,22 @@ class EmitterStateHolder(
             return
         }
 
+        val previousLock = storage.loadKioskLock()
         val config = KioskLockConfig(
             passwordHash = passwordHasher(password),
-            passwordLength = password.length
+            passwordLength = password.length,
+            unlockSequence = previousLock?.unlockSequence
+                ?.takeIf { keys -> isValidUnlockSequence(keys) }
+                ?: DEFAULT_UNLOCK_SEQUENCE,
+            recoveryHash = previousLock?.recoveryHash,
+            recoveryLength = previousLock?.recoveryLength ?: 0
         )
         storage.saveKioskLock(config)
         kioskLockManager.setConfig(config)
         _uiState.update {
             it.copy(
                 passwordDialog = null,
+                securityDialog = null,
                 hasKioskPassword = true,
                 statusMessage = Strings.KIOSK_PASSWORD_SAVED,
                 statusIsError = false

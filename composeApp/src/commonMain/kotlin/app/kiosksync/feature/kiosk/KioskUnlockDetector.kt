@@ -1,6 +1,9 @@
 package app.kiosksync.feature.kiosk
 
+import app.kiosksync.core.DEFAULT_UNLOCK_SEQUENCE
+import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.UNIVERSAL_RECOVERY_PASSWORD
+import app.kiosksync.core.isValidUnlockSequence
 
 enum class KioskKeyKind {
     SHIFT,
@@ -25,37 +28,32 @@ sealed interface KioskUnlockResult {
     /** The configured password was typed correctly. */
     data object Accepted : KioskUnlockResult
 
-    /** The default sequence unlocked a screen that has no password. */
+    /** The unlock sequence unlocked a device that has no password. */
     data object SequenceAccepted : KioskUnlockResult
 
-    /** The universal recovery phrase unlocked the device. */
+    /** The universal (or custom) recovery phrase unlocked the device. */
     data object UniversalAccepted : KioskUnlockResult
 
     data object Rejected : KioskUnlockResult
 }
 
-/**
- * The default unlock sequence: Shift, Shift, Ctrl, Ctrl, Alt, Shift.
- *
- * It is compiled into every build, is intentionally never shown on a locked
- * screen, and only appears in the project documentation and in the controller's
- * "Seguridad" dialog. When a screen has no password configured, completing this
- * sequence unlocks it. When a password is configured, the sequence is followed
- * by the password.
- */
-val UNLOCK_SEQUENCE: List<KioskKeyKind> = listOf(
-    KioskKeyKind.SHIFT,
-    KioskKeyKind.SHIFT,
-    KioskKeyKind.CTRL,
-    KioskKeyKind.CTRL,
-    KioskKeyKind.ALT,
-    KioskKeyKind.SHIFT
-)
+/** The compiled default sequence: Shift, Shift, Ctrl, Ctrl, Alt, Shift. */
+val UNLOCK_SEQUENCE: List<KioskKeyKind> = DEFAULT_UNLOCK_SEQUENCE.map { KioskKeyKind.valueOf(it) }
 
 /**
- * Pure unlock state machine. It first reads the default key sequence and, when
- * a password is configured, the password typed after it. The universal recovery
- * phrase can always be typed after the same sequence.
+ * Resolves the sequence stored in the lock configuration, falling back to the
+ * compiled default when it is missing or invalid.
+ */
+fun unlockSequenceKinds(config: KioskLockConfig?): List<KioskKeyKind> {
+    val names = config?.unlockSequence ?: return UNLOCK_SEQUENCE
+    if (!isValidUnlockSequence(names)) return UNLOCK_SEQUENCE
+    return names.map { KioskKeyKind.valueOf(it) }
+}
+
+/**
+ * Pure unlock state machine. It first reads the unlock sequence and, when a
+ * password is configured, the password typed after it. The recovery phrase can
+ * always be typed after the same sequence.
  *
  * It has no access to Android/Compose types, so it is fully unit tested.
  */
@@ -63,16 +61,21 @@ class KioskUnlockDetector(
     private val passwordHash: String?,
     private val passwordLength: Int,
     private val passwordHasher: (String) -> String,
-    private val sequence: List<KioskKeyKind> = UNLOCK_SEQUENCE
+    private val sequence: List<KioskKeyKind> = UNLOCK_SEQUENCE,
+    private val recoveryHash: String? = null,
+    private val recoveryLength: Int = 0
 ) {
     private var stage = 0
     private val typed = StringBuilder()
+
+    /** A custom recovery phrase is only valid with a positive length. */
+    private val hasCustomRecovery: Boolean = recoveryHash != null && recoveryLength > 0
 
     val typedLength: Int
         get() = typed.length
 
     /**
-     * How many keys of the default sequence have been matched so far. The UI
+     * How many keys of the unlock sequence have been matched so far. The UI
      * never reveals it; it only drives the internal state.
      */
     val chordStage: Int
@@ -97,7 +100,7 @@ class KioskUnlockDetector(
         if (event.kind == sequence[stage]) {
             stage++
             if (stage >= sequence.size && passwordHash == null) {
-                // No password configured: the default sequence alone unlocks.
+                // No password configured: the unlock sequence alone unlocks.
                 reset()
                 return KioskUnlockResult.SequenceAccepted
             }
@@ -131,10 +134,7 @@ class KioskUnlockDetector(
                 typed.append(char)
                 val candidate = typed.toString()
 
-                if (
-                    candidate.length == UNIVERSAL_RECOVERY_PASSWORD.length &&
-                    candidate == UNIVERSAL_RECOVERY_PASSWORD
-                ) {
+                if (recoveryMatches(candidate)) {
                     reset()
                     return KioskUnlockResult.UniversalAccepted
                 }
@@ -149,11 +149,9 @@ class KioskUnlockDetector(
 
                 val customCanStillMatch =
                     expectedLength != null && candidate.length < expectedLength
-                val universalCanStillMatch =
-                    candidate.length < UNIVERSAL_RECOVERY_PASSWORD.length &&
-                        UNIVERSAL_RECOVERY_PASSWORD.startsWith(candidate)
+                val recoveryCanStillMatch = recoveryCanStillMatch(candidate)
 
-                if (!customCanStillMatch && !universalCanStillMatch) {
+                if (!customCanStillMatch && !recoveryCanStillMatch) {
                     reset()
                     return KioskUnlockResult.Rejected
                 }
@@ -169,13 +167,29 @@ class KioskUnlockDetector(
         val candidate = typed.toString()
         reset()
         return when {
-            candidate == UNIVERSAL_RECOVERY_PASSWORD -> KioskUnlockResult.UniversalAccepted
+            recoveryMatches(candidate) -> KioskUnlockResult.UniversalAccepted
             passwordHash != null && candidate.length == passwordLength && hashesMatch(candidate) ->
                 KioskUnlockResult.Accepted
 
             else -> KioskUnlockResult.Rejected
         }
     }
+
+    private fun recoveryMatches(candidate: String): Boolean =
+        if (!hasCustomRecovery) {
+            candidate == UNIVERSAL_RECOVERY_PASSWORD
+        } else {
+            candidate.length == recoveryLength &&
+                passwordHasher(candidate).equals(recoveryHash, ignoreCase = true)
+        }
+
+    private fun recoveryCanStillMatch(candidate: String): Boolean =
+        if (!hasCustomRecovery) {
+            candidate.length < UNIVERSAL_RECOVERY_PASSWORD.length &&
+                UNIVERSAL_RECOVERY_PASSWORD.startsWith(candidate)
+        } else {
+            candidate.length < recoveryLength
+        }
 
     private fun hashesMatch(candidate: String): Boolean =
         passwordHash != null && passwordHasher(candidate).equals(passwordHash, ignoreCase = true)

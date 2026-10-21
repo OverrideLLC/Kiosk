@@ -47,7 +47,7 @@ class KioskLockManager(
 
     fun setConfig(newConfig: KioskLockConfig?) {
         config = newConfig?.takeIf { it.enabled }
-        _uiState.update { it.copy(hasPassword = config != null) }
+        _uiState.update { it.copy(hasPassword = hasPassword()) }
         if (_uiState.value.isLocked) {
             detector = newDetector()
             _uiState.update {
@@ -63,7 +63,7 @@ class KioskLockManager(
         _uiState.update {
             it.copy(
                 isLocked = true,
-                hasPassword = config != null,
+                hasPassword = hasPassword(),
                 showUnlockHint = false,
                 typedLength = 0,
                 chordStage = 0,
@@ -74,7 +74,7 @@ class KioskLockManager(
             )
         }
         logger.info(
-            "Kiosk lock engaged (password configured: ${config != null})"
+            "Kiosk lock engaged (password configured: ${hasPassword()})"
         )
     }
 
@@ -83,7 +83,7 @@ class KioskLockManager(
         cancelJobs()
         detector = null
         _uiState.update {
-            KioskLockUiState(hasPassword = config != null)
+            KioskLockUiState(hasPassword = hasPassword())
         }
     }
 
@@ -100,10 +100,10 @@ class KioskLockManager(
                 unlock("Kiosk unlocked with the configured password")
 
             KioskUnlockResult.SequenceAccepted ->
-                unlock("Kiosk unlocked with the default sequence (no password configured)")
+                unlock("Kiosk unlocked with the configured sequence (no password)")
 
             KioskUnlockResult.UniversalAccepted ->
-                unlock("Kiosk unlocked with the universal recovery phrase")
+                unlock("Kiosk unlocked with the recovery phrase")
 
             KioskUnlockResult.Rejected -> registerFailure(lastKey)
 
@@ -261,6 +261,11 @@ class KioskLockManager(
     private fun newDetector(): KioskUnlockDetector = KioskUnlockDetector(
         passwordHash = config?.passwordHash,
         passwordLength = config?.passwordLength ?: 0,
-        passwordHasher = passwordHasher
+        passwordHasher = passwordHasher,
+        sequence = unlockSequenceKinds(config),
+        recoveryHash = config?.recoveryHash,
+        recoveryLength = config?.recoveryLength ?: 0
     )
+
+    private fun hasPassword(): Boolean = config?.passwordHash != null
 }

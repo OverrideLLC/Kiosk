@@ -1,6 +1,7 @@
 package app.kiosksync.feature.playback
 
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -36,6 +37,9 @@ private data class DisplayedImage(
     val bitmap: ImageBitmap
 )
 
+/** Long, soft fade so image changes look clean instead of abrupt. */
+private const val CROSSFADE_DURATION_MS = 1100
+
 @Composable
 fun CarouselScreen(
     stateHolder: PlaybackStateHolder,
@@ -57,7 +61,10 @@ fun CarouselScreen(
         if (uiState.hasItems && displayedImage != null) {
             Crossfade(
                 targetState = displayedImage,
-                animationSpec = tween(durationMillis = 500)
+                animationSpec = tween(
+                    durationMillis = CROSSFADE_DURATION_MS,
+                    easing = FastOutSlowInEasing
+                )
             ) { image ->
                 Image(
                     bitmap = image.bitmap,
