@@ -141,7 +141,10 @@ Nada por debajo de **13 sp** en el Controlador.
 - Diálogos: 28 dp.
 - Menús: 20 dp.
 - Escala de espacio: 4, 8, 12, 16, 24, 32, 40 y 56 dp (`Space`).
-- Ancho máximo de contenido: 960 dp (`Sizes.contentMaxWidth`).
+- Ancho máximo de contenido: 960 dp (`Sizes.contentMaxWidth`) en selección de
+  rol, pantalla de vinculación y diálogos. El Controlador es un tablero de dos
+  columnas y usa el ancho disponible con márgenes de 24–32 dp; sus filas y
+  tarjetas mantienen la lectura acotada.
 - Área de clic mínima: 40 dp.
 
 ## Movimiento
