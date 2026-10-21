@@ -14,11 +14,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import app.kiosksync.core.Strings
 import app.kiosksync.designsystem.AppLoadingIndicator
 import app.kiosksync.designsystem.KioskDisplayType
 import app.kiosksync.designsystem.KioskScreenColors
+import app.kiosksync.designsystem.Sizes
 import app.kiosksync.designsystem.Space
 
 /**
@@ -36,14 +36,14 @@ fun WaitingForPasswordScreen() {
     ) {
         Column(
             modifier = Modifier
-                .widthIn(max = 860.dp)
+                .widthIn(max = Sizes.contentMaxWidth)
                 .padding(Space.xl),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
             AppLoadingIndicator(
                 color = KioskScreenColors.muted,
-                dotSize = 16.dp,
+                dotSize = Sizes.loadingDotLarge,
             )
             Spacer(Modifier.height(Space.xl))
             Text(

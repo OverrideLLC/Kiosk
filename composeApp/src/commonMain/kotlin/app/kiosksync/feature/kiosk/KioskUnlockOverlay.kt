@@ -21,7 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextAlign
 import app.kiosksync.core.Strings
 import app.kiosksync.designsystem.AppIcon
 import app.kiosksync.designsystem.KioskColors
@@ -54,10 +54,10 @@ fun KioskUnlockOverlay(state: KioskLockUiState) {
         Column(
             modifier = Modifier
                 .padding(Space.lg)
-                .widthIn(max = 720.dp)
+                .widthIn(max = Sizes.overlayMaxWidth)
                 .clip(KioskShape.card)
-                .background(colors.surfaceContainerHigh.copy(alpha = 0.97f))
-                .border(1.dp, colors.outlineVariant, KioskShape.card)
+                .background(colors.surfaceContainerHigh)
+                .border(Sizes.hairline, colors.outlineVariant, KioskShape.card)
                 .padding(horizontal = Space.lg, vertical = Space.md),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(Space.xs),
@@ -112,7 +112,7 @@ fun KioskUnlockOverlay(state: KioskLockUiState) {
                     text = Strings.KIOSK_RECOVERY_HINT,
                     style = KioskDisplayType.screenCaption(),
                     color = colors.onSurfaceVariant,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    textAlign = TextAlign.Center,
                 )
             }
         }
@@ -130,7 +130,7 @@ private fun TypedDots(count: Int, color: Color) {
         repeat(count.coerceIn(1, 16)) {
             Box(
                 modifier = Modifier
-                    .size(14.dp)
+                    .size(Sizes.passwordDot)
                     .clip(CircleShape)
                     .background(color),
             )

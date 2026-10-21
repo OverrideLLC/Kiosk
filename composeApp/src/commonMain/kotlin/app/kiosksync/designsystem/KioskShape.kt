@@ -65,6 +65,13 @@ object Sizes {
     val stepperWidth = 200.dp
     val emptyStateMinHeight = 220.dp
     val loadingDotSmall = 6.dp
+    val loadingDot = 8.dp
+    val loadingDotLarge = 16.dp
+    val passwordDot = 14.dp
+    val roleCardHeight = 200.dp
+    val roleActionMinWidth = 320.dp
+    val roleActionMaxWidth = 420.dp
+    val overlayMaxWidth = 720.dp
 
     val iconSmall = 16.dp
     val iconCompact = 20.dp

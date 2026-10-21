@@ -912,7 +912,7 @@ private fun SyncStatusRow(sync: DeviceSyncUi) {
                 tint = extra.success,
             )
             Text(
-                text = "${sync.message ?: Strings.SEND_DEVICE_SUCCESS} (v${sync.version})",
+                text = "${sync.message ?: Strings.SEND_DEVICE_SUCCESS} (${Strings.versionTag(sync.version)})",
                 style = MaterialTheme.typography.bodySmall,
                 color = extra.success,
             )

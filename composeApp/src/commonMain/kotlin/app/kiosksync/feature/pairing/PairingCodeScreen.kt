@@ -24,7 +24,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import app.kiosksync.core.Strings
 import app.kiosksync.designsystem.AppButton
 import app.kiosksync.designsystem.AppButtonSize
@@ -73,7 +72,7 @@ fun PairingCodeScreen(
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
-                .widthIn(max = 980.dp)
+                .widthIn(max = Sizes.contentMaxWidth)
                 .padding(horizontal = Space.xl, vertical = Space.huge),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -115,7 +114,7 @@ fun PairingCodeScreen(
             if (state.isLocked) {
                 LockoutMessage(
                     title = Strings.RECEIVER_LOCKED_TITLE,
-                    message = "${Strings.RECEIVER_LOCKED_MESSAGE} (${state.lockRemainingSeconds} s)",
+                    message = Strings.receiverLockedMessage(state.lockRemainingSeconds),
                 )
             } else {
                 Row(
@@ -124,7 +123,7 @@ fun PairingCodeScreen(
                 ) {
                     AppLoadingIndicator(
                         color = KioskScreenColors.subtle,
-                        dotSize = 8.dp,
+                        dotSize = Sizes.loadingDot,
                     )
                     Text(
                         text = Strings.receiverCodeRenewsIn(
@@ -195,7 +194,7 @@ private fun BrandMark(modifier: Modifier = Modifier) {
             modifier = Modifier
                 .size(Sizes.minTouchTarget)
                 .clip(CircleShape)
-                .background(KioskScreenColors.content.copy(alpha = 0.10f)),
+                .background(KioskScreenColors.surfaceSubtle),
             contentAlignment = Alignment.Center,
         ) {
             AppIcon(

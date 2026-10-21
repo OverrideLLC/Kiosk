@@ -29,7 +29,6 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.unit.dp
 import app.kiosksync.core.AppRole
 import app.kiosksync.core.AppTheme
 import app.kiosksync.core.Strings
@@ -121,7 +120,7 @@ fun RoleSelectionScreen(
                         icon = AppIcon.CAST,
                         selected = selectedRole == AppRole.EMITTER,
                         onClick = { stateHolder.selectRole(AppRole.EMITTER) },
-                        modifier = Modifier.weight(1f).height(200.dp),
+                        modifier = Modifier.weight(1f).height(Sizes.roleCardHeight),
                     )
                     AppSelectableCard(
                         title = Strings.ROLE_RECEIVER_TITLE,
@@ -129,7 +128,7 @@ fun RoleSelectionScreen(
                         icon = AppIcon.TV,
                         selected = selectedRole == AppRole.RECEIVER,
                         onClick = { stateHolder.selectRole(AppRole.RECEIVER) },
-                        modifier = Modifier.weight(1f).height(200.dp),
+                        modifier = Modifier.weight(1f).height(Sizes.roleCardHeight),
                     )
                 }
 
@@ -153,7 +152,7 @@ fun RoleSelectionScreen(
                     disabledReason = Strings.ROLE_SELECT_FIRST,
                     size = AppButtonSize.LARGE,
                     icon = AppIcon.PLAY_ARROW,
-                    modifier = Modifier.widthIn(min = 320.dp, max = 420.dp),
+                    modifier = Modifier.widthIn(min = Sizes.roleActionMinWidth, max = Sizes.roleActionMaxWidth),
                 )
 
                 Spacer(Modifier.height(Space.xs))
@@ -181,7 +180,7 @@ private fun BrandHeader(onExitRequested: () -> Unit) {
     ) {
         Box(
             modifier = Modifier
-                .size(44.dp)
+                .size(Sizes.avatar)
                 .clip(CircleShape)
                 .background(colors.primaryContainer),
             contentAlignment = Alignment.Center,

@@ -68,6 +68,15 @@ fun main(args: Array<String>) {
     val logsDir = File(effectiveDataDir, "logs").apply { mkdirs() }
 
     val logger = FileAppLogger(logsDir)
+
+    // Last-resort safety net: the app must never close silently because of an
+    // unexpected exception in a coroutine, the AWT thread or a Ktor worker.
+    val previousUncaughtHandler = Thread.getDefaultUncaughtExceptionHandler()
+    Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+        logger.error("Uncaught exception on thread '${thread.name}'", throwable)
+        previousUncaughtHandler?.uncaughtException(thread, throwable)
+    }
+
     logger.info("==========================================")
     logger.info("Starting $APP_NAME")
     logger.info("CLI args: ${args.joinToString(" ")}")

@@ -245,4 +245,7 @@ object KioskScreenColors {
 
     /** Inactive pairing code while the receiver rejects attempts. */
     val disabled: Color = Color(0xFF5C5C62)
+
+    /** Subtle brand chip on the pure black screen. */
+    val surfaceSubtle: Color = Color(0xFF1C1C20)
 }

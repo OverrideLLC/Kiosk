@@ -259,6 +259,8 @@ class PairingManager(
                 isLocked = false
             )
         }
-        logger.info("New pairing code generated: $activeCode (valid for 5 minutes)")
+        // Never write the code to the log: the log is a local file and support
+        // bundles usually include it.
+        logger.info("New pairing code generated (valid for 5 minutes)")
     }
 }

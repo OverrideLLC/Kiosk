@@ -37,6 +37,11 @@ object Strings {
     const val RECEIVER_WAITING_FOR_EMITTER = "Esperando al Controlador"
 
     fun receiverCodeRenewsIn(countdown: String): String = "$RECEIVER_CODE_RENEWS_IN $countdown"
+
+    fun receiverLockedMessage(seconds: Long): String =
+        "$RECEIVER_LOCKED_MESSAGE ($seconds $SECONDS_SUFFIX)"
+
+    fun versionTag(version: Int): String = "v$version"
     const val RECEIVER_WAITING_PASSWORD_TITLE = "Esperando contraseña del Controlador"
     const val RECEIVER_WAITING_PASSWORD_MESSAGE =
         "La pantalla se bloqueará en cuanto el Controlador envíe la contraseña de bloqueo."

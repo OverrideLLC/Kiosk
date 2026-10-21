@@ -9,9 +9,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import app.kiosksync.AppContainer
 import app.kiosksync.feature.kiosk.KioskLockUiState
+import app.kiosksync.designsystem.KioskScreenColors
 import app.kiosksync.feature.kiosk.KioskUnlockOverlay
 import app.kiosksync.feature.playback.CarouselScreen
 import app.kiosksync.feature.playback.PlaybackStateHolder
@@ -52,7 +52,7 @@ fun ProjectionScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black)
+            .background(KioskScreenColors.background)
     ) {
         CarouselScreen(stateHolder = stateHolder)
         KioskUnlockOverlay(lockState)
