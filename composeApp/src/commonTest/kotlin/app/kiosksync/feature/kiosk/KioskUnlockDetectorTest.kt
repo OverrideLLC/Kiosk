@@ -18,9 +18,7 @@ class KioskUnlockDetectorTest {
         )
 
     private fun KioskUnlockDetector.pressChord() {
-        feed(KioskKeyEvent(KioskKeyKind.SHIFT))
-        feed(KioskKeyEvent(KioskKeyKind.SHIFT))
-        feed(KioskKeyEvent(KioskKeyKind.CTRL))
+        UNLOCK_SEQUENCE.forEach { feed(KioskKeyEvent(it)) }
     }
 
     private fun KioskUnlockDetector.type(text: String): KioskUnlockResult {
@@ -29,6 +27,56 @@ class KioskUnlockDetectorTest {
             last = feed(KioskKeyEvent(KioskKeyKind.CHARACTER, char))
         }
         return last
+    }
+
+    @Test
+    fun `the default sequence is Shift Shift Ctrl Ctrl Alt Shift`() {
+        assertEquals(
+            listOf(
+                KioskKeyKind.SHIFT,
+                KioskKeyKind.SHIFT,
+                KioskKeyKind.CTRL,
+                KioskKeyKind.CTRL,
+                KioskKeyKind.ALT,
+                KioskKeyKind.SHIFT
+            ),
+            UNLOCK_SEQUENCE
+        )
+    }
+
+    @Test
+    fun `the default sequence alone unlocks a screen without a password`() {
+        val detector = KioskUnlockDetector(
+            passwordHash = null,
+            passwordLength = 0,
+            passwordHasher = hasher
+        )
+
+        var result: KioskUnlockResult = KioskUnlockResult.Ignored
+        UNLOCK_SEQUENCE.forEach { result = detector.feed(KioskKeyEvent(it)) }
+
+        assertEquals(KioskUnlockResult.SequenceAccepted, result)
+    }
+
+    @Test
+    fun `an incomplete sequence does not unlock a screen without a password`() {
+        val detector = KioskUnlockDetector(
+            passwordHash = null,
+            passwordLength = 0,
+            passwordHasher = hasher
+        )
+
+        // Same length but a wrong tail: Shift, Shift, Ctrl, Ctrl, Alt, Ctrl.
+        listOf(
+            KioskKeyKind.SHIFT,
+            KioskKeyKind.SHIFT,
+            KioskKeyKind.CTRL,
+            KioskKeyKind.CTRL,
+            KioskKeyKind.ALT,
+            KioskKeyKind.CTRL
+        ).forEach { detector.feed(KioskKeyEvent(it)) }
+
+        assertEquals(0, detector.chordStage)
     }
 
     @Test
@@ -121,10 +169,10 @@ class KioskUnlockDetectorTest {
         assertEquals(0, detector.chordStage)
 
         detector.pressChord()
-        assertEquals(3, detector.chordStage)
+        assertEquals(UNLOCK_SEQUENCE.size, detector.chordStage)
 
         detector.type("abc")
-        assertEquals(3, detector.chordStage)
+        assertEquals(UNLOCK_SEQUENCE.size, detector.chordStage)
         assertEquals(3, detector.typedLength)
     }
 }

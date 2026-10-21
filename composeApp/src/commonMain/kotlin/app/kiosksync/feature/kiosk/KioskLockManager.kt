@@ -96,8 +96,15 @@ class KioskLockManager(
         val lastKey = keyLabel(event)
 
         when (result) {
-            KioskUnlockResult.Accepted -> unlock(recovered = false)
-            KioskUnlockResult.UniversalAccepted -> unlock(recovered = true)
+            KioskUnlockResult.Accepted ->
+                unlock("Kiosk unlocked with the configured password")
+
+            KioskUnlockResult.SequenceAccepted ->
+                unlock("Kiosk unlocked with the default sequence (no password configured)")
+
+            KioskUnlockResult.UniversalAccepted ->
+                unlock("Kiosk unlocked with the universal recovery phrase")
+
             KioskUnlockResult.Rejected -> registerFailure(lastKey)
 
             KioskUnlockResult.ChordProgress, KioskUnlockResult.Typing -> {
@@ -133,13 +140,14 @@ class KioskLockManager(
     private fun keyLabel(event: KioskKeyEvent): String? = when (event.kind) {
         KioskKeyKind.SHIFT -> "Shift"
         KioskKeyKind.CTRL -> "Ctrl"
+        KioskKeyKind.ALT -> "Alt"
         KioskKeyKind.ENTER -> "Enter"
         KioskKeyKind.BACKSPACE -> Strings.KIOSK_KEY_BACKSPACE
         KioskKeyKind.CHARACTER -> Strings.KIOSK_KEY_CHAR
         KioskKeyKind.OTHER -> null
     }
 
-    private fun unlock(recovered: Boolean) {
+    private fun unlock(logMessage: String) {
         cancelJobs()
         detector = null
         _uiState.update {
@@ -154,13 +162,7 @@ class KioskLockManager(
                 lockoutRemainingSec = 0
             )
         }
-        logger.info(
-            if (recovered) {
-                "Kiosk unlocked with the universal recovery phrase"
-            } else {
-                "Kiosk unlocked with the configured password"
-            }
-        )
+        logger.info(logMessage)
     }
 
     private fun registerFailure(lastKey: String?) {

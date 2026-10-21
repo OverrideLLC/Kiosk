@@ -33,6 +33,10 @@ class KioskLockManagerTest {
             lock(force = true)
         }
 
+    private fun KioskLockManager.pressSequence() {
+        UNLOCK_SEQUENCE.forEach { onKey(KioskKeyEvent(it)) }
+    }
+
     @Test
     fun `force lock engages even when the platform hook is unavailable`() {
         val manager = KioskLockManager(
@@ -76,6 +80,12 @@ class KioskLockManagerTest {
         assertEquals(2, manager.uiState.value.chordStage)
         manager.onKey(KioskKeyEvent(KioskKeyKind.CTRL))
         assertEquals(3, manager.uiState.value.chordStage)
+        manager.onKey(KioskKeyEvent(KioskKeyKind.CTRL))
+        assertEquals(4, manager.uiState.value.chordStage)
+        manager.onKey(KioskKeyEvent(KioskKeyKind.ALT))
+        assertEquals(5, manager.uiState.value.chordStage)
+        manager.onKey(KioskKeyEvent(KioskKeyKind.SHIFT))
+        assertEquals(6, manager.uiState.value.chordStage)
 
         manager.onKey(KioskKeyEvent(KioskKeyKind.CHARACTER, 'a'))
         assertEquals(1, manager.uiState.value.typedLength)
@@ -89,13 +99,27 @@ class KioskLockManagerTest {
     fun `the chord and the password unlock through the manager`() {
         val manager = lockedManager("abcd")
 
-        manager.onKey(KioskKeyEvent(KioskKeyKind.SHIFT))
-        manager.onKey(KioskKeyEvent(KioskKeyKind.SHIFT))
-        manager.onKey(KioskKeyEvent(KioskKeyKind.CTRL))
+        manager.pressSequence()
         manager.onKey(KioskKeyEvent(KioskKeyKind.CHARACTER, 'a'))
         manager.onKey(KioskKeyEvent(KioskKeyKind.CHARACTER, 'b'))
         manager.onKey(KioskKeyEvent(KioskKeyKind.CHARACTER, 'c'))
         manager.onKey(KioskKeyEvent(KioskKeyKind.CHARACTER, 'd'))
+
+        assertFalse(manager.uiState.value.isLocked)
+    }
+
+    @Test
+    fun `the default sequence unlocks a locked screen with no password`() {
+        val manager = KioskLockManager(
+            logger = NoOpLogger(),
+            passwordHasher = hasher,
+            scope = scope,
+            platformLockAvailable = false
+        )
+        manager.lock(force = true)
+        assertTrue(manager.uiState.value.isLocked)
+
+        manager.pressSequence()
 
         assertFalse(manager.uiState.value.isLocked)
     }

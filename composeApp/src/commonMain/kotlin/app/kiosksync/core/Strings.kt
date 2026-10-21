@@ -121,22 +121,27 @@ object Strings {
 
     // Kiosk lock
     const val KIOSK_LOCKED_TITLE = "Equipo bloqueado"
-    const val KIOSK_UNLOCK_HINT = "Shift + Shift + Ctrl y escribe la contraseña"
+    const val KIOSK_UNLOCK_HINT = "Introduce el código de desbloqueo"
     const val KIOSK_RECOVERY_HINT = "Si olvidaste la contraseña, usa la frase de recuperación universal."
     const val KIOSK_WRONG_PASSWORD = "Contraseña incorrecta."
     const val KIOSK_ATTEMPTS_LEFT = "Intentos restantes:"
     const val KIOSK_LOCKED_OUT = "Demasiados intentos fallidos. Espera antes de volver a intentarlo."
-    const val KIOSK_CHORD_LABEL = "Secuencia de desbloqueo:"
-    const val KIOSK_TYPING_PASSWORD = "Escribe la contraseña"
-    const val KIOSK_KEYS_ACTIVE = "Las teclas se registran aquí"
     const val KIOSK_KEY_CHAR = "•"
     const val KIOSK_KEY_BACKSPACE = "Retroceso"
 
-    fun kioskLastKey(key: String): String = "Última tecla: $key"
+    /**
+     * Only shown in the controller's "Seguridad" dialog, never on a locked
+     * screen. It documents the default unlock sequence.
+     */
+    const val KIOSK_DEFAULT_SEQUENCE_HINT =
+        "Sin contraseña, la pantalla se desbloquea con la secuencia por defecto: " +
+            "Shift + Shift + Ctrl + Ctrl + Alt + Shift. " +
+            "Con contraseña, primero esa secuencia y después la contraseña. " +
+            "La secuencia también está en la documentación del proyecto."
+
     const val KIOSK_PASSWORD_TITLE = "Contraseña de bloqueo"
     const val KIOSK_PASSWORD_INSTRUCTION =
-        "Esta contraseña bloqueará el teclado de esta PC y de las pantallas que reciban contenido. " +
-            "Para desbloquear: Shift + Shift + Ctrl y luego la contraseña."
+        "Esta contraseña bloqueará el teclado de esta PC y de las pantallas que reciban contenido."
     const val KIOSK_PASSWORD_FIELD = "Contraseña"
     const val KIOSK_PASSWORD_CONFIRM_FIELD = "Repite la contraseña"
     const val KIOSK_PASSWORD_RULE = "Entre 4 y 64 caracteres. Solo letras y números."

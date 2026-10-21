@@ -5,6 +5,7 @@ import app.kiosksync.core.UNIVERSAL_RECOVERY_PASSWORD
 enum class KioskKeyKind {
     SHIFT,
     CTRL,
+    ALT,
     CHARACTER,
     ENTER,
     BACKSPACE,
@@ -20,21 +21,49 @@ sealed interface KioskUnlockResult {
     data object Ignored : KioskUnlockResult
     data object ChordProgress : KioskUnlockResult
     data object Typing : KioskUnlockResult
+
+    /** The configured password was typed correctly. */
     data object Accepted : KioskUnlockResult
+
+    /** The default sequence unlocked a screen that has no password. */
+    data object SequenceAccepted : KioskUnlockResult
+
+    /** The universal recovery phrase unlocked the device. */
     data object UniversalAccepted : KioskUnlockResult
+
     data object Rejected : KioskUnlockResult
 }
 
 /**
- * Pure unlock state machine: Shift, Shift, Ctrl, then the password.
+ * The default unlock sequence: Shift, Shift, Ctrl, Ctrl, Alt, Shift.
  *
- * The universal recovery phrase can always be typed after the same chord.
+ * It is compiled into every build, is intentionally never shown on a locked
+ * screen, and only appears in the project documentation and in the controller's
+ * "Seguridad" dialog. When a screen has no password configured, completing this
+ * sequence unlocks it. When a password is configured, the sequence is followed
+ * by the password.
+ */
+val UNLOCK_SEQUENCE: List<KioskKeyKind> = listOf(
+    KioskKeyKind.SHIFT,
+    KioskKeyKind.SHIFT,
+    KioskKeyKind.CTRL,
+    KioskKeyKind.CTRL,
+    KioskKeyKind.ALT,
+    KioskKeyKind.SHIFT
+)
+
+/**
+ * Pure unlock state machine. It first reads the default key sequence and, when
+ * a password is configured, the password typed after it. The universal recovery
+ * phrase can always be typed after the same sequence.
+ *
  * It has no access to Android/Compose types, so it is fully unit tested.
  */
 class KioskUnlockDetector(
     private val passwordHash: String?,
     private val passwordLength: Int,
-    private val passwordHasher: (String) -> String
+    private val passwordHasher: (String) -> String,
+    private val sequence: List<KioskKeyKind> = UNLOCK_SEQUENCE
 ) {
     private var stage = 0
     private val typed = StringBuilder()
@@ -43,12 +72,14 @@ class KioskUnlockDetector(
         get() = typed.length
 
     /**
-     * Progress of the Shift, Shift, Ctrl chord: 0 (nothing), 1, 2 or 3
-     * (chord completed, password expected). The UI uses it to highlight the
-     * keys that have already been registered.
+     * How many keys of the default sequence have been matched so far. The UI
+     * never reveals it; it only drives the internal state.
      */
     val chordStage: Int
         get() = stage
+
+    val isSequenceComplete: Boolean
+        get() = stage >= sequence.size
 
     fun reset() {
         stage = 0
@@ -56,48 +87,35 @@ class KioskUnlockDetector(
     }
 
     fun feed(event: KioskKeyEvent): KioskUnlockResult {
-        return when (stage) {
-            0 -> if (event.kind == KioskKeyKind.SHIFT) {
-                stage = 1
-                KioskUnlockResult.ChordProgress
-            } else {
-                KioskUnlockResult.Ignored
-            }
-
-            1 -> when (event.kind) {
-                KioskKeyKind.SHIFT -> {
-                    stage = 2
-                    KioskUnlockResult.ChordProgress
-                }
-
-                else -> {
-                    reset()
-                    KioskUnlockResult.Ignored
-                }
-            }
-
-            2 -> when (event.kind) {
-                KioskKeyKind.CTRL -> {
-                    stage = 3
-                    KioskUnlockResult.ChordProgress
-                }
-
-                // A third Shift is harmless; keep waiting for Ctrl.
-                KioskKeyKind.SHIFT -> KioskUnlockResult.ChordProgress
-
-                else -> {
-                    reset()
-                    KioskUnlockResult.Ignored
-                }
-            }
-
-            else -> handleTyping(event)
+        if (stage < sequence.size) {
+            return feedSequence(event)
         }
+        return handleTyping(event)
+    }
+
+    private fun feedSequence(event: KioskKeyEvent): KioskUnlockResult {
+        if (event.kind == sequence[stage]) {
+            stage++
+            if (stage >= sequence.size && passwordHash == null) {
+                // No password configured: the default sequence alone unlocks.
+                reset()
+                return KioskUnlockResult.SequenceAccepted
+            }
+            return KioskUnlockResult.ChordProgress
+        }
+
+        // A repeat of the key that was just accepted is harmless (auto-repeat).
+        if (stage > 0 && event.kind == sequence[stage - 1]) {
+            return KioskUnlockResult.ChordProgress
+        }
+
+        reset()
+        return KioskUnlockResult.Ignored
     }
 
     private fun handleTyping(event: KioskKeyEvent): KioskUnlockResult {
         when (event.kind) {
-            KioskKeyKind.SHIFT, KioskKeyKind.CTRL -> return KioskUnlockResult.Typing
+            KioskKeyKind.SHIFT, KioskKeyKind.CTRL, KioskKeyKind.ALT -> return KioskUnlockResult.Typing
 
             KioskKeyKind.BACKSPACE -> {
                 if (typed.isNotEmpty()) typed.deleteAt(typed.length - 1)

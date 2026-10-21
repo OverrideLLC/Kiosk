@@ -321,6 +321,7 @@ private fun composeKeyToKioskEvent(event: KeyEvent): KioskKeyEvent? =
     when (event.key) {
         Key.ShiftLeft, Key.ShiftRight -> KioskKeyEvent(KioskKeyKind.SHIFT)
         Key.CtrlLeft, Key.CtrlRight -> KioskKeyEvent(KioskKeyKind.CTRL)
+        Key.AltLeft, Key.AltRight -> KioskKeyEvent(KioskKeyKind.ALT)
         Key.Enter, Key.NumPadEnter -> KioskKeyEvent(KioskKeyKind.ENTER)
         Key.Backspace -> KioskKeyEvent(KioskKeyKind.BACKSPACE)
         else -> {

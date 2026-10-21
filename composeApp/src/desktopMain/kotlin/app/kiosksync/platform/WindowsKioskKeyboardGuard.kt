@@ -191,6 +191,7 @@ class WindowsKioskKeyboardGuard(
         return when (vk) {
             VK_SHIFT, VK_LSHIFT, VK_RSHIFT -> KioskKeyEvent(KioskKeyKind.SHIFT)
             VK_CONTROL, VK_LCONTROL, VK_RCONTROL -> KioskKeyEvent(KioskKeyKind.CTRL)
+            VK_MENU, VK_LMENU, VK_RMENU -> KioskKeyEvent(KioskKeyKind.ALT)
             VK_RETURN -> KioskKeyEvent(KioskKeyKind.ENTER)
             VK_BACK -> KioskKeyEvent(KioskKeyKind.BACKSPACE)
             else -> {
@@ -255,6 +256,7 @@ class WindowsKioskKeyboardGuard(
         const val VK_RETURN = 0x0D
         const val VK_SHIFT = 0x10
         const val VK_CONTROL = 0x11
+        const val VK_MENU = 0x12
         const val VK_SPACE = 0x20
         const val VK_0 = 0x30
         const val VK_9 = 0x39
@@ -268,6 +270,8 @@ class WindowsKioskKeyboardGuard(
         const val VK_RSHIFT = 0xA1
         const val VK_LCONTROL = 0xA2
         const val VK_RCONTROL = 0xA3
+        const val VK_LMENU = 0xA4
+        const val VK_RMENU = 0xA5
         const val VK_V = 0x56
 
         val SHIFTED_DIGITS = charArrayOf(')', '!', '@', '#', '$', '%', '^', '&', '*', '(')

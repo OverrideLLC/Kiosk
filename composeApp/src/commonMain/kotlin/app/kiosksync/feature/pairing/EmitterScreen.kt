@@ -965,6 +965,8 @@ private fun KioskPasswordDialog(
                 Text(Strings.KIOSK_PASSWORD_INSTRUCTION, color = Color(0xFFCCCCCC), fontSize = 12.sp)
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(Strings.KIOSK_PASSWORD_RULE, color = Color(0xFF999999), fontSize = 11.sp)
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(Strings.KIOSK_DEFAULT_SEQUENCE_HINT, color = Color(0xFF999999), fontSize = 10.sp)
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
                     value = dialog.draft,
