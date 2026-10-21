@@ -48,7 +48,7 @@ object Strings {
     const val UNPAIR_RECEIVER_TITLE = "Desvincular esta pantalla"
     const val UNPAIR_RECEIVER_CONFIRM = "¿Seguro que deseas desvincular esta pantalla de su Controlador? Se mostrará un código nuevo."
     const val UNPAIR_RECEIVER_DONE = "Pantalla desvinculada"
-    const val SERVER_START_ERROR = "No se pudo iniciar el servicio de red. Revisa el registro."
+    const val SERVER_START_ERROR = "No se pudo iniciar el servicio de red. Reinicia la app y comprueba que el puerto esté libre."
 
     // Emitter screens
     const val EMITTER_SCREENS_TITLE = "Pantallas"
@@ -73,7 +73,7 @@ object Strings {
     const val PAIR_ERROR_REMAINING_ATTEMPTS = "Intentos restantes:"
     const val PAIR_ERROR_LOCKED = "Demasiados intentos fallidos. Espera antes de volver a intentarlo."
     const val PAIR_ERROR_ALREADY_PAIRED = "Esa pantalla ya está vinculada a otro Controlador."
-    const val PAIR_ERROR_NETWORK = "No se pudo conectar con la pantalla."
+    const val PAIR_ERROR_NETWORK = "No se pudo conectar con la pantalla. Revisa que esté encendida y en la misma red."
     const val PAIR_SUCCESS = "Pantalla vinculada correctamente."
     const val UNPAIR_SUCCESS = "Pantalla desvinculada correctamente."
     const val UNPAIR_ERROR = "No se pudo desvincular la pantalla. Inténtalo cuando esté en línea."
@@ -84,8 +84,8 @@ object Strings {
     const val MANUAL_IP_FIELD = "IP:puerto"
     const val MANUAL_IP_HINT = "Ejemplo: 192.168.1.20:8765"
     const val MANUAL_IP_INVALID = "Formato no válido. Usa IP:puerto, por ejemplo 192.168.1.20:8765."
-    const val MANUAL_IP_NOT_RECEIVER = "Ese equipo no es una Pantalla de KioskSync."
-    const val MANUAL_IP_UNREACHABLE = "No se pudo conectar con esa dirección."
+    const val MANUAL_IP_NOT_RECEIVER = "Ese equipo no es una Pantalla de KioskSync. Usa la IP de la Pantalla, no la del Controlador."
+    const val MANUAL_IP_UNREACHABLE = "No se pudo conectar con esa dirección. Revisa la IP, el puerto y la red."
     const val ADD_BUTTON = "Agregar"
     const val CANCEL_BUTTON = "Cancelar"
     const val CLOSE_BUTTON = "Cerrar"
@@ -262,9 +262,9 @@ object Strings {
     const val SEND_DEVICE_SUCCESS = "Enviado correctamente."
     const val SEND_DEVICE_UP_TO_DATE = "Ya estaba actualizada."
     const val SEND_DEVICE_FAILED = "No se pudo enviar."
-    const val SEND_ERROR_MISSING = "Faltan imágenes en la Pantalla."
-    const val SEND_ERROR_LOCAL_MEDIA = "Falta un archivo de imagen en este equipo."
-    const val SEND_ERROR_NETWORK = "No se pudo conectar con la Pantalla."
+    const val SEND_ERROR_MISSING = "Faltan imágenes en la Pantalla. Vuelve a enviar la playlist."
+    const val SEND_ERROR_LOCAL_MEDIA = "Falta un archivo de imagen en este equipo. Quita esa imagen de la playlist o vuelve a agregarla."
+    const val SEND_ERROR_NETWORK = "No se pudo conectar con la Pantalla. Revisa que esté encendida y en la misma red."
 
     fun sendCompleted(success: Int, failure: Int): String = when {
         success == 0 -> "No se pudo enviar a ninguna pantalla."

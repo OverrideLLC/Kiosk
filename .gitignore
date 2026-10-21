@@ -24,3 +24,7 @@ media/
 config.json
 paired.json
 playlist.json
+playlists.json
+lock.json
+*.hprof
+hs_err_pid*

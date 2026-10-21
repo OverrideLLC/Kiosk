@@ -15,7 +15,8 @@ import app.kiosksync.platform.StoredMedia
 
 class FakeLocalStorage(
     var playlist: Playlist? = null,
-    val availableBitmaps: MutableMap<String, ImageBitmap> = mutableMapOf()
+    val availableBitmaps: MutableMap<String, ImageBitmap> = mutableMapOf(),
+    private val hashProvider: (ByteArray) -> String = { "hash" }
 ) : LocalStorage {
     var savedConfig: AppConfig? = null
     var receiverPairedInfo: ReceiverPairedInfo? = null
@@ -114,7 +115,12 @@ class FakeLocalStorage(
     override fun listStoredMedia(): List<StoredMedia> = storedMedia.values.toList()
 
     override fun writeReceivedMedia(mediaId: String, format: ImageFormat, bytes: ByteArray): StoredMedia? {
-        val media = StoredMedia(mediaId, "$mediaId.${format.extension}", "hash", bytes.size.toLong())
+        val media = StoredMedia(
+            mediaId = mediaId,
+            fileName = "$mediaId.${format.extension}",
+            sha256 = hashProvider(bytes),
+            sizeBytes = bytes.size.toLong(),
+        )
         storedMedia[mediaId] = media
         mediaBytes[mediaId] = bytes
         return media

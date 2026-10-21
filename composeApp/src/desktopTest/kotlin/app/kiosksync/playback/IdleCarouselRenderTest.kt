@@ -6,14 +6,13 @@ import app.kiosksync.feature.playback.DefaultIdleCarousel
 import kotlin.test.Test
 
 /**
- * Smoke test for the idle animation: renders every slide (and the crossfade
- * between them) offscreen so a broken draw call fails the build instead of
- * crashing a screen at run time.
+ * Smoke test for the idle state: it is a static brand mark now, so a couple of
+ * frames are enough to catch a broken draw call or a missing icon/font.
  */
 class IdleCarouselRenderTest {
 
     @Test
-    fun rendersEverySlideWithoutThrowing() {
+    fun rendersIdleStateWithoutThrowing() {
         val scene = ImageComposeScene(
             width = 1280,
             height = 720,
@@ -23,12 +22,10 @@ class IdleCarouselRenderTest {
         }
 
         try {
-            // Five slides of 7.5 s each plus their 1.6 s crossfades.
             var nanos = 0L
-            val step = 500_000_000L
-            while (nanos <= 45_000_000_000L) {
+            repeat(3) {
                 scene.render(nanos)
-                nanos += step
+                nanos += 250_000_000L
             }
         } finally {
             scene.close()
