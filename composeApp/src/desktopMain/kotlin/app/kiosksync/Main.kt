@@ -100,7 +100,10 @@ fun main(args: Array<String>) {
     )
     kioskLockManager.setConfig(localStorage.loadKioskLock())
     if (activeRole == AppRole.RECEIVER) {
-        kioskLockManager.lock()
+        // The screen role is always a kiosk. `force` locks even on Linux or in
+        // --windowed debug, where the native hook is disabled and Compose feeds
+        // the key events instead.
+        kioskLockManager.lock(force = true)
     }
 
     val projectionController = ProjectionController()

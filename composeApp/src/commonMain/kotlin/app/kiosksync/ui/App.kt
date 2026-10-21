@@ -120,8 +120,10 @@ fun App(
     var wasLocked by remember { mutableStateOf(lockState.isLocked) }
 
     fun relockReceiverIfNeeded() {
-        if (currentScreen is Screen.ReceiverHome && !container.args.windowed) {
-            container.kioskLockManager.lock()
+        if (currentScreen is Screen.ReceiverHome) {
+            // The screen role is always locked, including --windowed/Linux where
+            // the Compose key fallback handles the unlock sequence.
+            container.kioskLockManager.lock(force = true)
         }
     }
 
@@ -142,14 +144,10 @@ fun App(
     }
 
     // The screen role is always a kiosk: lock the keyboard as soon as the
-    // receiver UI is shown, unless --windowed was passed for debugging.
+    // receiver UI is shown, including --windowed (Compose feeds the keys).
     LaunchedEffect(currentScreen) {
         when (currentScreen) {
-            is Screen.ReceiverHome -> {
-                if (!container.args.windowed) {
-                    container.kioskLockManager.lock()
-                }
-            }
+            is Screen.ReceiverHome -> container.kioskLockManager.lock(force = true)
 
             is Screen.RoleSelection -> container.kioskLockManager.release()
             is Screen.EmitterHome -> {
