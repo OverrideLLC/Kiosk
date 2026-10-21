@@ -150,6 +150,17 @@ class ControllerRenderTest {
                 )
             }
 
+            render(output, "controller-fullhd", AppTheme.DARK, 1920, 1080) {
+                EmitterScreen(
+                    stateHolder = holder,
+                    playlistStateHolder = editor,
+                    storage = storage,
+                    onExitRequested = {},
+                    onRoleReset = {},
+                    theme = AppTheme.DARK,
+                )
+            }
+
             holder.openSecurityDialog()
             render(output, "controller-security", AppTheme.DARK, 1280, 800) {
                 EmitterScreen(
