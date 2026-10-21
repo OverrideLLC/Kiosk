@@ -67,13 +67,9 @@ fun CarouselScreen(
                 )
             }
         } else {
-            // No playlist or all images unreadable
-            Text(
-                text = Strings.WAITING_CONTENT,
-                color = Color(0xFF666666),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Normal
-            )
+            // No playlist yet (or every image is unreadable): play the default
+            // animated carousel so the screen never looks dead.
+            DefaultIdleCarousel()
         }
 
         // Exit / Options Dialog (opened via Esc or call)

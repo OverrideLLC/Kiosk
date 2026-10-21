@@ -16,6 +16,9 @@ object Strings {
 
     // Status & messages
     const val WAITING_CONTENT = "Esperando contenido"
+    const val WAITING_PLAYLIST_TITLE = "Esperando Playlist"
+    const val WAITING_PLAYLIST_MESSAGE =
+        "El Controlador enviará el contenido automáticamente cuando esté listo."
     const val ENTER_CODE_IN_CONTROLLER = "Escribe este código en el Controlador"
     const val PAIRING_CODE_LABEL = "Código de vinculación"
     const val STATUS_ONLINE = "En línea"
