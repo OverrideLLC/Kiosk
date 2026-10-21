@@ -93,7 +93,8 @@ data class EmitterUiState(
     val syncByDevice: Map<String, DeviceSyncUi> = emptyMap(),
     val isSending: Boolean = false,
     val passwordDialog: KioskPasswordDialogUi? = null,
-    val hasKioskPassword: Boolean = false
+    val hasKioskPassword: Boolean = false,
+    val isRefreshing: Boolean = false
 )
 
 class EmitterStateHolder(
@@ -156,6 +157,22 @@ class EmitterStateHolder(
         jobs.clear()
         serviceScope.launch { discovery.stopDiscovery() }
         logger.info("Emitter discovery stopped")
+    }
+
+    /**
+     * Manual "scan again" from the screens panel. Forces a fresh mDNS browse so
+     * a screen that just appeared shows up without waiting for its next
+     * announcement.
+     */
+    fun refreshDevices() {
+        if (_uiState.value.isRefreshing) return
+        _uiState.update { it.copy(isRefreshing = true) }
+        logger.info("Manual screen scan requested")
+        serviceScope.launch { discovery.refresh() }
+        scope.launch {
+            delay(1500)
+            _uiState.update { it.copy(isRefreshing = false) }
+        }
     }
 
     fun toggleSelection(deviceId: String) {

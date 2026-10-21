@@ -174,9 +174,17 @@ fun main(args: Array<String>) {
         val lockState by kioskLockManager.uiState.collectAsState()
 
         LaunchedEffect(projectionPlaylist != null) {
+            val isProjecting = projectionPlaylist != null
             // Hide the management window while projecting so a mouse cannot
             // reach the admin actions behind the fullscreen projection.
-            windowState.isMinimized = projectionPlaylist != null
+            windowState.isMinimized = isProjecting
+            if (isProjecting) {
+                // The controller is a display too while projecting: lock it with
+                // the same password as the screens. `force` also covers Linux and
+                // --windowed debugging, where the native hook is disabled.
+                kioskLockManager.lock(force = true)
+                logger.info("Projection active: controller locked")
+            }
         }
 
         LaunchedEffect(lockState.isLocked) {

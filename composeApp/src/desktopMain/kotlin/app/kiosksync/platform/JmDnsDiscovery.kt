@@ -70,6 +70,31 @@ class JmDnsDiscovery(
         logger.info("mDNS discovery stopped")
     }
 
+    /**
+     * Re-browses the network. mDNS announces services asynchronously, so this
+     * lets the person force a scan instead of waiting for the next announcement.
+     * Re-adding the listener triggers a fresh browse; the known names are asked
+     * again so their address and port are refreshed.
+     */
+    @Synchronized
+    override fun refresh() {
+        val instance = jmDns
+        if (instance == null || !listenerRegistered) {
+            startDiscovery()
+            return
+        }
+        logger.info("Manual mDNS refresh requested")
+        runCatching { instance.removeServiceListener(MDNS_SERVICE_TYPE, listener) }
+        listenerRegistered = false
+        runCatching {
+            instance.addServiceListener(MDNS_SERVICE_TYPE, listener)
+            listenerRegistered = true
+        }
+        serviceNames.keys.toList().forEach { name ->
+            runCatching { instance.requestServiceInfo(MDNS_SERVICE_TYPE, name, true) }
+        }
+    }
+
     @Synchronized
     override fun registerService(deviceName: String, port: Int, deviceId: String, isPaired: Boolean) {
         val instance = ensureJmDns() ?: return

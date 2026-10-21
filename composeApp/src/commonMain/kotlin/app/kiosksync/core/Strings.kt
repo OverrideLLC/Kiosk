@@ -41,6 +41,8 @@ object Strings {
     const val EMITTER_SCREENS_TITLE = "Pantallas"
     const val EMITTER_SCREENS_SUBTITLE = "Selecciona las pantallas a las que enviarás contenido."
     const val ADD_BY_IP = "Agregar por IP"
+    const val DISCOVERY_REFRESH = "Actualizar"
+    const val DISCOVERY_REFRESHING = "Buscando…"
     const val DISCOVERY_SEARCHING = "Buscando pantallas en la red local…"
     const val DISCOVERY_EMPTY = "Todavía no hay pantallas. Enciende una Pantalla en la misma red o agrégala por IP."
     const val PAIRED_OTHER_CONTROLLER = "Vinculada a otro Controlador"

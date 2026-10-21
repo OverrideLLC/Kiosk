@@ -465,6 +465,27 @@ private fun ScreensPanel(
                 )
             }
             Button(
+                onClick = { stateHolder.refreshDevices() },
+                enabled = !state.isRefreshing,
+                colors = ButtonDefaults.buttonColors(
+                    backgroundColor = Color(0xFF2D3A52),
+                    disabledBackgroundColor = Color(0xFF232323),
+                    contentColor = Color(0xFF9EC1FF),
+                    disabledContentColor = Color(0xFF666666)
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = if (state.isRefreshing) {
+                        Strings.DISCOVERY_REFRESHING
+                    } else {
+                        Strings.DISCOVERY_REFRESH
+                    },
+                    fontSize = 12.sp
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(
                 onClick = { stateHolder.openManualIpDialog() },
                 colors = ButtonDefaults.buttonColors(
                     backgroundColor = Color(0xFF2D3A52),
