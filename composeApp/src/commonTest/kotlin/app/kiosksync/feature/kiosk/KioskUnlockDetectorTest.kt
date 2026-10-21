@@ -105,4 +105,26 @@ class KioskUnlockDetectorTest {
         assertFalse(app.kiosksync.core.isValidKioskPassword("abc def"))
         assertFalse(app.kiosksync.core.isValidKioskPassword("abc!"))
     }
+
+    @Test
+    fun `chord stage tracks the sequence and resets on a wrong key`() {
+        val detector = detector("abcdefgh")
+        assertEquals(0, detector.chordStage)
+
+        detector.feed(KioskKeyEvent(KioskKeyKind.SHIFT))
+        assertEquals(1, detector.chordStage)
+        detector.feed(KioskKeyEvent(KioskKeyKind.SHIFT))
+        assertEquals(2, detector.chordStage)
+
+        // A wrong key after the first Shift starts the chord over.
+        detector.feed(KioskKeyEvent(KioskKeyKind.CHARACTER, 'x'))
+        assertEquals(0, detector.chordStage)
+
+        detector.pressChord()
+        assertEquals(3, detector.chordStage)
+
+        detector.type("abc")
+        assertEquals(3, detector.chordStage)
+        assertEquals(3, detector.typedLength)
+    }
 }

@@ -36,21 +36,29 @@ class KioskUnlockDetector(
     private val passwordLength: Int,
     private val passwordHasher: (String) -> String
 ) {
-    private var chordStage = 0
+    private var stage = 0
     private val typed = StringBuilder()
 
     val typedLength: Int
         get() = typed.length
 
+    /**
+     * Progress of the Shift, Shift, Ctrl chord: 0 (nothing), 1, 2 or 3
+     * (chord completed, password expected). The UI uses it to highlight the
+     * keys that have already been registered.
+     */
+    val chordStage: Int
+        get() = stage
+
     fun reset() {
-        chordStage = 0
+        stage = 0
         typed.clear()
     }
 
     fun feed(event: KioskKeyEvent): KioskUnlockResult {
-        return when (chordStage) {
+        return when (stage) {
             0 -> if (event.kind == KioskKeyKind.SHIFT) {
-                chordStage = 1
+                stage = 1
                 KioskUnlockResult.ChordProgress
             } else {
                 KioskUnlockResult.Ignored
@@ -58,7 +66,7 @@ class KioskUnlockDetector(
 
             1 -> when (event.kind) {
                 KioskKeyKind.SHIFT -> {
-                    chordStage = 2
+                    stage = 2
                     KioskUnlockResult.ChordProgress
                 }
 
@@ -70,7 +78,7 @@ class KioskUnlockDetector(
 
             2 -> when (event.kind) {
                 KioskKeyKind.CTRL -> {
-                    chordStage = 3
+                    stage = 3
                     KioskUnlockResult.ChordProgress
                 }
 

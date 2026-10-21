@@ -1,11 +1,13 @@
 package app.kiosksync
 
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.utf16CodePoint
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -17,6 +19,8 @@ import androidx.compose.ui.window.rememberWindowState
 import app.kiosksync.core.APP_NAME
 import app.kiosksync.core.AppArgs
 import app.kiosksync.core.AppRole
+import app.kiosksync.feature.kiosk.KioskKeyEvent
+import app.kiosksync.feature.kiosk.KioskKeyKind
 import app.kiosksync.feature.kiosk.KioskLockManager
 import app.kiosksync.feature.pairing.PairingManager
 import app.kiosksync.feature.playback.ReceiverPlaylistBridge
@@ -185,6 +189,14 @@ fun main(args: Array<String>) {
         var escHandler: (() -> Unit)? = null
         var unpairHandler: (() -> Unit)? = null
 
+        // When the native hook is not available (Linux or --windowed debug),
+        // Compose feeds the unlock detector so the lock stays usable.
+        val feedLockFromCompose: (KeyEvent) -> Unit = { event ->
+            if (!kioskLockAvailable && event.type == KeyEventType.KeyDown) {
+                composeKeyToKioskEvent(event)?.let { kioskLockManager.onKey(it) }
+            }
+        }
+
         Window(
             onCloseRequest = {
                 logger.info("Application close requested. Exiting.")
@@ -199,7 +211,10 @@ fun main(args: Array<String>) {
                 when {
                     // The native hook already swallows keys on Windows. This is a
                     // second barrier so Compose cannot open dialogs while locked.
-                    kioskLockManager.uiState.value.isLocked -> true
+                    kioskLockManager.uiState.value.isLocked -> {
+                        feedLockFromCompose(keyEvent)
+                        true
+                    }
 
                     keyEvent.type == KeyEventType.KeyDown &&
                         keyEvent.isCtrlPressed &&
@@ -249,10 +264,12 @@ fun main(args: Array<String>) {
                 alwaysOnTop = true,
                 resizable = false,
                 onKeyEvent = { event ->
-                    if (
+                    if (kioskLockManager.uiState.value.isLocked) {
+                        feedLockFromCompose(event)
+                        true
+                    } else if (
                         event.type == KeyEventType.KeyDown &&
-                        event.key == Key.Escape &&
-                        !kioskLockManager.uiState.value.isLocked
+                        event.key == Key.Escape
                     ) {
                         projectionController.stop()
                         true
@@ -277,6 +294,26 @@ private fun blankCursor() = Toolkit.getDefaultToolkit().createCustomCursor(
     Point(0, 0),
     "blank cursor"
 )
+
+/**
+ * Translates a Compose key event into the pure unlock key model. Used only as
+ * a fallback when the native Windows hook is not active.
+ */
+private fun composeKeyToKioskEvent(event: KeyEvent): KioskKeyEvent? =
+    when (event.key) {
+        Key.ShiftLeft, Key.ShiftRight -> KioskKeyEvent(KioskKeyKind.SHIFT)
+        Key.CtrlLeft, Key.CtrlRight -> KioskKeyEvent(KioskKeyKind.CTRL)
+        Key.Enter, Key.NumPadEnter -> KioskKeyEvent(KioskKeyKind.ENTER)
+        Key.Backspace -> KioskKeyEvent(KioskKeyKind.BACKSPACE)
+        else -> {
+            val codePoint = event.utf16CodePoint
+            if (codePoint in 33..126) {
+                KioskKeyEvent(KioskKeyKind.CHARACTER, codePoint.toChar())
+            } else {
+                KioskKeyEvent(KioskKeyKind.OTHER)
+            }
+        }
+    }
 
 private fun showImagePicker(): List<String> {
     // Never open the modal dialog inside Compose's FlushCoroutineDispatcher: the nested

@@ -118,6 +118,13 @@ object Strings {
     const val KIOSK_WRONG_PASSWORD = "Contraseña incorrecta."
     const val KIOSK_ATTEMPTS_LEFT = "Intentos restantes:"
     const val KIOSK_LOCKED_OUT = "Demasiados intentos fallidos. Espera antes de volver a intentarlo."
+    const val KIOSK_CHORD_LABEL = "Secuencia de desbloqueo:"
+    const val KIOSK_TYPING_PASSWORD = "Escribe la contraseña"
+    const val KIOSK_KEYS_ACTIVE = "Las teclas se registran aquí"
+    const val KIOSK_KEY_CHAR = "•"
+    const val KIOSK_KEY_BACKSPACE = "Retroceso"
+
+    fun kioskLastKey(key: String): String = "Última tecla: $key"
     const val KIOSK_PASSWORD_TITLE = "Contraseña de bloqueo"
     const val KIOSK_PASSWORD_INSTRUCTION =
         "Esta contraseña bloqueará el teclado de esta PC y de las pantallas que reciban contenido. " +

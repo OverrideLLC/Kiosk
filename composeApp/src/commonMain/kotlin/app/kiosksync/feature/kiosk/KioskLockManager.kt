@@ -19,6 +19,8 @@ data class KioskLockUiState(
     val hasPassword: Boolean = false,
     val showUnlockHint: Boolean = false,
     val typedLength: Int = 0,
+    val chordStage: Int = 0,
+    val lastKey: String? = null,
     val message: String? = null,
     val failedAttempts: Int = 0,
     val lockoutRemainingSec: Int = 0
@@ -48,18 +50,24 @@ class KioskLockManager(
         _uiState.update { it.copy(hasPassword = config != null) }
         if (_uiState.value.isLocked) {
             detector = newDetector()
+            _uiState.update {
+                it.copy(typedLength = 0, chordStage = 0, lastKey = null)
+            }
         }
     }
 
-    fun lock() {
-        if (_uiState.value.isLocked || !platformLockAvailable) return
+    fun lock(force: Boolean = false) {
+        if (_uiState.value.isLocked) return
+        if (!platformLockAvailable && !force) return
         detector = newDetector()
         _uiState.update {
             it.copy(
                 isLocked = true,
                 hasPassword = config != null,
-                showUnlockHint = false,
+                showUnlockHint = true,
                 typedLength = 0,
+                chordStage = 0,
+                lastKey = null,
                 message = null,
                 failedAttempts = 0,
                 lockoutRemainingSec = 0
@@ -68,6 +76,9 @@ class KioskLockManager(
         logger.info(
             "Kiosk lock engaged (password configured: ${config != null})"
         )
+        // Show the unlock card right away, then let it hide so it does not
+        // cover the content permanently. It comes back on any key press.
+        scheduleHintHide()
     }
 
     /** Releases the lock without a password (role change or shutdown). */
@@ -84,24 +95,38 @@ class KioskLockManager(
         if (!state.isLocked || state.lockoutRemainingSec > 0) return
 
         val activeDetector = detector ?: newDetector().also { detector = it }
-        when (activeDetector.feed(event)) {
-            KioskUnlockResult.Ignored -> Unit
+        val result = activeDetector.feed(event)
+        val lastKey = keyLabel(event)
 
-            KioskUnlockResult.ChordProgress, KioskUnlockResult.Typing -> {
+        when (result) {
+            KioskUnlockResult.Accepted -> unlock(recovered = false)
+            KioskUnlockResult.UniversalAccepted -> unlock(recovered = true)
+            KioskUnlockResult.Rejected -> registerFailure(lastKey)
+
+            // Any other key keeps the on-screen key feedback in sync, even a
+            // wrong key that resets the chord.
+            else -> {
                 scheduleHintHide()
                 _uiState.update {
                     it.copy(
                         showUnlockHint = true,
+                        chordStage = activeDetector.chordStage,
                         typedLength = activeDetector.typedLength,
+                        lastKey = lastKey ?: it.lastKey,
                         message = null
                     )
                 }
             }
-
-            KioskUnlockResult.Accepted -> unlock(recovered = false)
-            KioskUnlockResult.UniversalAccepted -> unlock(recovered = true)
-            KioskUnlockResult.Rejected -> registerFailure()
         }
+    }
+
+    private fun keyLabel(event: KioskKeyEvent): String? = when (event.kind) {
+        KioskKeyKind.SHIFT -> "Shift"
+        KioskKeyKind.CTRL -> "Ctrl"
+        KioskKeyKind.ENTER -> "Enter"
+        KioskKeyKind.BACKSPACE -> Strings.KIOSK_KEY_BACKSPACE
+        KioskKeyKind.CHARACTER -> Strings.KIOSK_KEY_CHAR
+        KioskKeyKind.OTHER -> null
     }
 
     private fun unlock(recovered: Boolean) {
@@ -112,6 +137,8 @@ class KioskLockManager(
                 isLocked = false,
                 showUnlockHint = false,
                 typedLength = 0,
+                chordStage = 0,
+                lastKey = null,
                 message = null,
                 failedAttempts = 0,
                 lockoutRemainingSec = 0
@@ -126,7 +153,7 @@ class KioskLockManager(
         )
     }
 
-    private fun registerFailure() {
+    private fun registerFailure(lastKey: String?) {
         val failed = _uiState.value.failedAttempts + 1
         detector?.reset()
 
@@ -139,6 +166,8 @@ class KioskLockManager(
             it.copy(
                 showUnlockHint = true,
                 typedLength = 0,
+                chordStage = 0,
+                lastKey = lastKey ?: it.lastKey,
                 failedAttempts = failed,
                 message = "${Strings.KIOSK_WRONG_PASSWORD} " +
                     "${Strings.KIOSK_ATTEMPTS_LEFT} ${MAX_UNLOCK_ATTEMPTS - failed}"
@@ -154,6 +183,8 @@ class KioskLockManager(
             it.copy(
                 showUnlockHint = true,
                 typedLength = 0,
+                chordStage = 0,
+                lastKey = null,
                 failedAttempts = MAX_UNLOCK_ATTEMPTS,
                 message = Strings.KIOSK_LOCKED_OUT,
                 lockoutRemainingSec = UNLOCK_LOCKOUT_SECONDS
@@ -174,7 +205,9 @@ class KioskLockManager(
                     failedAttempts = 0,
                     message = null,
                     showUnlockHint = false,
-                    typedLength = 0
+                    typedLength = 0,
+                    chordStage = 0,
+                    lastKey = null
                 )
             }
         }
