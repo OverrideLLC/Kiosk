@@ -32,6 +32,19 @@ usa **Agregar por IP** (`192.168.1.40:8765`).
   descargar Gradle y las dependencias).
 - La app compilada **no** necesita JDK ni internet.
 
+## Descarga
+
+Todavía no hay una versión publicada en GitHub Releases. Mientras tanto:
+
+- **Usuarios finales**: pide la carpeta portable `KioskSync` (o el instalador
+  `.msi`/`.exe`) generada con las instrucciones de
+  [Empaquetado para Windows](docs/PACKAGING.md). No hace falta JDK ni internet.
+- **Desarrollo**: clona este repositorio y compílalo con Gradle (siguiente
+  sección).
+
+La carpeta portable es la opción más simple y no requiere permisos de
+administrador. El instalador solo agrega accesos directos y desinstalación.
+
 ## Compilar y ejecutar
 
 En PowerShell, desde la raíz del repositorio:
