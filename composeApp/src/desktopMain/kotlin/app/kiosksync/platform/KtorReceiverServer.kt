@@ -337,6 +337,21 @@ class KtorReceiverServer(
                     )
                 )
             }
+
+            put("/lock") {
+                if (!call.requireAuthorization()) return@put
+
+                val lock = runCatching { call.receive<KioskLockConfig>() }.getOrNull()
+                if (lock == null || !lock.isValid()) {
+                    call.respond(HttpStatusCode.BadRequest, ErrorResponse("invalid_lock"))
+                    return@put
+                }
+
+                storage.saveKioskLock(lock)
+                kioskLockManager.setConfig(lock)
+                logger.info("Kiosk lock provisioned by the controller")
+                call.respondText("ok", status = HttpStatusCode.OK)
+            }
         }
     }
 

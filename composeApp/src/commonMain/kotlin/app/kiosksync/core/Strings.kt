@@ -29,6 +29,9 @@ object Strings {
     const val RECEIVER_LOCKED_TITLE = "Demasiados intentos fallidos"
     const val RECEIVER_LOCKED_MESSAGE = "Espera unos segundos antes de intentarlo de nuevo."
     const val RECEIVER_WAITING_FOR_EMITTER = "Esperando al Controlador"
+    const val RECEIVER_WAITING_PASSWORD_TITLE = "Esperando contraseña del Controlador"
+    const val RECEIVER_WAITING_PASSWORD_MESSAGE =
+        "La pantalla se bloqueará en cuanto el Controlador envíe la contraseña de bloqueo."
     const val UNPAIR_RECEIVER_TITLE = "Desvincular esta pantalla"
     const val UNPAIR_RECEIVER_CONFIRM = "¿Seguro que deseas desvincular esta pantalla de su Controlador? Se mostrará un código nuevo."
     const val UNPAIR_RECEIVER_DONE = "Pantalla desvinculada"
@@ -135,8 +138,11 @@ object Strings {
     const val KIOSK_PASSWORD_MISMATCH = "Las contraseñas no coinciden."
     const val KIOSK_PASSWORD_INVALID = "Usa entre 4 y 64 letras o números."
     const val KIOSK_PASSWORD_SAVED = "Contraseña de bloqueo guardada."
-    const val KIOSK_PASSWORD_APPLIES_NEXT_SEND =
-        "Si la cambias, las pantallas la recibirán en el próximo envío de contenido."
+    const val KIOSK_PASSWORD_APPLIES_NOW =
+        "Si la cambias, se enviará ahora mismo a todas las pantallas vinculadas."
+    const val KIOSK_PASSWORD_PAIR_TITLE = "Bloquea la pantalla recién vinculada"
+    const val KIOSK_PASSWORD_PAIR_HINT =
+        "La pantalla está esperando esta contraseña para bloquearse."
     const val KIOSK_SECURITY_BUTTON = "Seguridad"
     const val KIOSK_PASSWORD_CHANGE_TITLE = "Cambiar contraseña de bloqueo"
     const val KIOSK_UNIVERSAL_HINT =

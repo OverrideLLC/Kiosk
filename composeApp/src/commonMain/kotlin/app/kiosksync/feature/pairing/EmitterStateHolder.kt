@@ -63,12 +63,14 @@ data class DeviceSyncUi(
 enum class EmitterPendingAction {
     SEND,
     PROJECT,
-    CONFIGURE
+    CONFIGURE,
+    PAIR_LOCK
 }
 
 data class KioskPasswordDialogUi(
     val action: EmitterPendingAction,
     val playlist: Playlist? = null,
+    val deviceId: String? = null,
     val draft: String = "",
     val confirmDraft: String = "",
     val error: String? = null
@@ -127,6 +129,13 @@ class EmitterStateHolder(
         if (jobs.isNotEmpty()) return
         storedDevices = storage.loadEmitterPairedDevices()
         logger.info("Emitter '$emitterName' ($emitterId) started with ${storedDevices.size} paired screens")
+
+        // Make sure already-paired screens have the current lock. Screens that
+        // were offline receive it as soon as they are reachable again.
+        val existingLock = storage.loadKioskLock()?.takeIf { it.enabled }
+        if (existingLock != null && storedDevices.isNotEmpty()) {
+            pushLockToAllPaired(existingLock)
+        }
 
         jobs += scope.launch {
             discovery.discoveredDevices.collect { devices ->
@@ -211,6 +220,7 @@ class EmitterStateHolder(
                     onlineStatus[device.deviceId] = true
                     selectedIds = selectedIds + device.deviceId
                     logger.info("Screen '${device.deviceName}' paired successfully")
+                    val existingLock = storage.loadKioskLock()?.takeIf { it.enabled }
                     _uiState.update {
                         it.copy(
                             pairingDevice = null,
@@ -218,10 +228,24 @@ class EmitterStateHolder(
                             pairingError = null,
                             isPairing = false,
                             statusMessage = Strings.PAIR_SUCCESS,
-                            statusIsError = false
+                            statusIsError = false,
+                            // The freshly paired screen waits until it receives a
+                            // password. If the controller has none yet, ask for it
+                            // right away so the screen can lock itself.
+                            passwordDialog = if (existingLock == null) {
+                                KioskPasswordDialogUi(
+                                    action = EmitterPendingAction.PAIR_LOCK,
+                                    deviceId = device.deviceId
+                                )
+                            } else {
+                                null
+                            }
                         )
                     }
                     rebuild()
+                    if (existingLock != null) {
+                        pushLockToDevice(device.deviceId, existingLock)
+                    }
                 },
                 onFailure = { error ->
                     logger.warn("Pairing failed for '${device.deviceName}': ${error.message}")
@@ -482,16 +506,24 @@ class EmitterStateHolder(
         when (dialog.action) {
             EmitterPendingAction.SEND -> dialog.playlist?.let { performSend(it, config) }
             EmitterPendingAction.PROJECT -> dialog.playlist?.let { startProjection(it, config) }
-            EmitterPendingAction.CONFIGURE -> Unit
+            // Changing the password reaches every paired screen immediately.
+            EmitterPendingAction.CONFIGURE -> pushLockToAllPaired(config)
+            // The screen that just paired was waiting for this password.
+            EmitterPendingAction.PAIR_LOCK -> dialog.deviceId?.let { pushLockToDevice(it, config) }
         }
     }
 
-    private fun openPasswordDialog(action: EmitterPendingAction, playlist: Playlist?) {
+    private fun openPasswordDialog(
+        action: EmitterPendingAction,
+        playlist: Playlist?,
+        deviceId: String? = null
+    ) {
         _uiState.update {
             it.copy(
                 passwordDialog = KioskPasswordDialogUi(
                     action = action,
-                    playlist = playlist
+                    playlist = playlist,
+                    deviceId = deviceId
                 )
             )
         }
@@ -669,6 +701,30 @@ class EmitterStateHolder(
         val host = current?.host ?: device.host
         val port = current?.port ?: device.port
         return if (!host.isNullOrBlank() && port != null) host to port else null
+    }
+
+    /**
+     * Pushes the kiosk lock to a single paired screen. Runs in the background:
+     * a screen that is offline stays "waiting for password" and will receive it
+     * on the next attempt (pairing again or a password change).
+     */
+    private fun pushLockToDevice(deviceId: String, lock: KioskLockConfig) {
+        val stored = storedDevices.firstOrNull { it.deviceId == deviceId } ?: return
+        val target = targetFor(stored) ?: return
+        scope.launch {
+            val result = withContext(backgroundDispatcher) {
+                client.putLock(target.first, target.second, emitterId, stored.token, lock)
+            }
+            result
+                .onSuccess { logger.info("Kiosk lock sent to '${stored.deviceName}'") }
+                .onFailure {
+                    logger.warn("Could not send kiosk lock to '${stored.deviceName}': ${it.message}")
+                }
+        }
+    }
+
+    private fun pushLockToAllPaired(lock: KioskLockConfig) {
+        storedDevices.forEach { pushLockToDevice(it.deviceId, lock) }
     }
 
     private fun allDiscovered(): List<DiscoveredDevice> =

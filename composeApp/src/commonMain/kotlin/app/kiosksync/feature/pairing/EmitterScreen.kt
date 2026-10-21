@@ -928,10 +928,10 @@ private fun KioskPasswordDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    val title = if (dialog.action == EmitterPendingAction.CONFIGURE) {
-        Strings.KIOSK_PASSWORD_CHANGE_TITLE
-    } else {
-        Strings.KIOSK_PASSWORD_TITLE
+    val title = when (dialog.action) {
+        EmitterPendingAction.CONFIGURE -> Strings.KIOSK_PASSWORD_CHANGE_TITLE
+        EmitterPendingAction.PAIR_LOCK -> Strings.KIOSK_PASSWORD_PAIR_TITLE
+        else -> Strings.KIOSK_PASSWORD_TITLE
     }
 
     AlertDialog(
@@ -968,7 +968,14 @@ private fun KioskPasswordDialog(
                 Text(Strings.KIOSK_LOCK_ACTIVE_HINT, color = Color(0xFFFFB74D), fontSize = 11.sp)
                 if (dialog.action == EmitterPendingAction.CONFIGURE) {
                     Text(
-                        Strings.KIOSK_PASSWORD_APPLIES_NEXT_SEND,
+                        Strings.KIOSK_PASSWORD_APPLIES_NOW,
+                        color = Color(0xFFFFB74D),
+                        fontSize = 10.sp
+                    )
+                }
+                if (dialog.action == EmitterPendingAction.PAIR_LOCK) {
+                    Text(
+                        Strings.KIOSK_PASSWORD_PAIR_HINT,
                         color = Color(0xFFFFB74D),
                         fontSize = 10.sp
                     )

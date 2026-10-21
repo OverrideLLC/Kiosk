@@ -79,19 +79,23 @@ fun ReceiverHomeScreen(
         }
     }
 
-    if (pairingState.isPaired) {
-        CarouselScreen(
-            stateHolder = playbackStateHolder,
-            onExitRequested = onExitRequested,
-            onChangeRoleRequested = onChangeRoleRequested
-        )
-    } else {
-        PairingCodeScreen(
+    when {
+        !pairingState.isPaired -> PairingCodeScreen(
             pairingManager = pairingManager,
             serviceError = runtime.error,
             onExitRequested = onExitRequested,
             onChangeRoleRequested = onChangeRoleRequested,
             showAdminActions = !lockState.isLocked
+        )
+
+        // A paired screen stays inert until it receives its blocking password
+        // from the controller; only then does the carousel start.
+        !lockState.hasPassword -> WaitingForPasswordScreen()
+
+        else -> CarouselScreen(
+            stateHolder = playbackStateHolder,
+            onExitRequested = onExitRequested,
+            onChangeRoleRequested = onChangeRoleRequested
         )
     }
 }

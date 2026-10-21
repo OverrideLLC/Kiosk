@@ -41,5 +41,18 @@ interface EmitterClient {
         lock: KioskLockConfig? = null
     ): Result<PlaylistApplyResponse>
 
+    /**
+     * Sends only the kiosk lock. The controller calls this right after pairing
+     * (or when the password changes) so a screen locks immediately instead of
+     * waiting for the next content push.
+     */
+    suspend fun putLock(
+        host: String,
+        port: Int,
+        emitterId: String,
+        token: String,
+        lock: KioskLockConfig
+    ): Result<Boolean>
+
     fun close()
 }

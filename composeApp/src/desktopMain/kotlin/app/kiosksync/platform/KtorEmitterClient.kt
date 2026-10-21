@@ -207,6 +207,25 @@ class KtorEmitterClient(
         }
     }
 
+    override suspend fun putLock(
+        host: String,
+        port: Int,
+        emitterId: String,
+        token: String,
+        lock: KioskLockConfig
+    ): Result<Boolean> = runCatching {
+        val response = client.put("${baseUrl(host, port)}/lock") {
+            header(HEADER_EMITTER_ID, emitterId)
+            header(HEADER_AUTH_TOKEN, token)
+            contentType(ContentType.Application.Json)
+            setBody(lock)
+        }
+        if (!response.status.isSuccess()) {
+            throw IOException("PUT /lock returned HTTP ${response.status}")
+        }
+        true
+    }
+
     override fun close() {
         runCatching { client.close() }
     }
