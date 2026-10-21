@@ -37,7 +37,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-enum class AppButtonVariant { FILLED, TONAL, OUTLINED, TEXT }
+enum class AppButtonVariant { FILLED, TONAL, OUTLINED, TEXT, DANGER }
 
 enum class AppButtonSize(
     val height: Dp,
@@ -72,6 +72,7 @@ fun AppButton(
         AppButtonVariant.FILLED -> colors.onPrimary
         AppButtonVariant.TONAL -> colors.onSecondaryContainer
         AppButtonVariant.OUTLINED, AppButtonVariant.TEXT -> colors.primary
+        AppButtonVariant.DANGER -> colors.onError
     }
     val textStyle = when (size) {
         AppButtonSize.LARGE -> MaterialTheme.typography.titleMedium
@@ -154,6 +155,21 @@ fun AppButton(
                 content = content,
             )
 
+            AppButtonVariant.DANGER -> Button(
+                onClick = onClick,
+                modifier = buttonModifier,
+                enabled = effectiveEnabled,
+                shape = KioskShape.button,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = colors.error,
+                    contentColor = contentColor,
+                    disabledContainerColor = extra.disabledContainer,
+                    disabledContentColor = extra.disabledContent,
+                ),
+                contentPadding = contentPadding,
+                content = content,
+            )
+
             AppButtonVariant.TEXT -> TextButton(
                 onClick = onClick,
                 modifier = buttonModifier,
@@ -194,6 +210,7 @@ fun AppIconButton(
     size: AppIconButtonSize = AppIconButtonSize.MEDIUM,
     enabled: Boolean = true,
     tooltip: String? = null,
+    tint: Color? = null,
 ) {
     val colors = KioskColors.scheme
     val extra = KioskColors.extra
@@ -226,7 +243,11 @@ fun AppIconButton(
                 icon = icon,
                 contentDescription = contentDescription,
                 size = size.icon,
-                tint = if (enabled) foreground else extra.disabledContent,
+                tint = when {
+                    !enabled -> extra.disabledContent
+                    tint != null -> tint
+                    else -> foreground
+                },
             )
         }
     }

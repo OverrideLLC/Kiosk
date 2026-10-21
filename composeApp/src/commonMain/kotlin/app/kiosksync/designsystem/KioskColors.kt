@@ -233,4 +233,16 @@ object KioskColors {
 object KioskScreenColors {
     val background: Color = Color(0xFF000000)
     val content: Color = Color(0xFFFFFFFF)
+
+    /** Secondary text on black (contrast 9.5:1). */
+    val muted: Color = Color(0xFFB8B8BE)
+
+    /** Tertiary text and countdowns on black (contrast 6.2:1). */
+    val subtle: Color = Color(0xFF8A8A90)
+
+    /** Security failures and lockouts on black (contrast 9.9:1). */
+    val error: Color = Color(0xFFFFB4AB)
+
+    /** Inactive pairing code while the receiver rejects attempts. */
+    val disabled: Color = Color(0xFF5C5C62)
 }

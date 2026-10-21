@@ -1,19 +1,12 @@
 package app.kiosksync.ui
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.width
-import androidx.compose.ui.unit.dp
-import androidx.compose.material.AlertDialog
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.MaterialTheme
-import androidx.compose.material.OutlinedButton
 import androidx.compose.material.Surface
-import androidx.compose.material.Text
 import androidx.compose.material.darkColors
+import androidx.compose.material3.MaterialTheme as M3MaterialTheme
+import androidx.compose.material3.Text as M3Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -25,12 +18,17 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import app.kiosksync.AppContainer
 import app.kiosksync.core.AppRole
 import app.kiosksync.core.AppTheme
 import app.kiosksync.core.DEFAULT_PORT
 import app.kiosksync.core.Strings
+import app.kiosksync.designsystem.AppButton
+import app.kiosksync.designsystem.AppButtonSize
+import app.kiosksync.designsystem.AppButtonVariant
+import app.kiosksync.designsystem.AppDialog
+import app.kiosksync.designsystem.AppIcon
+import app.kiosksync.designsystem.KioskColors
 import app.kiosksync.designsystem.KioskTheme
 import app.kiosksync.feature.kiosk.KioskUnlockOverlay
 import app.kiosksync.feature.pairing.PairingManager
@@ -282,94 +280,86 @@ fun App(
         }
 
         if (showReceiverOptions) {
-            AlertDialog(
+            AppDialog(
+                title = Strings.OPTIONS_TITLE,
+                icon = AppIcon.LOCK_OPEN,
                 onDismissRequest = { closeReceiverOptions() },
-                title = {
-                    Text(Strings.OPTIONS_TITLE, color = Color.White, fontWeight = FontWeight.Bold)
-                },
-                text = {
-                    Text(
-                        if (currentScreen is Screen.ReceiverHome) {
+                content = {
+                    M3Text(
+                        text = if (currentScreen is Screen.ReceiverHome) {
                             Strings.RECEIVER_UNLOCKED_MESSAGE
                         } else {
                             Strings.OPTIONS_MESSAGE
                         },
-                        color = Color(0xFFCCCCCC)
+                        style = M3MaterialTheme.typography.bodyLarge,
+                        color = KioskColors.scheme.onSurfaceVariant,
                     )
                 },
-                confirmButton = {
-                    Row {
-                        OutlinedButton(
-                            onClick = { resetRole() },
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
-                        ) {
-                            Text(Strings.CHANGE_ROLE)
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Button(
-                            onClick = {
-                                showReceiverOptions = false
-                                onExitRequested()
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                backgroundColor = Color(0xFFD32F2F),
-                                contentColor = Color.White
-                            )
-                        ) {
-                            Text(Strings.EXIT_APP)
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        OutlinedButton(
-                            onClick = { closeReceiverOptions() },
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF9EC1FF))
-                        ) {
-                            Text(Strings.RELOCK_BUTTON)
-                        }
-                    }
+                actions = {
+                    AppButton(
+                        text = Strings.CHANGE_ROLE,
+                        onClick = { resetRole() },
+                        variant = AppButtonVariant.OUTLINED,
+                        size = AppButtonSize.SMALL,
+                        icon = AppIcon.SWAP_HORIZ,
+                    )
+                    AppButton(
+                        text = Strings.EXIT_APP,
+                        onClick = {
+                            showReceiverOptions = false
+                            onExitRequested()
+                        },
+                        variant = AppButtonVariant.TEXT,
+                        size = AppButtonSize.SMALL,
+                        icon = AppIcon.LOGOUT,
+                    )
+                    AppButton(
+                        text = Strings.RELOCK_BUTTON,
+                        onClick = { closeReceiverOptions() },
+                        size = AppButtonSize.SMALL,
+                        icon = AppIcon.LOCK,
+                    )
                 },
-                backgroundColor = Color(0xFF242424)
             )
         }
 
         if (showUnpairConfirm) {
-            AlertDialog(
+            AppDialog(
+                title = Strings.UNPAIR_RECEIVER_TITLE,
+                icon = AppIcon.LINK,
                 onDismissRequest = {
                     showUnpairConfirm = false
                     relockReceiverIfNeeded()
                 },
-                title = {
-                    Text(Strings.UNPAIR_RECEIVER_TITLE, color = Color.White, fontWeight = FontWeight.Bold)
+                content = {
+                    M3Text(
+                        text = Strings.UNPAIR_RECEIVER_CONFIRM,
+                        style = M3MaterialTheme.typography.bodyLarge,
+                        color = KioskColors.scheme.onSurfaceVariant,
+                    )
                 },
-                text = {
-                    Text(Strings.UNPAIR_RECEIVER_CONFIRM, color = Color(0xFFCCCCCC))
-                },
-                confirmButton = {
-                    Button(
+                actions = {
+                    AppButton(
+                        text = Strings.CANCEL_BUTTON,
+                        onClick = {
+                            showUnpairConfirm = false
+                            relockReceiverIfNeeded()
+                        },
+                        variant = AppButtonVariant.TEXT,
+                        size = AppButtonSize.SMALL,
+                    )
+                    AppButton(
+                        text = Strings.UNPAIR_BUTTON,
                         onClick = {
                             pairingManager.unpair()
                             showUnpairConfirm = false
                             relockReceiverIfNeeded()
                         },
-                        colors = ButtonDefaults.buttonColors(
-                            backgroundColor = Color(0xFFD32F2F),
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Text(Strings.UNPAIR_BUTTON)
-                    }
+                        variant = AppButtonVariant.DANGER,
+                        size = AppButtonSize.SMALL,
+                        icon = AppIcon.LINK,
+                    )
                 },
-                dismissButton = {
-                    OutlinedButton(
-                        onClick = {
-                            showUnpairConfirm = false
-                            relockReceiverIfNeeded()
-                        },
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
-                    ) {
-                        Text(Strings.CANCEL_BUTTON)
-                    }
-                },
-                backgroundColor = Color(0xFF242424)
             )
         }
     }

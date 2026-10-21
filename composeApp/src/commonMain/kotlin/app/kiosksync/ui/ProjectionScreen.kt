@@ -54,11 +54,7 @@ fun ProjectionScreen(
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        CarouselScreen(
-            stateHolder = stateHolder,
-            onExitRequested = {},
-            onChangeRoleRequested = {}
-        )
+        CarouselScreen(stateHolder = stateHolder)
         KioskUnlockOverlay(lockState)
     }
 }

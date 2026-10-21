@@ -24,8 +24,7 @@ data class PlaybackUiState(
     val currentIndex: Int = 0,
     val currentItem: PlaylistItem? = null,
     val currentBitmap: ImageBitmap? = null,
-    val hasItems: Boolean = false,
-    val isExitDialogOpen: Boolean = false
+    val hasItems: Boolean = false
 )
 
 class PlaybackStateHolder(
@@ -179,11 +178,4 @@ class PlaybackStateHolder(
         }
     }
 
-    fun requestExitDialog() {
-        _uiState.update { it.copy(isExitDialogOpen = true) }
-    }
-
-    fun dismissExitDialog() {
-        _uiState.update { it.copy(isExitDialogOpen = false) }
-    }
 }

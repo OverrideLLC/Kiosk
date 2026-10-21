@@ -35,6 +35,8 @@ object Strings {
     const val RECEIVER_LOCKED_TITLE = "Demasiados intentos fallidos"
     const val RECEIVER_LOCKED_MESSAGE = "Espera unos segundos antes de intentarlo de nuevo."
     const val RECEIVER_WAITING_FOR_EMITTER = "Esperando al Controlador"
+
+    fun receiverCodeRenewsIn(countdown: String): String = "$RECEIVER_CODE_RENEWS_IN $countdown"
     const val RECEIVER_WAITING_PASSWORD_TITLE = "Esperando contraseña del Controlador"
     const val RECEIVER_WAITING_PASSWORD_MESSAGE =
         "La pantalla se bloqueará en cuanto el Controlador envíe la contraseña de bloqueo."
@@ -131,6 +133,8 @@ object Strings {
     const val KIOSK_LOCKED_OUT = "Demasiados intentos fallidos. Espera antes de volver a intentarlo."
     const val KIOSK_KEY_CHAR = "•"
     const val KIOSK_KEY_BACKSPACE = "Retroceso"
+
+    fun kioskTypedCharacters(count: Int): String = "$count caracteres escritos."
 
     /**
      * Only shown in the controller's "Seguridad" dialog, never on a locked

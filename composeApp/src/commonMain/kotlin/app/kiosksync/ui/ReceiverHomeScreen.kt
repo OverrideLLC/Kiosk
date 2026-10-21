@@ -93,9 +93,7 @@ fun ReceiverHomeScreen(
         !lockState.hasPassword -> WaitingForPasswordScreen()
 
         else -> CarouselScreen(
-            stateHolder = playbackStateHolder,
-            onExitRequested = onExitRequested,
-            onChangeRoleRequested = onChangeRoleRequested
+            stateHolder = playbackStateHolder
         )
     }
 }
