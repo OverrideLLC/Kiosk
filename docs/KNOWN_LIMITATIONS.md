@@ -5,9 +5,10 @@ prometer funciones o de instalar la app en un comercio real.
 
 ## Plataforma y empaquetado
 
-- **Windows 10/11 es la plataforma objetivo.** El desarrollo y las pruebas de esta
-  versión se hicieron en Linux; el hook de teclado nativo de Windows no se pudo
-  probar aquí.
+- **Windows 10/11 es la plataforma objetivo.** Esta versión se compiló y se
+  ejecutó en Windows 11 con JDK 21; el hook de teclado nativo se instala
+  correctamente, pero el bloqueo de atajos del sistema requiere una prueba manual
+  en el equipo destino.
 - El instalador `.exe`/`.msi` requiere **WiX Toolset** en la máquina que compila.
   Sin WiX solo se genera la carpeta portable.
 - `jpackage` **no** produce un único `.exe` autocontenido: la versión portable es

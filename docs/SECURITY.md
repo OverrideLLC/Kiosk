@@ -88,9 +88,11 @@ solo sirve contra ese servicio falso.
 
 - `Ctrl+Alt+Del` no se puede interceptar; el usuario siempre puede llegar a la
   pantalla de seguridad de Windows.
-- El hook de teclado es de bajo nivel y **solo está probado en Windows**. En Linux
-  o con `--windowed` se usa un manejo de teclas de Compose, que no bloquea atajos
-  del sistema.
+- El hook de teclado es de bajo nivel y **solo existe en Windows**. Esta versión se
+  verificó en Windows 11 (el hook se instala), pero el bloqueo efectivo de atajos
+  del sistema requiere una prueba manual en el equipo destino. En Linux o con
+  `--windowed` se usa un manejo de teclas de Compose, que no bloquea atajos del
+  sistema.
 - La app no impide apagar el equipo, desconectar la red ni cerrar sesión.
 - El bloqueo no sustituye una cuenta de Windows restringida ni una política de
   grupo.

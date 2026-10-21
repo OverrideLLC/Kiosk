@@ -25,6 +25,16 @@ Las próximas veces basta con abrir la app: la pantalla se anuncia sola y el
 Controlador la vuelve a encontrar aunque cambie de IP. Si la red no permite mDNS,
 usa **Agregar por IP** (`192.168.1.40:8765`).
 
+## Descarga
+
+Las versiones empaquetadas se publican en
+[GitHub Releases](https://github.com/Drinity/OverrideKiosk/releases). Descarga el
+`.zip` portable, descomprímelo en la PC de destino y ejecuta `KioskSync.exe`. No
+requiere JDK, instalador ni permisos de administrador.
+
+Si todavía no hay una versión publicada, genera la carpeta portable siguiendo
+[Empaquetado para Windows](docs/PACKAGING.md).
+
 ## Requisitos
 
 - Windows 10 u 11 (incluida la edición Home) para el uso normal.
@@ -63,12 +73,17 @@ automático no aparece en la misma máquina.
 Los datos viven en `%APPDATA%\KioskSync\`:
 
 ```
-config.json      rol, id del equipo, nombre, puerto, tema
-paired.json      vinculación (token) o lista de pantallas del Controlador
-playlist.json    playlist vigente
+config.json      rol, id del equipo, nombre, puerto y tema
+paired.json      vinculación: token de la Pantalla o pantallas del Controlador
+playlists.json   biblioteca de playlists del Controlador
+playlist.json    playlist vigente de la Pantalla
+lock.json        contraseña (hash) y secuencia de desbloqueo
 media\           imágenes
 logs\app.log     registro con rotación
 ```
+
+La Pantalla borra su contenido, su bloqueo y su vinculación al arrancar, para no
+reproducir material viejo. Consulta [Límites conocidos](docs/KNOWN_LIMITATIONS.md).
 
 ## Documentación
 

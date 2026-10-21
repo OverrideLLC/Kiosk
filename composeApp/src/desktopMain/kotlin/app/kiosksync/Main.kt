@@ -19,6 +19,7 @@ import androidx.compose.ui.window.rememberWindowState
 import app.kiosksync.core.APP_NAME
 import app.kiosksync.core.AppArgs
 import app.kiosksync.core.AppRole
+import app.kiosksync.core.Strings
 import app.kiosksync.designsystem.catalog.CatalogScreen
 import app.kiosksync.feature.kiosk.KioskKeyEvent
 import app.kiosksync.feature.kiosk.KioskKeyKind
@@ -370,7 +371,7 @@ private fun showImagePicker(): List<String> {
 }
 
 private fun showImagePickerOnEventDispatchThread(): List<String> {
-    val dialog = FileDialog(null as Frame?, "Agregar imágenes", FileDialog.LOAD)
+    val dialog = FileDialog(null as Frame?, Strings.ADD_IMAGES, FileDialog.LOAD)
     dialog.isMultipleMode = true
     dialog.file = "*.jpg;*.jpeg;*.png;*.webp"
     dialog.isVisible = true
