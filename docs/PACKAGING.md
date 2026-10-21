@@ -8,8 +8,10 @@ Hay dos entregables: **carpeta portable** (no requiere WiX) e **instalador**
 
 - Windows 10 u 11.
 - JDK 17 o superior (probado con JDK 21). Comprueba con `java -version`.
-- WiX Toolset **3.x** instalado y en el `PATH` solo si vas a generar el instalador.
-  `jpackage` de JDK 17/21 no soporta WiX 4.
+- Para generar el instalador **no hace falta instalar WiX a mano**: el plugin de
+  Compose descarga WiX 3.11.2 automáticamente la primera vez que ejecutas
+  `packageExe` o `packageMsi`. Esa primera ejecución sí necesita internet; las
+  siguientes reutilizan la descarga.
 - La primera compilación necesita internet para descargar Gradle y dependencias.
   La app empaquetada **no**.
 
@@ -37,12 +39,13 @@ Para entregarla:
 No hace falta JDK ni permisos de administrador. El `.exe` es el lanzador; la app
 vive en `app\` y `runtime\`. **No muevas el `.exe` fuera de la carpeta.**
 
-> `jpackage` no genera un único `.exe` autocontenido. La opción portable es una
-> carpeta con un `.exe` dentro. Es el comportamiento esperado, no un error.
+> `jpackage` no genera un único `.exe` autocontenido para la opción portable: es
+> una carpeta con un `.exe` dentro. Es el comportamiento esperado, no un error.
+> El instalador `.exe`/`.msi` sí es un archivo único.
 
 ## 2. Instalador
 
-Con WiX 3.x instalado:
+El plugin descarga WiX automáticamente; solo necesitas internet la primera vez:
 
 ```powershell
 .\gradlew.bat packageMsi   # instalador .msi
@@ -88,18 +91,37 @@ archivo con otro `.ico` multi-resolución y vuelve a empaquetar.
    nuevo (la Pantalla se limpia al iniciar; ver
    [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md)).
 
+## Artefactos generados en Windows 11
+
+Estos son los archivos que se generaron y probaron en esta máquina (2026-10-21):
+
+| Archivo en `dist\` | Tamaño | Para qué sirve |
+| --- | --- | --- |
+| `KioskSync-1.0.0.exe` | ~72 MB | Instalador único. Instala por usuario, sin administrador, con acceso directo. |
+| `KioskSync-1.0.0.msi` | ~71 MB | Instalador MSI equivalente, útil para despliegue con `msiexec`. |
+| `KioskSync-1.0.0-portable.zip` | ~70 MB | Carpeta portable comprimida: descomprimir y ejecutar `KioskSync.exe`. |
+
+Los originales quedan en `composeApp\build\compose\binaries\main\`; la carpeta
+`dist\` es solo una copia cómoda para distribuir y está ignorada por Git. Incluye
+`SHA256SUMS.txt` con los hashes de los tres archivos.
+
+El instalador `.exe` y el `.msi` **no están firmados**: Windows SmartScreen pedirá
+confirmación. La instalación se probó en `%LOCALAPPDATA%\KioskSync` y se
+desinstaló después de verificar que la app abría y escuchaba en el puerto 8765.
+
 ## Consumo de memoria
 
-Medición de referencia con la imagen `createDistributable` en Linux (JVM + Compose
-+ Skia, sin imágenes cargadas):
+Medición con la carpeta portable en Windows 11 (JDK 21, ventana normal, sin
+imágenes cargadas):
 
-| Rol | RSS aproximado |
-| --- | --- |
-| Controlador (ventana normal) | ~230 MB |
-| Pantalla (ventana normal) | ~225 MB |
+| Rol | Working set | Memoria privada |
+| --- | --- | --- |
+| Controlador | ~241 MB | ~275 MB |
+| Pantalla | ~231 MB | ~267 MB |
 
-En Windows puede variar por la versión de la JVM y por la cantidad y el tamaño de
-las imágenes. Mide con el Administrador de tareas en la PC real antes de fijar
+El lanzador de `jpackage` agrega un proceso auxiliar de unos 8 MB. El consumo
+puede variar por la versión de la JVM y por la cantidad y el tamaño de las
+imágenes. Mide con el Administrador de tareas en la PC real antes de fijar
 requisitos de hardware. Para un equipo de 4 GB de RAM es suficiente; 8 GB deja
 margen para Windows y el resto de la operación.
 

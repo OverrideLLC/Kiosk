@@ -39,10 +39,11 @@ trabajo cerrado y para poder continuar desde otra computadora.
    - Cortar la red a mitad de una sincronización y comprobar que la Pantalla
      conserva la playlist anterior y sigue reproduciendo sin red.
 4. **Empaquetado**
-   - Ejecutar el build final y generar la carpeta portable.
-   - Si se quiere instalador, instalar WiX Toolset y generar el `.exe`/`.msi`.
-   - Probar la carpeta portable en una PC limpia sin JDK.
-   - Medir el consumo de RAM de cada rol y anotarlo en la documentación.
+   - [x] Build final y carpeta portable generados.
+   - [x] Instaladores `.exe` y `.msi` generados; el plugin descarga WiX solo.
+   - [ ] Probar la carpeta portable en una PC limpia sin JDK.
+   - [x] RAM medida en Windows 11: Controlador ~241 MB, Pantalla ~231 MB
+     (working set, sin imágenes cargadas).
 5. **Publicación**
    - Todavía no hay una versión publicada en GitHub Releases.
    - El `README.md` explica que, mientras tanto, se debe usar una carpeta
