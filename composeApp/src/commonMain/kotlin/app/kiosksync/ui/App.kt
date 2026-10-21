@@ -160,12 +160,15 @@ fun App(
         }
     }
 
-    // Unlocking the receiver temporarily opens the admin dialog. Closing it
-    // re-engages the lock.
+    // While locked, the screen must never show the admin menu. The menu only
+    // appears after the correct password unlocks the device.
     LaunchedEffect(lockState.isLocked) {
         val previous = wasLocked
         wasLocked = lockState.isLocked
-        if (previous && !lockState.isLocked && currentScreen is Screen.ReceiverHome) {
+        if (lockState.isLocked) {
+            showReceiverOptions = false
+            showUnpairConfirm = false
+        } else if (previous && currentScreen is Screen.ReceiverHome) {
             showReceiverOptions = true
         }
     }

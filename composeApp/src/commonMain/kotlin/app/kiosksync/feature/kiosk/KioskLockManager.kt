@@ -64,7 +64,7 @@ class KioskLockManager(
             it.copy(
                 isLocked = true,
                 hasPassword = config != null,
-                showUnlockHint = true,
+                showUnlockHint = false,
                 typedLength = 0,
                 chordStage = 0,
                 lastKey = null,
@@ -76,9 +76,6 @@ class KioskLockManager(
         logger.info(
             "Kiosk lock engaged (password configured: ${config != null})"
         )
-        // Show the unlock card right away, then let it hide so it does not
-        // cover the content permanently. It comes back on any key press.
-        scheduleHintHide()
     }
 
     /** Releases the lock without a password (role change or shutdown). */
@@ -103,9 +100,7 @@ class KioskLockManager(
             KioskUnlockResult.UniversalAccepted -> unlock(recovered = true)
             KioskUnlockResult.Rejected -> registerFailure(lastKey)
 
-            // Any other key keeps the on-screen key feedback in sync, even a
-            // wrong key that resets the chord.
-            else -> {
+            KioskUnlockResult.ChordProgress, KioskUnlockResult.Typing -> {
                 scheduleHintHide()
                 _uiState.update {
                     it.copy(
@@ -115,6 +110,21 @@ class KioskLockManager(
                         lastKey = lastKey ?: it.lastKey,
                         message = null
                     )
+                }
+            }
+
+            // Any unrelated key (Esc, arrows, letters before the chord...) must
+            // do absolutely nothing while locked. The unlock card only appears
+            // once the Shift+Shift+Ctrl sequence starts. If the card is already
+            // visible, keep the chord progress in sync with the detector.
+            KioskUnlockResult.Ignored -> {
+                if (_uiState.value.showUnlockHint) {
+                    _uiState.update {
+                        it.copy(
+                            chordStage = activeDetector.chordStage,
+                            typedLength = activeDetector.typedLength
+                        )
+                    }
                 }
             }
         }

@@ -47,7 +47,23 @@ class KioskLockManagerTest {
 
         manager.lock(force = true)
         assertTrue(manager.uiState.value.isLocked)
+        // A freshly locked screen must not show anything until the user starts
+        // the unlock sequence.
+        assertFalse(manager.uiState.value.showUnlockHint)
+    }
+
+    @Test
+    fun `unrelated keys do nothing while locked`() {
+        val manager = lockedManager()
+
+        manager.onKey(KioskKeyEvent(KioskKeyKind.OTHER))
+        assertFalse(manager.uiState.value.showUnlockHint)
+        assertEquals(0, manager.uiState.value.chordStage)
+
+        // The card only appears once the Shift+Shift+Ctrl chord begins.
+        manager.onKey(KioskKeyEvent(KioskKeyKind.SHIFT))
         assertTrue(manager.uiState.value.showUnlockHint)
+        assertEquals(1, manager.uiState.value.chordStage)
     }
 
     @Test
