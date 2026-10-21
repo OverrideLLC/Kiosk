@@ -11,5 +11,6 @@ data class AppConfig(
     val deviceId: String,
     val deviceName: String,
     val port: Int = DEFAULT_PORT,
-    val theme: AppTheme = AppTheme.DARK
+    val theme: AppTheme = AppTheme.DARK,
+    val reduceMotion: Boolean = false
 )

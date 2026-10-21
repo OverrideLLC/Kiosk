@@ -11,6 +11,9 @@ object Strings {
     const val ROLE_RECEIVER_TITLE = "Pantalla"
     const val ROLE_RECEIVER_DESC = "Recibe el contenido y lo reproduce a pantalla completa."
     const val ROLE_CONFIRM_BUTTON = "Continuar con este rol"
+    const val ROLE_SELECT_FIRST = "Elige un rol para continuar."
+    const val ROLE_CHANGE_HINT = "Puedes cambiarlo después desde Ajustes en el Controlador."
+    const val APP_TAGLINE = "Contenido para tus pantallas, sin internet."
     const val CHANGE_ROLE = "Cambiar de rol"
     const val CHANGE_ROLE_CONFIRM = "¿Seguro que deseas cambiar de rol? Se borrará la vinculación actual."
 

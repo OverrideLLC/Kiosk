@@ -2,6 +2,7 @@ package app.kiosksync.feature.role
 
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.AppRole
+import app.kiosksync.core.AppTheme
 import app.kiosksync.platform.LocalStorage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,13 +26,21 @@ class RoleStateHolder(
         _uiState.update { it.copy(selectedRole = role) }
     }
 
-    fun confirmRole(deviceId: String, deviceName: String, port: Int): AppConfig? {
+    fun confirmRole(
+        deviceId: String,
+        deviceName: String,
+        port: Int,
+        theme: AppTheme = AppTheme.DARK,
+        reduceMotion: Boolean = false
+    ): AppConfig? {
         val role = _uiState.value.selectedRole ?: return null
         val config = AppConfig(
             role = role,
             deviceId = deviceId,
             deviceName = deviceName,
-            port = port
+            port = port,
+            theme = theme,
+            reduceMotion = reduceMotion
         )
         localStorage.saveConfig(config)
         logger.info("Role confirmed and saved: $role for device $deviceId ($deviceName)")

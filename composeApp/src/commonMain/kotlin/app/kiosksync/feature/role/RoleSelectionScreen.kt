@@ -1,8 +1,8 @@
 package app.kiosksync.feature.role
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,27 +10,43 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults
-import androidx.compose.material.Card
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.OutlinedButton
-import androidx.compose.material.Text
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import app.kiosksync.core.AppRole
+import app.kiosksync.core.AppTheme
 import app.kiosksync.core.Strings
+import app.kiosksync.designsystem.AppButton
+import app.kiosksync.designsystem.AppButtonSize
+import app.kiosksync.designsystem.AppButtonVariant
+import app.kiosksync.designsystem.AppIcon
+import app.kiosksync.designsystem.AppSelectableCard
+import app.kiosksync.designsystem.KioskColors
+import app.kiosksync.designsystem.KioskShape
+import app.kiosksync.designsystem.Sizes
+import app.kiosksync.designsystem.Space
 
+/**
+ * First-run role choice. Two large cards, arrow-key navigation and a single
+ * primary action. Every colour, size and shape comes from the design system.
+ */
 @Composable
 fun RoleSelectionScreen(
     stateHolder: RoleStateHolder,
@@ -38,147 +54,164 @@ fun RoleSelectionScreen(
     deviceId: String,
     deviceName: String,
     port: Int,
-    onExitRequested: () -> Unit = {}
+    onExitRequested: () -> Unit = {},
+    theme: AppTheme = AppTheme.DARK,
+    reduceMotion: Boolean = false
 ) {
     val uiState by stateHolder.uiState.collectAsState()
+    val colors = KioskColors.scheme
+    val selectedRole = uiState.selectedRole
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .background(colors.surface),
     ) {
-        Text(
-            text = Strings.ROLE_SELECTION_TITLE,
-            fontSize = 26.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Text(
-            text = Strings.ROLE_SELECTION_SUBTITLE,
-            fontSize = 15.sp,
-            color = Color(0xFFAAAAAA),
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(36.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterHorizontally)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = Space.xl, vertical = Space.xxl),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            RoleCard(
-                title = Strings.ROLE_EMITTER_TITLE,
-                description = Strings.ROLE_EMITTER_DESC,
-                role = AppRole.EMITTER,
-                isSelected = uiState.selectedRole == AppRole.EMITTER,
-                onSelect = { stateHolder.selectRole(AppRole.EMITTER) },
-                modifier = Modifier.weight(1f).height(180.dp)
-            )
+            Column(modifier = Modifier.widthIn(max = Sizes.contentMaxWidth).fillMaxWidth()) {
+                BrandHeader(onExitRequested = onExitRequested)
 
-            RoleCard(
-                title = Strings.ROLE_RECEIVER_TITLE,
-                description = Strings.ROLE_RECEIVER_DESC,
-                role = AppRole.RECEIVER,
-                isSelected = uiState.selectedRole == AppRole.RECEIVER,
-                onSelect = { stateHolder.selectRole(AppRole.RECEIVER) },
-                modifier = Modifier.weight(1f).height(180.dp)
-            )
-        }
+                Spacer(Modifier.height(Space.huge))
 
-        Spacer(modifier = Modifier.height(36.dp))
-
-        Button(
-            onClick = {
-                val config = stateHolder.confirmRole(
-                    deviceId = deviceId,
-                    deviceName = deviceName,
-                    port = port
+                Text(
+                    text = Strings.ROLE_SELECTION_TITLE,
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = colors.onSurface,
                 )
-                if (config != null) {
-                    onRoleConfirmed(config)
+                Spacer(Modifier.height(Space.xs))
+                Text(
+                    text = Strings.ROLE_SELECTION_SUBTITLE,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = colors.onSurfaceVariant,
+                )
+
+                Spacer(Modifier.height(Space.xl))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .selectableGroup()
+                        .onPreviewKeyEvent { event ->
+                            if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                            when (event.key) {
+                                Key.DirectionLeft -> {
+                                    stateHolder.selectRole(AppRole.EMITTER)
+                                    true
+                                }
+
+                                Key.DirectionRight -> {
+                                    stateHolder.selectRole(AppRole.RECEIVER)
+                                    true
+                                }
+
+                                else -> false
+                            }
+                        },
+                    horizontalArrangement = Arrangement.spacedBy(Space.lg),
+                ) {
+                    AppSelectableCard(
+                        title = Strings.ROLE_EMITTER_TITLE,
+                        description = Strings.ROLE_EMITTER_DESC,
+                        icon = AppIcon.CAST,
+                        selected = selectedRole == AppRole.EMITTER,
+                        onClick = { stateHolder.selectRole(AppRole.EMITTER) },
+                        modifier = Modifier.weight(1f).height(200.dp),
+                    )
+                    AppSelectableCard(
+                        title = Strings.ROLE_RECEIVER_TITLE,
+                        description = Strings.ROLE_RECEIVER_DESC,
+                        icon = AppIcon.TV,
+                        selected = selectedRole == AppRole.RECEIVER,
+                        onClick = { stateHolder.selectRole(AppRole.RECEIVER) },
+                        modifier = Modifier.weight(1f).height(200.dp),
+                    )
                 }
-            },
-            enabled = uiState.selectedRole != null,
-            colors = ButtonDefaults.buttonColors(
-                backgroundColor = Color(0xFF3D7AF5),
-                disabledBackgroundColor = Color(0xFF2A2A2A),
-                contentColor = Color.White,
-                disabledContentColor = Color(0xFF666666)
-            ),
-            shape = RoundedCornerShape(8.dp),
-            modifier = Modifier.height(48.dp).width(260.dp)
-        ) {
-            Text(
-                text = Strings.ROLE_CONFIRM_BUTTON,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+                Spacer(Modifier.height(Space.xl))
 
-        OutlinedButton(
-            onClick = onExitRequested,
-            colors = ButtonDefaults.outlinedButtonColors(
-                contentColor = Color(0xFFAAAAAA)
-            ),
-            shape = RoundedCornerShape(8.dp),
-            modifier = Modifier.height(40.dp).width(260.dp)
-        ) {
-            Text(
-                text = Strings.EXIT_APP,
-                fontSize = 13.sp
-            )
+                AppButton(
+                    text = Strings.ROLE_CONFIRM_BUTTON,
+                    onClick = {
+                        val config = stateHolder.confirmRole(
+                            deviceId = deviceId,
+                            deviceName = deviceName,
+                            port = port,
+                            theme = theme,
+                            reduceMotion = reduceMotion,
+                        )
+                        if (config != null) {
+                            onRoleConfirmed(config)
+                        }
+                    },
+                    enabled = selectedRole != null,
+                    disabledReason = Strings.ROLE_SELECT_FIRST,
+                    size = AppButtonSize.LARGE,
+                    icon = AppIcon.PLAY_ARROW,
+                    modifier = Modifier.widthIn(min = 320.dp, max = 420.dp),
+                )
+
+                Spacer(Modifier.height(Space.xs))
+                Text(
+                    text = if (selectedRole == null) {
+                        Strings.ROLE_SELECT_FIRST
+                    } else {
+                        Strings.ROLE_CHANGE_HINT
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colors.onSurfaceVariant,
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun RoleCard(
-    title: String,
-    description: String,
-    role: AppRole,
-    isSelected: Boolean,
-    onSelect: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val borderColor = if (isSelected) Color(0xFF3D7AF5) else Color(0xFF333333)
-    val cardBg = if (isSelected) Color(0xFF232B3B) else Color(0xFF1E1E1E)
+private fun BrandHeader(onExitRequested: () -> Unit) {
+    val colors = KioskColors.scheme
 
-    Card(
-        backgroundColor = cardBg,
-        border = BorderStroke(if (isSelected) 2.dp else 1.dp, borderColor),
-        shape = RoundedCornerShape(12.dp),
-        elevation = if (isSelected) 6.dp else 2.dp,
-        modifier = modifier.clickable { onSelect() }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(
+        Box(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(colors.primaryContainer),
+            contentAlignment = Alignment.Center,
         ) {
-            Text(
-                text = title,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = if (isSelected) Color(0xFF75A6FF) else Color.White
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = description,
-                fontSize = 13.sp,
-                color = Color(0xFFBBBBBB),
-                textAlign = TextAlign.Center,
-                lineHeight = 18.sp
+            AppIcon(
+                icon = AppIcon.CAST,
+                contentDescription = null,
+                size = Sizes.iconCompact,
+                tint = colors.onPrimaryContainer,
             )
         }
+        Spacer(Modifier.size(Space.sm))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = Strings.APP_TITLE,
+                style = MaterialTheme.typography.titleLarge,
+                color = colors.onSurface,
+            )
+            Text(
+                text = Strings.APP_TAGLINE,
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant,
+            )
+        }
+        AppButton(
+            text = Strings.EXIT_APP,
+            onClick = onExitRequested,
+            variant = AppButtonVariant.TEXT,
+            size = AppButtonSize.SMALL,
+            icon = AppIcon.LOGOUT,
+        )
     }
 }

@@ -28,8 +28,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import app.kiosksync.AppContainer
 import app.kiosksync.core.AppRole
+import app.kiosksync.core.AppTheme
 import app.kiosksync.core.DEFAULT_PORT
 import app.kiosksync.core.Strings
+import app.kiosksync.designsystem.KioskTheme
 import app.kiosksync.feature.kiosk.KioskUnlockOverlay
 import app.kiosksync.feature.pairing.PairingManager
 import app.kiosksync.feature.playback.PlaybackStateHolder
@@ -50,6 +52,26 @@ fun App(
     val effectivePort = container.args.port ?: existingConfig?.port ?: DEFAULT_PORT
     val pairingManager: PairingManager = container.pairingManager
 
+    // Appearance is shared by every role and persisted in config.json.
+    var appTheme by remember { mutableStateOf(existingConfig?.theme ?: AppTheme.DARK) }
+    var reduceMotion by remember { mutableStateOf(existingConfig?.reduceMotion ?: false) }
+
+    fun persistConfig(transform: (AppConfig) -> AppConfig) {
+        container.localStorage.loadConfig()?.let { current ->
+            container.localStorage.saveConfig(transform(current))
+        }
+    }
+
+    fun updateTheme(theme: AppTheme) {
+        appTheme = theme
+        persistConfig { it.copy(theme = theme) }
+    }
+
+    fun updateReduceMotion(enabled: Boolean) {
+        reduceMotion = enabled
+        persistConfig { it.copy(reduceMotion = enabled) }
+    }
+
     // Determine initial screen based on CLI args and saved config
     val initialScreen = remember {
         val forcedRole = container.args.role
@@ -58,7 +80,9 @@ fun App(
                 role = forcedRole,
                 deviceId = initialDeviceId,
                 deviceName = container.deviceName,
-                port = effectivePort
+                port = effectivePort,
+                theme = existingConfig?.theme ?: AppTheme.DARK,
+                reduceMotion = existingConfig?.reduceMotion ?: false
             )
             container.localStorage.saveConfig(config)
             when (forcedRole) {
@@ -193,6 +217,7 @@ fun App(
         }
     }
 
+    KioskTheme(theme = appTheme, reduceMotion = reduceMotion) {
     MaterialTheme(
         colors = darkColors(
             background = Color(0xFF121212),
@@ -225,7 +250,9 @@ fun App(
                             deviceId = initialDeviceId,
                             deviceName = container.deviceName,
                             port = effectivePort,
-                            onExitRequested = onExitRequested
+                            onExitRequested = onExitRequested,
+                            theme = appTheme,
+                            reduceMotion = reduceMotion
                         )
                     }
 
@@ -345,5 +372,6 @@ fun App(
                 backgroundColor = Color(0xFF242424)
             )
         }
+    }
     }
 }
