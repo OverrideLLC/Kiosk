@@ -250,97 +250,97 @@ fun App(
                 KioskUnlockOverlay(lockState)
             }
         }
-    }
 
-    if (showReceiverOptions) {
-        AlertDialog(
-            onDismissRequest = { closeReceiverOptions() },
-            title = {
-                Text(Strings.OPTIONS_TITLE, color = Color.White, fontWeight = FontWeight.Bold)
-            },
-            text = {
-                Text(
-                    if (currentScreen is Screen.ReceiverHome) {
-                        Strings.RECEIVER_UNLOCKED_MESSAGE
-                    } else {
-                        Strings.OPTIONS_MESSAGE
-                    },
-                    color = Color(0xFFCCCCCC)
-                )
-            },
-            confirmButton = {
-                Row {
-                    OutlinedButton(
-                        onClick = { resetRole() },
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
-                    ) {
-                        Text(Strings.CHANGE_ROLE)
+        if (showReceiverOptions) {
+            AlertDialog(
+                onDismissRequest = { closeReceiverOptions() },
+                title = {
+                    Text(Strings.OPTIONS_TITLE, color = Color.White, fontWeight = FontWeight.Bold)
+                },
+                text = {
+                    Text(
+                        if (currentScreen is Screen.ReceiverHome) {
+                            Strings.RECEIVER_UNLOCKED_MESSAGE
+                        } else {
+                            Strings.OPTIONS_MESSAGE
+                        },
+                        color = Color(0xFFCCCCCC)
+                    )
+                },
+                confirmButton = {
+                    Row {
+                        OutlinedButton(
+                            onClick = { resetRole() },
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+                        ) {
+                            Text(Strings.CHANGE_ROLE)
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Button(
+                            onClick = {
+                                showReceiverOptions = false
+                                onExitRequested()
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                backgroundColor = Color(0xFFD32F2F),
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Text(Strings.EXIT_APP)
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        OutlinedButton(
+                            onClick = { closeReceiverOptions() },
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF9EC1FF))
+                        ) {
+                            Text(Strings.RELOCK_BUTTON)
+                        }
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
+                },
+                backgroundColor = Color(0xFF242424)
+            )
+        }
+
+        if (showUnpairConfirm) {
+            AlertDialog(
+                onDismissRequest = {
+                    showUnpairConfirm = false
+                    relockReceiverIfNeeded()
+                },
+                title = {
+                    Text(Strings.UNPAIR_RECEIVER_TITLE, color = Color.White, fontWeight = FontWeight.Bold)
+                },
+                text = {
+                    Text(Strings.UNPAIR_RECEIVER_CONFIRM, color = Color(0xFFCCCCCC))
+                },
+                confirmButton = {
                     Button(
                         onClick = {
-                            showReceiverOptions = false
-                            onExitRequested()
+                            pairingManager.unpair()
+                            showUnpairConfirm = false
+                            relockReceiverIfNeeded()
                         },
                         colors = ButtonDefaults.buttonColors(
                             backgroundColor = Color(0xFFD32F2F),
                             contentColor = Color.White
                         )
                     ) {
-                        Text(Strings.EXIT_APP)
+                        Text(Strings.UNPAIR_BUTTON)
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
+                },
+                dismissButton = {
                     OutlinedButton(
-                        onClick = { closeReceiverOptions() },
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF9EC1FF))
+                        onClick = {
+                            showUnpairConfirm = false
+                            relockReceiverIfNeeded()
+                        },
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
                     ) {
-                        Text(Strings.RELOCK_BUTTON)
+                        Text(Strings.CANCEL_BUTTON)
                     }
-                }
-            },
-            backgroundColor = Color(0xFF242424)
-        )
-    }
-
-    if (showUnpairConfirm) {
-        AlertDialog(
-            onDismissRequest = {
-                showUnpairConfirm = false
-                relockReceiverIfNeeded()
-            },
-            title = {
-                Text(Strings.UNPAIR_RECEIVER_TITLE, color = Color.White, fontWeight = FontWeight.Bold)
-            },
-            text = {
-                Text(Strings.UNPAIR_RECEIVER_CONFIRM, color = Color(0xFFCCCCCC))
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        pairingManager.unpair()
-                        showUnpairConfirm = false
-                        relockReceiverIfNeeded()
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        backgroundColor = Color(0xFFD32F2F),
-                        contentColor = Color.White
-                    )
-                ) {
-                    Text(Strings.UNPAIR_BUTTON)
-                }
-            },
-            dismissButton = {
-                OutlinedButton(
-                    onClick = {
-                        showUnpairConfirm = false
-                        relockReceiverIfNeeded()
-                    },
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
-                ) {
-                    Text(Strings.CANCEL_BUTTON)
-                }
-            },
-            backgroundColor = Color(0xFF242424)
-        )
+                },
+                backgroundColor = Color(0xFF242424)
+            )
+        }
     }
 }
