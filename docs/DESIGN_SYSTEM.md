@@ -129,7 +129,7 @@ Nada por debajo de **13 sp** en el Controlador.
 `KioskDisplayType` expone:
 
 - `pairingCode()`: 104 sp monoespaciado, `letterSpacing` 8 sp (código ≥ 96 sp).
-- `screenTitle()`: 36 sp display.
+- `screenTitle()`: 40 sp display.
 - `screenBody()`: 28 sp.
 - `screenCaption()`: 24 sp.
 
@@ -141,7 +141,10 @@ Nada por debajo de **13 sp** en el Controlador.
 - Diálogos: 28 dp.
 - Menús: 20 dp.
 - Escala de espacio: 4, 8, 12, 16, 24, 32, 40 y 56 dp (`Space`).
-- Ancho máximo de contenido: 960 dp (`Sizes.contentMaxWidth`).
+- Ancho máximo de contenido: 960 dp (`Sizes.contentMaxWidth`) en selección de
+  rol, pantalla de vinculación y diálogos. El Controlador es un tablero de dos
+  columnas y usa el ancho disponible con márgenes de 24–32 dp; sus filas y
+  tarjetas mantienen la lectura acotada.
 - Área de clic mínima: 40 dp.
 
 ## Movimiento
@@ -169,7 +172,7 @@ La Pantalla en reproducción no tiene movimiento decorativo.
 | `AppSelectableCard` | `AppSelectableCard.kt` | tarjeta con rol radio/check, foco y “morph” |
 | `AppStatusChip` | `AppStatusChip.kt` | estados con tono semántico |
 | `AppListItem` | `AppListItem.kt` | fila con miniatura y acciones |
-| `AppDialog` | `AppDialog.kt` | diálogo 480 dp (640 dp en el de seguridad) con ícono y acciones |
+| `AppDialog` | `AppDialog.kt` | diálogo 480 dp (600 dp en el de seguridad) con ícono y acciones |
 | `AppDropdownMenu` | `AppDropdownMenu.kt` | menú de desbordamiento |
 | `AppSnackbarHost` | `AppSnackbar.kt` | aviso con “Deshacer” |
 | `AppLoadingIndicator` | `AppLoadingIndicator.kt` | puntos ondulados |

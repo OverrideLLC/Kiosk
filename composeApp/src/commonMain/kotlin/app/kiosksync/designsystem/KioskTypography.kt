@@ -135,7 +135,11 @@ object KioskDisplayType {
     )
 
     @Composable
-    fun screenTitle(): TextStyle = MaterialTheme.typography.displaySmall
+    fun screenTitle(): TextStyle = MaterialTheme.typography.displaySmall.copy(
+        // Minimum 40 sp for the Screen role, readable from several metres.
+        fontSize = 40.sp,
+        lineHeight = 48.sp,
+    )
 
     @Composable
     fun screenBody(): TextStyle = MaterialTheme.typography.headlineSmall.copy(
