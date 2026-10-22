@@ -3,7 +3,7 @@
 Fecha: 2026-10-22  
 Rama: `master`  
 Último commit de código: consulta `git log -1 --oneline`.
-Remoto: `https://github.com/Drinity/OverrideKiosk.git`
+Remoto: `https://github.com/OverrideLLC/Kiosk.git`
 
 ## Estado actual
 
@@ -67,7 +67,7 @@ trabajo cerrado y para poder continuar desde otra computadora.
 6. **Publicación**
    - Licencia MIT añadida en `LICENSE` y en el `README.md`.
    - [x] Release `v1.1.0` publicada por GitHub Actions el 2026-10-22:
-     https://github.com/Drinity/OverrideKiosk/releases/tag/v1.1.0
+     https://github.com/OverrideLLC/Kiosk/releases/tag/v1.1.0
    - [x] Artefactos publicados: `OverrideKiosk-1.1.0.exe`,
      `OverrideKiosk-1.1.0.msi`, `OverrideKiosk-1.1.0-portable.zip` y
      `SHA256SUMS.txt`.
@@ -79,7 +79,7 @@ Requisitos: JDK 17 o superior y Git. La primera compilación necesita internet
 para descargar Gradle y las dependencias; la app ya compilada funciona offline.
 
 ```powershell
-git clone https://github.com/Drinity/OverrideKiosk.git
+git clone https://github.com/OverrideLLC/Kiosk.git
 cd OverrideKiosk
 git pull origin master
 .\gradlew.bat build
