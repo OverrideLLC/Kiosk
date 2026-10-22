@@ -34,8 +34,8 @@ internal fun DesktopWindowHost(
     onExit: () -> Unit,
 ) {
     val args = container.args
-    val initialRole = args.role ?: container.initialConfig?.role
-    val isFullscreenReceiver = !args.windowed && initialRole == AppRole.RECEIVER
+    val activeRole by container.activeRole.collectAsState()
+    val isFullscreenReceiver = !args.windowed && activeRole == AppRole.RECEIVER
     val isWindows = System.getProperty("os.name").orEmpty().startsWith("Windows", ignoreCase = true)
     val kioskLockAvailable = isWindows && !args.windowed
 
@@ -61,10 +61,14 @@ internal fun DesktopWindowHost(
         windowState.placement,
         windowState.isMinimized,
     ) {
-        if (isFullscreenReceiver && lockState.isLocked) {
-            if (windowState.isMinimized) windowState.isMinimized = false
+        if (isFullscreenReceiver) {
+            if (lockState.isLocked && windowState.isMinimized) windowState.isMinimized = false
             if (windowState.placement != WindowPlacement.Fullscreen) {
                 windowState.placement = WindowPlacement.Fullscreen
+            }
+        } else {
+            if (windowState.placement != WindowPlacement.Floating) {
+                windowState.placement = WindowPlacement.Floating
             }
         }
     }

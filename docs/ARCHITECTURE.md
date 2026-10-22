@@ -109,9 +109,10 @@ pequeños a `AppContainer`. La composición crea una sola vez:
 
 `Main.kt` lee los argumentos, configura el logger y abre `DesktopApplicationRoot`.
 La raíz crea el contenedor fuera del hilo de UI y muestra carga o reintento.
-`DesktopWindowHost` posee las ventanas y el cierre de recursos. Si el rol es
-Pantalla y no se pasó `--windowed`, la ventana es fullscreen, sin bordes y siempre
-encima.
+`DesktopWindowHost` posee las ventanas y el cierre de recursos, y sigue los cambios
+de rol en tiempo de ejecución: la Pantalla usa fullscreen, sin bordes y siempre
+encima salvo que se pase `--windowed`; al volver al selector o al Controlador la
+ventana vuelve al modo normal.
 
 ## Flujos
 

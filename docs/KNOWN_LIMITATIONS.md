@@ -9,10 +9,10 @@ prometer funciones o de instalar la app en un comercio real.
 
 ## Plataforma y empaquetado
 
-- **Windows 10/11 es la plataforma objetivo.** Esta versión se compiló y se
-  ejecutó en Windows 11 con JDK 21; los hooks nativos de teclado y mouse se
-  instalan correctamente, pero el bloqueo efectivo de atajos y gestos del sistema
-  requiere una prueba manual en el equipo destino.
+- **Windows 10/11 es la plataforma objetivo.** Esta revisión se compiló y ejecutó
+  en Linux con JDK 21, incluidos los recorridos de arranque de ambos roles. No se
+  volvió a ejecutar esta rama en Windows 11; los hooks nativos de teclado y mouse,
+  DPAPI y el empaquetado requieren validación en Windows antes de distribuirla.
 - Para generar el instalador `.exe`/`.msi` el plugin de Compose descarga WiX 3.11
   automáticamente la primera vez; no hace falta instalarlo a mano. Sin conexión
   en esa primera compilación solo se genera la carpeta portable.

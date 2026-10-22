@@ -229,6 +229,16 @@ fun App(
     // The screen role is always a kiosk: lock the keyboard as soon as the
     // receiver UI is shown, including --windowed (Compose feeds the keys).
     LaunchedEffect(currentScreen) {
+        container.updateActiveRole(
+            when (currentScreen) {
+                is Screen.EmitterHome -> AppRole.EMITTER
+                is Screen.ReceiverHome -> AppRole.RECEIVER
+                Screen.RoleSelection -> null
+            },
+        )
+    }
+
+    LaunchedEffect(currentScreen) {
         when (currentScreen) {
             is Screen.ReceiverHome -> container.kioskLockManager.lock(force = true)
 

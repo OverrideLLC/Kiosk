@@ -2,6 +2,7 @@ package app.kiosksync
 
 import app.kiosksync.core.AppArgs
 import app.kiosksync.core.AppLogger
+import app.kiosksync.core.AppRole
 import app.kiosksync.feature.kiosk.KioskLockManager
 import app.kiosksync.feature.kiosk.domain.KioskLockRepository
 import app.kiosksync.feature.emitter.domain.EmitterScreensRepository
@@ -27,6 +28,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
@@ -73,6 +76,12 @@ class AppContainer(
 ) {
     val serviceScope: CoroutineScope = CoroutineScope(SupervisorJob() + serviceDispatcher)
     private val shutdownStarted = MutableStateFlow(false)
+    private val _activeRole = MutableStateFlow(args.role ?: initialConfig?.role)
+    val activeRole: StateFlow<AppRole?> = _activeRole.asStateFlow()
+
+    fun updateActiveRole(role: AppRole?) {
+        _activeRole.value = role
+    }
 
     /**
      * Starts cleanup without blocking the caller. The window can close immediately;
