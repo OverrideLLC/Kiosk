@@ -1,5 +1,6 @@
 package app.kiosksync.platform
 
+import app.kiosksync.core.APP_VERSION
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.DiscoveredDevice
 import app.kiosksync.core.MDNS_SERVICE_TYPE
@@ -106,7 +107,8 @@ class JmDnsDiscovery(
                 "deviceId" to deviceId,
                 "deviceName" to deviceName,
                 "role" to "receiver",
-                "paired" to isPaired.toString()
+                "paired" to isPaired.toString(),
+                "appVersion" to APP_VERSION
             )
             val info = ServiceInfo.create(
                 MDNS_SERVICE_TYPE,
@@ -167,7 +169,8 @@ class JmDnsDiscovery(
             deviceName = info.getPropertyString("deviceName") ?: info.name,
             host = host,
             port = info.port,
-            paired = info.getPropertyString("paired") == "true"
+            paired = info.getPropertyString("paired") == "true",
+            appVersion = info.getPropertyString("appVersion")?.takeIf { it.isNotBlank() }
         )
 
         devices[deviceId] = device

@@ -48,10 +48,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import app.kiosksync.core.APP_NAME
+import app.kiosksync.core.APP_VERSION
 import app.kiosksync.core.AppTheme
+import app.kiosksync.core.AppVersionPolicy
 import app.kiosksync.core.MAX_DURATION_SEC
 import app.kiosksync.core.MIN_DURATION_SEC
 import app.kiosksync.core.Strings
+import app.kiosksync.core.UpdateUrgency
 import app.kiosksync.core.formatUnlockSequence
 import app.kiosksync.designsystem.AppButton
 import app.kiosksync.designsystem.AppButtonGroup
@@ -686,9 +689,11 @@ private fun ScreensPanel(
                     DeviceCard(
                         device = device,
                         sync = state.syncByDevice[device.deviceId],
+                        update = state.updateByDevice[device.deviceId],
                         onToggleSelection = { stateHolder.toggleSelection(device.deviceId) },
                         onPair = { stateHolder.openPairDialog(device) },
                         onUnpair = { stateHolder.requestUnpair(device) },
+                        onUpdate = { stateHolder.requestUpdate(device.deviceId) },
                     )
                 }
             }
@@ -736,13 +741,27 @@ private fun PanelHeader(
 private fun DeviceCard(
     device: EmitterDeviceUi,
     sync: DeviceSyncUi?,
+    update: DeviceUpdateUi?,
     onToggleSelection: () -> Unit,
     onPair: () -> Unit,
     onUnpair: () -> Unit,
+    onUpdate: () -> Unit,
 ) {
     val colors = KioskColors.scheme
     val extra = KioskColors.extra
     val selected = device.isSelected && device.isPairedToThisEmitter
+    val versionPlan = device.appVersion?.let { screenVersion ->
+        AppVersionPolicy.plan(APP_VERSION, screenVersion)
+    }
+    val canRequestUpdate = device.isPairedToThisEmitter &&
+        versionPlan != null &&
+        versionPlan.urgency != UpdateUrgency.NONE &&
+        update?.status in setOf(
+            DeviceUpdateStatus.FAILED,
+            DeviceUpdateStatus.SKIPPED,
+            DeviceUpdateStatus.UNAVAILABLE,
+            DeviceUpdateStatus.AWAITING_CONFIRMATION
+        )
 
     val statusLabel: String
     val statusTone: AppStatusTone
@@ -810,7 +829,8 @@ private fun DeviceCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        text = "${device.host}:${device.port}",
+                        text = "${device.host}:${device.port} · " +
+                            Strings.screenVersion(device.appVersion),
                         style = MaterialTheme.typography.bodySmall,
                         color = if (selected) colors.onPrimaryContainer else colors.onSurfaceVariant,
                     )
@@ -842,13 +862,27 @@ private fun DeviceCard(
                 Spacer(Modifier.weight(1f))
                 when {
                     device.isPairedToThisEmitter -> {
-                        AppButton(
-                            text = Strings.UNPAIR_BUTTON,
-                            onClick = onUnpair,
-                            variant = AppButtonVariant.TEXT,
-                            size = AppButtonSize.SMALL,
-                            icon = AppIcon.LINK,
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(Space.xxs),
+                        ) {
+                            if (canRequestUpdate) {
+                                AppButton(
+                                    text = Strings.UPDATE_BUTTON,
+                                    onClick = onUpdate,
+                                    variant = AppButtonVariant.TONAL,
+                                    size = AppButtonSize.SMALL,
+                                    icon = AppIcon.REFRESH,
+                                )
+                            }
+                            AppButton(
+                                text = Strings.UNPAIR_BUTTON,
+                                onClick = onUnpair,
+                                variant = AppButtonVariant.TEXT,
+                                size = AppButtonSize.SMALL,
+                                icon = AppIcon.LINK,
+                            )
+                        }
                     }
 
                     !device.isPairedToAnotherEmitter -> {
@@ -867,6 +901,97 @@ private fun DeviceCard(
                 Spacer(Modifier.height(Space.xs))
                 SyncStatusRow(it)
             }
+
+            update?.let {
+                Spacer(Modifier.height(Space.xs))
+                UpdateStatusRow(it)
+            }
+        }
+    }
+}
+
+@Composable
+private fun UpdateStatusRow(update: DeviceUpdateUi) {
+    val colors = KioskColors.scheme
+    val extra = KioskColors.extra
+
+    when (update.status) {
+        DeviceUpdateStatus.PREPARING,
+        DeviceUpdateStatus.UPLOADING,
+        DeviceUpdateStatus.APPLYING -> Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Space.xs),
+        ) {
+            AppLoadingIndicator(
+                color = colors.primary,
+                dotSize = Sizes.loadingDotSmall,
+            )
+            Text(
+                text = when (update.status) {
+                    DeviceUpdateStatus.PREPARING -> Strings.UPDATE_SEND_PREPARING
+                    DeviceUpdateStatus.UPLOADING -> Strings.UPDATE_SEND_UPLOADING
+                    else -> Strings.UPDATE_SEND_APPLYING
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant,
+            )
+        }
+
+        DeviceUpdateStatus.AWAITING_CONFIRMATION -> Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Space.xs),
+        ) {
+            AppIcon(
+                icon = AppIcon.CHECK_CIRCLE,
+                contentDescription = null,
+                size = Sizes.iconSmall,
+                tint = colors.primary,
+            )
+            Text(
+                text = Strings.UPDATE_SEND_WAITING,
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant,
+            )
+        }
+
+        DeviceUpdateStatus.SKIPPED -> Text(
+            text = update.message ?: Strings.updateSkipped(update.version),
+            style = MaterialTheme.typography.bodySmall,
+            color = colors.onSurfaceVariant,
+        )
+
+        DeviceUpdateStatus.FAILED -> Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Space.xs),
+        ) {
+            AppIcon(
+                icon = AppIcon.ERROR,
+                contentDescription = null,
+                size = Sizes.iconSmall,
+                tint = colors.error,
+            )
+            Text(
+                text = update.message ?: Strings.UPDATE_SEND_FAILED,
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.error,
+            )
+        }
+
+        DeviceUpdateStatus.UNAVAILABLE -> Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Space.xs),
+        ) {
+            AppIcon(
+                icon = AppIcon.WARNING,
+                contentDescription = null,
+                size = Sizes.iconSmall,
+                tint = extra.warning,
+            )
+            Text(
+                text = update.message ?: Strings.UPDATE_SEND_UNAVAILABLE,
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant,
+            )
         }
     }
 }

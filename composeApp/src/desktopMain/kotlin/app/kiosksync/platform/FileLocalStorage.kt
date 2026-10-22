@@ -27,6 +27,8 @@ class FileLocalStorage(
     private val playlistsFile = File(dataDir, "playlists.json")
     private val lockFile = File(dataDir, "lock.json")
     private val mediaDir = File(dataDir, "media")
+    private val skippedUpdateFile = File(dataDir, "skipped-update.txt")
+    private val updatesDir = File(dataDir, "updates")
 
     private val json = Json {
         prettyPrint = true
@@ -94,6 +96,11 @@ class FileLocalStorage(
             deleteFile(lockFile)
             deleteFile(File(dataDir, "lock.json.tmp"))
             deleteFile(pairedFile)
+            deleteFile(skippedUpdateFile)
+            if (updatesDir.exists()) {
+                updatesDir.deleteRecursively()
+                logger.info("Removed staged update files")
+            }
             val mediaCount = mediaDir.listFiles()?.count { it.isFile && it.delete() } ?: 0
             logger.info(
                 "Receiver data cleared: content, password and pairing " +

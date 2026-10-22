@@ -33,6 +33,7 @@ import app.kiosksync.feature.playback.PlaybackStateHolder
 import app.kiosksync.feature.role.AppConfig
 import app.kiosksync.feature.role.RoleSelectionScreen
 import app.kiosksync.feature.role.RoleStateHolder
+import app.kiosksync.feature.update.ReceiverUpdateOverlay
 
 @Composable
 fun App(
@@ -138,6 +139,7 @@ fun App(
 
     val pairingState by pairingManager.uiState.collectAsState()
     val lockState by container.kioskLockManager.uiState.collectAsState()
+    val receiverUpdateState by container.receiverUpdateManager.uiState.collectAsState()
     var showReceiverOptions by remember { mutableStateOf(false) }
     var showUnpairConfirm by remember { mutableStateOf(false) }
     var wasLocked by remember { mutableStateOf(lockState.isLocked) }
@@ -191,6 +193,14 @@ fun App(
             showUnpairConfirm = false
         } else if (previous && currentScreen is Screen.ReceiverHome) {
             showReceiverOptions = true
+        }
+    }
+
+    LaunchedEffect(receiverUpdateState.isVisible) {
+        if (receiverUpdateState.isVisible) {
+            showReceiverOptions = false
+            showUnpairConfirm = false
+            relockReceiverIfNeeded()
         }
     }
 
@@ -273,6 +283,21 @@ fun App(
                 }
 
                 KioskUnlockOverlay(lockState)
+
+                if (currentScreen is Screen.ReceiverHome && receiverUpdateState.isVisible) {
+                    ReceiverUpdateOverlay(
+                        state = receiverUpdateState,
+                        onUpdate = {
+                            if (container.receiverUpdateManager.acceptUpdate()) {
+                                onExitRequested()
+                            }
+                        },
+                        onDecline = { container.receiverUpdateManager.declineUpdate() },
+                        onDismissError = {
+                            container.receiverUpdateManager.dismissError()
+                        }
+                    )
+                }
             }
         }
 

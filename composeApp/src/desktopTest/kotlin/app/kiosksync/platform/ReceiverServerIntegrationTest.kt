@@ -1,7 +1,9 @@
 package app.kiosksync.platform
 
 import app.kiosksync.FakeLocalStorage
+import app.kiosksync.FakeReceiverUpdateManager
 import app.kiosksync.NoOpLogger
+import app.kiosksync.core.APP_VERSION
 import app.kiosksync.core.PlaylistRejectedException
 import app.kiosksync.core.ReceiverStatusResponse
 import app.kiosksync.feature.kiosk.KioskLockManager
@@ -15,6 +17,7 @@ import java.util.Base64
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -54,6 +57,7 @@ class ReceiverServerIntegrationTest {
             scope = lockScope,
             platformLockAvailable = false,
         )
+        val updateManager = FakeReceiverUpdateManager()
         val server = KtorReceiverServer(
             pairingManager = pairing,
             logger = NoOpLogger(),
@@ -66,6 +70,7 @@ class ReceiverServerIntegrationTest {
                     playlistVersion = storage.loadPlaylist()?.version ?: 0,
                 )
             },
+            updateManager = updateManager,
         )
         val port = ServerSocket(0).use { it.localPort }
         server.start(port, deviceId = "rx-1", deviceName = "Pantalla")
@@ -75,6 +80,7 @@ class ReceiverServerIntegrationTest {
             val info = client.getInfo("127.0.0.1", port).getOrThrow()
             assertEquals("receiver", info.role)
             assertEquals("Pantalla", info.deviceName)
+            assertEquals(APP_VERSION, info.appVersion)
             assertFalse(info.paired)
 
             // A wrong code is rejected and does not pair the screen.
@@ -168,6 +174,24 @@ class ReceiverServerIntegrationTest {
 
             val status = client.getStatus("127.0.0.1", port, "tx-1", paired.token).getOrThrow()
             assertEquals(1, status.playlistVersion)
+            assertEquals(APP_VERSION, status.appVersion)
+
+            val updateBytes = "update-package-for-test".toByteArray()
+            assertTrue(
+                client.uploadUpdate(
+                    "127.0.0.1", port, "tx-1", paired.token, "1.1.0",
+                    "0".repeat(64), updateBytes,
+                ).isFailure,
+            )
+            assertNull(updateManager.stagedVersion)
+            val update = client.uploadUpdate(
+                "127.0.0.1", port, "tx-1", paired.token, "1.1.0",
+                Sha256.hex(updateBytes), updateBytes,
+            ).getOrThrow()
+            assertTrue(update.accepted)
+            assertEquals("1.1.0", update.version)
+            assertFalse(update.forced)
+            assertEquals("1.1.0", updateManager.stagedVersion)
 
             assertTrue(
                 client.synchronizePlayback(
@@ -218,6 +242,7 @@ class ReceiverServerIntegrationTest {
                 platformLockAvailable = false,
             ),
             statusProvider = { ReceiverStatusResponse(playlistVersion = 0) },
+            updateManager = FakeReceiverUpdateManager(),
         )
         val port = ServerSocket(0).use { it.localPort }
         server.start(port, "rx-2", "Pantalla 2")

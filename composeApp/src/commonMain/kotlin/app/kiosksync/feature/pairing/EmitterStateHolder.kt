@@ -1,6 +1,8 @@
 package app.kiosksync.feature.pairing
 
+import app.kiosksync.core.APP_VERSION
 import app.kiosksync.core.AppLogger
+import app.kiosksync.core.AppVersionPolicy
 import app.kiosksync.core.DEFAULT_PORT
 import app.kiosksync.core.DEFAULT_UNLOCK_SEQUENCE
 import app.kiosksync.core.DiscoveredDevice
@@ -15,6 +17,7 @@ import app.kiosksync.core.PlaylistRejectedException
 import app.kiosksync.core.STATUS_FAILURE_THRESHOLD
 import app.kiosksync.core.STATUS_POLL_INTERVAL_MS
 import app.kiosksync.core.Strings
+import app.kiosksync.core.UpdateUrgency
 import app.kiosksync.core.isValidKioskPassword
 import app.kiosksync.core.isValidRecoveryPhrase
 import app.kiosksync.core.isValidUnlockSequence
@@ -26,8 +29,11 @@ import app.kiosksync.feature.sync.LocalMediaMissingException
 import app.kiosksync.platform.DeviceDiscovery
 import app.kiosksync.platform.EmitterClient
 import app.kiosksync.platform.LocalStorage
+import app.kiosksync.platform.UpdatePackageProvider
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -39,7 +45,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 
 data class EmitterDeviceUi(
     val deviceId: String,
@@ -49,7 +61,25 @@ data class EmitterDeviceUi(
     val isPairedToThisEmitter: Boolean,
     val isPairedToAnotherEmitter: Boolean,
     val isOnline: Boolean,
-    val isSelected: Boolean
+    val isSelected: Boolean,
+    val appVersion: String? = null
+)
+
+enum class DeviceUpdateStatus {
+    PREPARING,
+    UPLOADING,
+    AWAITING_CONFIRMATION,
+    APPLYING,
+    SKIPPED,
+    FAILED,
+    UNAVAILABLE
+}
+
+data class DeviceUpdateUi(
+    val status: DeviceUpdateStatus,
+    val version: String,
+    val forced: Boolean = false,
+    val message: String? = null
 )
 
 enum class SyncUiStatus {
@@ -110,6 +140,7 @@ data class EmitterUiState(
     val statusMessage: String? = null,
     val statusIsError: Boolean = false,
     val syncByDevice: Map<String, DeviceSyncUi> = emptyMap(),
+    val updateByDevice: Map<String, DeviceUpdateUi> = emptyMap(),
     val isSending: Boolean = false,
     val isSyncing: Boolean = false,
     val passwordDialog: KioskPasswordDialogUi? = null,
@@ -130,7 +161,8 @@ class EmitterStateHolder(
     private val kioskLockManager: KioskLockManager,
     private val projectionController: ProjectionController,
     private val passwordHasher: (String) -> String,
-    private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default
+    private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val updatePackageProvider: UpdatePackageProvider? = null
 ) {
     private val _uiState = MutableStateFlow(
         EmitterUiState(hasKioskPassword = storage.loadKioskLock()?.passwordHash != null)
@@ -154,10 +186,27 @@ class EmitterStateHolder(
     private val justPairedIds = mutableSetOf<String>()
     private val jobs = mutableListOf<Job>()
 
+    private val deviceVersions = mutableMapOf<String, String>()
+    private val skippedUpdateVersions = mutableMapOf<String, String?>()
+    private val sentUpdateVersions = mutableMapOf<String, String>()
+    private val updateSentAt = mutableMapOf<String, TimeMark>()
+    private val updateRetryAt = mutableMapOf<String, TimeMark>()
+    private val updateJobs = mutableMapOf<String, Job>()
+    private val updateUploadMutex = Mutex()
+    private val unavailableUpdateNotice = mutableSetOf<String>()
+
     fun start() {
         if (jobs.isNotEmpty()) return
         storedDevices = storage.loadEmitterPairedDevices()
         logger.info("Emitter '$emitterName' ($emitterId) started with ${storedDevices.size} paired screens")
+        logger.info(
+            "Automatic updates: " +
+                if (updatePackageProvider?.isAvailable() == true) {
+                    "enabled (package $APP_VERSION available)"
+                } else {
+                    "unavailable (controller is not running from a packaged install)"
+                }
+        )
 
         // Make sure already-paired screens have the current lock. Screens that
         // were offline receive it as soon as they are reachable again.
@@ -184,6 +233,8 @@ class EmitterStateHolder(
     fun stop() {
         jobs.forEach { it.cancel() }
         jobs.clear()
+        updateJobs.values.forEach { it.cancel() }
+        updateJobs.clear()
         serviceScope.launch { discovery.stopDiscovery() }
         logger.info("Emitter discovery stopped")
     }
@@ -266,6 +317,8 @@ class EmitterStateHolder(
                     onlineStatus[device.deviceId] = true
                     selectedIds = selectedIds + device.deviceId
                     justPairedIds += device.deviceId
+                    device.appVersion?.let { deviceVersions[device.deviceId] = it }
+                    skippedUpdateVersions.remove(device.deviceId)
                     logger.info("Screen '${device.deviceName}' paired successfully")
                     val existingLock = storage.loadKioskLock()
             ?.takeIf { it.enabled && it.passwordHash != null }
@@ -338,6 +391,7 @@ class EmitterStateHolder(
                     onlineStatus.remove(device.deviceId)
                     failedChecks.remove(device.deviceId)
                     selectedIds = selectedIds - device.deviceId
+                    clearUpdateState(device.deviceId)
                     logger.info("Screen '${device.deviceName}' unpaired")
                     _uiState.update {
                         it.copy(
@@ -409,8 +463,11 @@ class EmitterStateHolder(
                         deviceName = info.deviceName,
                         host = host,
                         port = port,
-                        paired = info.paired
+                        paired = info.paired,
+                        appVersion = info.appVersion
                     )
+                    deviceVersions[info.deviceId] = info.appVersion
+                    skippedUpdateVersions[info.deviceId] = info.skippedUpdateVersion
                     logger.info("Screen '${info.deviceName}' added manually at $host:$port")
                     _uiState.update {
                         it.copy(
@@ -1017,9 +1074,11 @@ class EmitterStateHolder(
                     client.getStatus(target.first, target.second, emitterId, device.token)
                 }
                 statusResult
-                    .onSuccess {
+                    .onSuccess { status ->
                         failedChecks[device.deviceId] = 0
                         onlineStatus[device.deviceId] = true
+                        deviceVersions[device.deviceId] = status.appVersion
+                        skippedUpdateVersions[device.deviceId] = status.skippedUpdateVersion
                     }
                     .onFailure {
                         registerFailure(device.deviceId)
@@ -1093,6 +1152,7 @@ class EmitterStateHolder(
                 onlineStatus.remove(id)
                 failedChecks.remove(id)
                 selectedIds = selectedIds - id
+                clearUpdateState(id)
             }
             logger.info("Forgot ${staleIds.size} screen(s) that are no longer paired: $staleIds")
         }
@@ -1114,7 +1174,8 @@ class EmitterStateHolder(
                     isPairedToThisEmitter = true,
                     isPairedToAnotherEmitter = false,
                     isOnline = onlineStatus[id] ?: false,
-                    isSelected = id in selectedIds
+                    isSelected = id in selectedIds,
+                    appVersion = deviceVersions[id] ?: live?.appVersion
                 )
 
                 live != null -> EmitterDeviceUi(
@@ -1125,7 +1186,8 @@ class EmitterStateHolder(
                     isPairedToThisEmitter = false,
                     isPairedToAnotherEmitter = live.paired,
                     isOnline = false,
-                    isSelected = false
+                    isSelected = false,
+                    appVersion = live.appVersion ?: deviceVersions[id]
                 )
 
                 else -> null
@@ -1135,6 +1197,226 @@ class EmitterStateHolder(
         _uiState.update {
             it.copy(devices = devices, isSearching = false)
         }
+        maybeAutoUpdateAll()
+    }
+
+    /**
+     * Manual retry from the controller card. It ignores a previous "stay on
+     * this version" decision and the automatic retry delay.
+     */
+    fun requestUpdate(deviceId: String) {
+        maybeAutoUpdate(deviceId, manual = true)
+    }
+
+    private fun maybeAutoUpdateAll() {
+        _uiState.value.devices
+            .filter { it.isPairedToThisEmitter && it.isOnline && it.appVersion != null }
+            .forEach { maybeAutoUpdate(it.deviceId, manual = false) }
+    }
+
+    private fun maybeAutoUpdate(deviceId: String, manual: Boolean) {
+        val device = _uiState.value.devices.firstOrNull { it.deviceId == deviceId } ?: return
+        if (!device.isPairedToThisEmitter) return
+        val screenVersion = device.appVersion ?: return
+        val plan = AppVersionPolicy.plan(APP_VERSION, screenVersion)
+        if (plan.urgency == UpdateUrgency.NONE) {
+            clearFinishedUpdate(deviceId)
+            return
+        }
+
+        if (!manual &&
+            plan.urgency == UpdateUrgency.OPTIONAL &&
+            skippedUpdateVersions[deviceId] == plan.targetVersion
+        ) {
+            sentUpdateVersions.remove(deviceId)
+            updateSentAt.remove(deviceId)
+            setDeviceUpdate(
+                deviceId,
+                DeviceUpdateUi(
+                    status = DeviceUpdateStatus.SKIPPED,
+                    version = plan.targetVersion,
+                    message = Strings.updateSkipped(screenVersion)
+                )
+            )
+            return
+        }
+
+        if (!manual && sentUpdateVersions[deviceId] == plan.targetVersion) {
+            // Give the screen time to decide and restart. If it is still on an
+            // old version after this window, the install probably failed, so
+            // allow the next automatic attempt.
+            val sentAt = updateSentAt[deviceId]
+            if (sentAt == null || sentAt.elapsedNow() < 15.minutes) return
+            sentUpdateVersions.remove(deviceId)
+            updateSentAt.remove(deviceId)
+        }
+        if (updateJobs[deviceId]?.isActive == true) return
+        val retry = updateRetryAt[deviceId]
+        if (!manual && retry != null && retry.elapsedNow() < 60.seconds) return
+
+        val provider = updatePackageProvider
+        if (provider == null || !provider.isAvailable()) {
+            setDeviceUpdate(
+                deviceId,
+                DeviceUpdateUi(
+                    status = DeviceUpdateStatus.UNAVAILABLE,
+                    version = plan.targetVersion,
+                    forced = plan.urgency == UpdateUrgency.FORCED,
+                    message = Strings.UPDATE_SEND_UNAVAILABLE
+                )
+            )
+            if (unavailableUpdateNotice.add(deviceId)) {
+                logger.warn(
+                    "Screen '${device.deviceName}' is on $screenVersion but this controller " +
+                        "has no packaged update available"
+                )
+            }
+            return
+        }
+        unavailableUpdateNotice.remove(deviceId)
+
+        val stored = storedDevices.firstOrNull { it.deviceId == deviceId } ?: return
+        val target = targetFor(stored) ?: return
+        sentUpdateVersions[deviceId] = plan.targetVersion
+
+        val updateJob = scope.launch(start = CoroutineStart.LAZY) {
+            try {
+                updateUploadMutex.withLock {
+                    setDeviceUpdate(
+                        deviceId,
+                        DeviceUpdateUi(
+                            status = DeviceUpdateStatus.PREPARING,
+                            version = plan.targetVersion,
+                            forced = plan.urgency == UpdateUrgency.FORCED
+                        )
+                    )
+                    val update = withContext(backgroundDispatcher) {
+                        provider.getPackage()
+                    }.getOrElse { error ->
+                        throw error
+                    }
+
+                    setDeviceUpdate(
+                        deviceId,
+                        DeviceUpdateUi(
+                            status = DeviceUpdateStatus.UPLOADING,
+                            version = update.version,
+                            forced = plan.urgency == UpdateUrgency.FORCED
+                        )
+                    )
+                    val result = withContext(backgroundDispatcher) {
+                        client.uploadUpdate(
+                            host = target.first,
+                            port = target.second,
+                            emitterId = emitterId,
+                            token = stored.token,
+                            version = update.version,
+                            sha256 = update.sha256,
+                            bytes = update.bytes
+                        )
+                    }
+                    result.fold(
+                        onSuccess = { response ->
+                            sentUpdateVersions[deviceId] = response.version
+                            updateSentAt[deviceId] = TimeSource.Monotonic.markNow()
+                            setDeviceUpdate(
+                                deviceId,
+                                DeviceUpdateUi(
+                                    status = DeviceUpdateStatus.AWAITING_CONFIRMATION,
+                                    version = response.version,
+                                    forced = response.forced
+                                )
+                            )
+                            logger.info(
+                                "Update ${response.version} sent to '${stored.deviceName}' " +
+                                    "(forced=${response.forced})"
+                            )
+                        },
+                        onFailure = { error ->
+                            sentUpdateVersions.remove(deviceId)
+                            updateSentAt.remove(deviceId)
+                            updateRetryAt[deviceId] = TimeSource.Monotonic.markNow()
+                            setDeviceUpdate(
+                                deviceId,
+                                DeviceUpdateUi(
+                                    status = DeviceUpdateStatus.FAILED,
+                                    version = plan.targetVersion,
+                                    forced = plan.urgency == UpdateUrgency.FORCED,
+                                    message = Strings.UPDATE_SEND_FAILED
+                                )
+                            )
+                            logger.warn(
+                                "Could not send update ${plan.targetVersion} to " +
+                                    "'${stored.deviceName}': ${error.message}"
+                            )
+                        }
+                    )
+                }
+            } catch (cancelled: CancellationException) {
+                sentUpdateVersions.remove(deviceId)
+                updateSentAt.remove(deviceId)
+                throw cancelled
+            } catch (error: Exception) {
+                sentUpdateVersions.remove(deviceId)
+                updateSentAt.remove(deviceId)
+                updateRetryAt[deviceId] = TimeSource.Monotonic.markNow()
+                setDeviceUpdate(
+                    deviceId,
+                    DeviceUpdateUi(
+                        status = DeviceUpdateStatus.FAILED,
+                        version = plan.targetVersion,
+                        forced = plan.urgency == UpdateUrgency.FORCED,
+                        message = Strings.UPDATE_SEND_FAILED
+                    )
+                )
+                logger.warn(
+                    "Update ${plan.targetVersion} for '${stored.deviceName}' failed: " +
+                        "${error.message}"
+                )
+            } finally {
+                updateJobs.remove(deviceId)
+            }
+        }
+        updateJobs[deviceId] = updateJob
+        updateJob.start()
+    }
+
+    private fun setDeviceUpdate(deviceId: String, update: DeviceUpdateUi) {
+        _uiState.update {
+            it.copy(updateByDevice = it.updateByDevice + (deviceId to update))
+        }
+    }
+
+    private fun clearFinishedUpdate(deviceId: String) {
+        sentUpdateVersions.remove(deviceId)
+        updateSentAt.remove(deviceId)
+        updateRetryAt.remove(deviceId)
+        unavailableUpdateNotice.remove(deviceId)
+        skippedUpdateVersions[deviceId]?.let { skipped ->
+            if (AppVersionPolicy.plan(APP_VERSION, skipped).urgency == UpdateUrgency.NONE) {
+                skippedUpdateVersions.remove(deviceId)
+            }
+        }
+        _uiState.update { state ->
+            val current = state.updateByDevice[deviceId] ?: return@update state
+            if (current.status == DeviceUpdateStatus.PREPARING ||
+                current.status == DeviceUpdateStatus.UPLOADING
+            ) {
+                return@update state
+            }
+            state.copy(updateByDevice = state.updateByDevice - deviceId)
+        }
+    }
+
+    private fun clearUpdateState(deviceId: String) {
+        updateJobs.remove(deviceId)?.cancel()
+        sentUpdateVersions.remove(deviceId)
+        updateSentAt.remove(deviceId)
+        updateRetryAt.remove(deviceId)
+        skippedUpdateVersions.remove(deviceId)
+        deviceVersions.remove(deviceId)
+        unavailableUpdateNotice.remove(deviceId)
+        _uiState.update { it.copy(updateByDevice = it.updateByDevice - deviceId) }
     }
 
     private fun mapPairError(error: Throwable): String {

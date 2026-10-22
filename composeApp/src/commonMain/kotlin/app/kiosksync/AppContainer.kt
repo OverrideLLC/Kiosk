@@ -14,6 +14,8 @@ import app.kiosksync.platform.KioskKeyboardGuard
 import app.kiosksync.platform.KioskMouseGuard
 import app.kiosksync.platform.LocalStorage
 import app.kiosksync.platform.ReceiverServer
+import app.kiosksync.platform.ReceiverUpdateManager
+import app.kiosksync.platform.UpdatePackageProvider
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,7 +39,9 @@ class AppContainer(
     val pairingManager: PairingManager,
     val discovery: DeviceDiscovery,
     val receiverServer: ReceiverServer,
+    val receiverUpdateManager: ReceiverUpdateManager,
     val emitterClient: EmitterClient,
+    val updatePackageProvider: UpdatePackageProvider,
     val receiverStatusTracker: ReceiverStatusTracker,
     val receiverPlaylistBridge: ReceiverPlaylistBridge,
     val receiverPlaybackSyncBridge: ReceiverPlaybackSyncBridge,

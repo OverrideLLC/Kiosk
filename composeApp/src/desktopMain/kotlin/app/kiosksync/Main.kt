@@ -32,15 +32,18 @@ import app.kiosksync.feature.playback.ReceiverStatusTracker
 import app.kiosksync.feature.projection.ProjectionController
 import app.kiosksync.platform.FileAppLogger
 import app.kiosksync.platform.FileLocalStorage
+import app.kiosksync.platform.FileReceiverUpdateManager
 import app.kiosksync.platform.JmDnsDiscovery
 import app.kiosksync.platform.KtorEmitterClient
 import app.kiosksync.platform.KtorReceiverServer
+import app.kiosksync.platform.LocalUpdatePackageProvider
 import app.kiosksync.platform.Sha256
 import app.kiosksync.platform.createKioskKeyboardGuard
 import app.kiosksync.platform.createKioskMouseGuard
 import app.kiosksync.platform.detectLocalIpv4Address
 import app.kiosksync.ui.App
 import app.kiosksync.ui.ProjectionScreen
+import java.awt.Cursor
 import java.awt.FileDialog
 import java.awt.Frame
 import java.awt.Point
@@ -97,7 +100,16 @@ fun main(args: Array<String>) {
         // A screen always starts blank: wipe any content, blocking password and
         // pairing left by a previous session so it never replays stale content.
         // The Controller role keeps all of its data untouched.
-        localStorage.clearReceiverData()
+        //
+        // The one exception is the first start after an update: the helper wrote
+        // a marker so pairing and content survive the restart. Consume it once.
+        val updateRestartMarker = File(effectiveDataDir, "update-restart.marker")
+        if (updateRestartMarker.isFile) {
+            logger.info("Update restart detected; preserving receiver pairing and content")
+            updateRestartMarker.delete()
+        } else {
+            localStorage.clearReceiverData()
+        }
     }
 
     val isFullscreenReceiver = !appArgs.windowed && activeRole == AppRole.RECEIVER
@@ -153,6 +165,10 @@ fun main(args: Array<String>) {
     val playlistBridge = ReceiverPlaylistBridge()
     val playbackSyncBridge = ReceiverPlaybackSyncBridge()
     val discovery = JmDnsDiscovery(logger)
+    val receiverUpdateManager = FileReceiverUpdateManager(
+        dataDir = effectiveDataDir,
+        logger = logger
+    )
     val receiverServer = KtorReceiverServer(
         pairingManager = pairingManager,
         logger = logger,
@@ -160,9 +176,14 @@ fun main(args: Array<String>) {
         playlistBridge = playlistBridge,
         playbackSyncBridge = playbackSyncBridge,
         kioskLockManager = kioskLockManager,
-        statusProvider = { statusTracker.snapshot() }
+        statusProvider = { statusTracker.snapshot() },
+        updateManager = receiverUpdateManager
     )
     val emitterClient = KtorEmitterClient(logger)
+    val updatePackageProvider = LocalUpdatePackageProvider(
+        dataDir = effectiveDataDir,
+        logger = logger
+    )
     val pickImageFiles: suspend () -> List<String> = {
         withContext(Dispatchers.IO) {
             runCatching { showImagePicker() }
@@ -187,7 +208,9 @@ fun main(args: Array<String>) {
         pairingManager = pairingManager,
         discovery = discovery,
         receiverServer = receiverServer,
+        receiverUpdateManager = receiverUpdateManager,
         emitterClient = emitterClient,
+        updatePackageProvider = updatePackageProvider,
         receiverStatusTracker = statusTracker,
         receiverPlaylistBridge = playlistBridge,
         receiverPlaybackSyncBridge = playbackSyncBridge,
@@ -215,6 +238,12 @@ fun main(args: Array<String>) {
 
         val projectionPlaylist by projectionController.playlist.collectAsState()
         val lockState by kioskLockManager.uiState.collectAsState()
+        val receiverUpdateState by receiverUpdateManager.uiState.collectAsState()
+        // The update prompt needs a usable cursor and mouse, but the keyboard
+        // remains locked: the screen is still a kiosk, only this decision is
+        // temporarily clickable.
+        val updatePromptVisible =
+            isFullscreenReceiver && receiverUpdateState.isVisible
 
         // The screen is a kiosk. If Windows ever minimizes or restores the
         // fullscreen window (remote session, shell shortcut, display change),
@@ -250,11 +279,12 @@ fun main(args: Array<String>) {
             }
         }
 
-        LaunchedEffect(lockState.isLocked) {
+        LaunchedEffect(lockState.isLocked, updatePromptVisible) {
             // Capture/release the pointer exactly when the kiosk lock changes.
             // Releasing it here is what makes the screen options card usable
-            // with the mouse or touchpad right after the unlock sequence.
-            mouseGuard.setLocked(lockState.isLocked)
+            // with the mouse or touchpad right after the unlock sequence. The
+            // update prompt also releases it while keeping the keyboard locked.
+            mouseGuard.setLocked(lockState.isLocked && !updatePromptVisible)
             if (!lockState.isLocked && projectionController.isProjecting) {
                 logger.info("Projection stopped after unlocking the controller")
                 projectionController.stop()
@@ -310,7 +340,11 @@ fun main(args: Array<String>) {
             }
         ) {
             if (isFullscreenReceiver) {
-                window.cursor = blankCursor()
+                window.cursor = if (updatePromptVisible) {
+                    Cursor.getDefaultCursor()
+                } else {
+                    blankCursor()
+                }
             }
 
             App(

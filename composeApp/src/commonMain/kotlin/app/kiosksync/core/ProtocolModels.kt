@@ -8,7 +8,8 @@ data class DeviceInfo(
     val deviceName: String,
     val role: String,
     val paired: Boolean,
-    val appVersion: String = APP_VERSION
+    val appVersion: String = APP_VERSION,
+    val skippedUpdateVersion: String? = null
 )
 
 @Serializable
@@ -28,7 +29,9 @@ data class PairResponse(
 data class ReceiverStatusResponse(
     val playlistVersion: Int,
     val currentMediaId: String? = null,
-    val currentFileName: String? = null
+    val currentFileName: String? = null,
+    val appVersion: String = APP_VERSION,
+    val skippedUpdateVersion: String? = null
 )
 
 @Serializable
@@ -90,7 +93,21 @@ data class DiscoveredDevice(
     val deviceName: String,
     val host: String,
     val port: Int,
-    val paired: Boolean
+    val paired: Boolean,
+    val appVersion: String? = null
+)
+
+@Serializable
+data class UpdatePackageManifest(
+    val version: String,
+    val format: Int = UPDATE_PACKAGE_FORMAT
+)
+
+@Serializable
+data class UpdateUploadResponse(
+    val accepted: Boolean,
+    val version: String,
+    val forced: Boolean = false
 )
 
 @Serializable

@@ -37,7 +37,8 @@ fun EmitterHomeScreen(
             kioskLockManager = container.kioskLockManager,
             projectionController = container.projectionController,
             passwordHasher = container.passwordHasher,
-            backgroundDispatcher = container.backgroundDispatcher
+            backgroundDispatcher = container.backgroundDispatcher,
+            updatePackageProvider = container.updatePackageProvider
         )
     }
 

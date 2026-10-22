@@ -14,6 +14,7 @@ import app.kiosksync.core.PairResponse
 import app.kiosksync.core.PlaylistApplyResponse
 import app.kiosksync.core.ReceiverStatusResponse
 import app.kiosksync.core.SyncStateResponse
+import app.kiosksync.core.UpdateUploadResponse
 import app.kiosksync.designsystem.KioskTheme
 import app.kiosksync.feature.kiosk.KioskLockManager
 import app.kiosksync.feature.playlist.Playlist
@@ -286,6 +287,16 @@ private class FakeEmitterClient : EmitterClient {
         sha256: String,
         bytes: ByteArray,
     ): Result<MediaUploadResponse> = Result.failure(UnsupportedOperationException())
+
+    override suspend fun uploadUpdate(
+        host: String,
+        port: Int,
+        emitterId: String,
+        token: String,
+        version: String,
+        sha256: String,
+        bytes: ByteArray,
+    ): Result<UpdateUploadResponse> = Result.failure(UnsupportedOperationException())
 
     override suspend fun putPlaylist(
         host: String,

@@ -19,7 +19,9 @@ import app.kiosksync.core.PlaylistRejectedException
 import app.kiosksync.core.ReceiverStatusResponse
 import app.kiosksync.core.SYNC_TIMEOUT_MS
 import app.kiosksync.core.SyncStateResponse
+import app.kiosksync.core.UPDATE_UPLOAD_TIMEOUT_MS
 import app.kiosksync.core.UPLOAD_TIMEOUT_MS
+import app.kiosksync.core.UpdateUploadResponse
 import app.kiosksync.feature.playlist.Playlist
 import app.kiosksync.feature.sync.PlaylistUpdateRequest
 import io.ktor.client.HttpClient
@@ -198,6 +200,34 @@ class KtorEmitterClient(
             throw IOException("PUT /media returned HTTP ${response.status}")
         }
         response.body<MediaUploadResponse>()
+    }
+
+    override suspend fun uploadUpdate(
+        host: String,
+        port: Int,
+        emitterId: String,
+        token: String,
+        version: String,
+        sha256: String,
+        bytes: ByteArray
+    ): Result<UpdateUploadResponse> = runCatching {
+        val response = client.put("${baseUrl(host, port)}/update/$version") {
+            header(HEADER_EMITTER_ID, emitterId)
+            header(HEADER_AUTH_TOKEN, token)
+            header(HEADER_CONTENT_SHA256, sha256)
+            contentType(ContentType.Application.OctetStream)
+            setBody(bytes)
+            timeout {
+                requestTimeoutMillis = UPDATE_UPLOAD_TIMEOUT_MS
+                socketTimeoutMillis = UPDATE_UPLOAD_TIMEOUT_MS
+            }
+        }
+        if (response.status != HttpStatusCode.OK) {
+            throw IOException("PUT /update returned HTTP ${response.status}")
+        }
+        response.body<UpdateUploadResponse>()
+    }.onFailure {
+        logger.warn("Could not send update $version to $host:$port: ${it.message}")
     }
 
     override suspend fun putPlaylist(

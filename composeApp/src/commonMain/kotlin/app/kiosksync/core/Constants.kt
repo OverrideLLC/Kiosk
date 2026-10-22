@@ -3,6 +3,12 @@ package app.kiosksync.core
 const val APP_NAME = "Override Kiosk"
 const val APP_VERSION = "1.0.0"
 
+/** Name produced by jpackage; used to relaunch after an in-place update. */
+const val APP_EXECUTABLE_NAME = "OverrideKiosk.exe"
+
+/** Folder inside the installation that contains the replaceable application payload. */
+const val APP_PAYLOAD_DIR_NAME = "app"
+
 /** Folder under %APPDATA% used when the user does not pass --data-dir. */
 const val DATA_DIR_NAME = "OverrideKiosk"
 
@@ -22,6 +28,12 @@ const val STATUS_FAILURE_THRESHOLD = 3
 const val HTTP_TIMEOUT_MS = 5_000L
 const val SYNC_TIMEOUT_MS = 60_000L
 const val UPLOAD_TIMEOUT_MS = 120_000L
+const val UPDATE_UPLOAD_TIMEOUT_MS = 300_000L
+
+/** A package contains only the app payload, never the bundled runtime. */
+const val MAX_UPDATE_PACKAGE_BYTES = 512L * 1024 * 1024
+const val MAX_UPDATE_EXTRACTED_BYTES = 1024L * 1024 * 1024
+const val UPDATE_PACKAGE_FORMAT = 1
 
 /**
  * Delay between the synchronisation command and the restart of the carousel.

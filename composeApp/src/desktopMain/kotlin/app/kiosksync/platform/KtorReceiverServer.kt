@@ -12,6 +12,7 @@ import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.MAX_DURATION_SEC
 import app.kiosksync.core.MAX_IMAGE_SIZE_BYTES
 import app.kiosksync.core.MAX_RECOVERY_PHRASE_LENGTH
+import app.kiosksync.core.MAX_UPDATE_PACKAGE_BYTES
 import app.kiosksync.core.MIN_DURATION_SEC
 import app.kiosksync.core.MIN_RECOVERY_PHRASE_LENGTH
 import app.kiosksync.core.MediaState
@@ -23,6 +24,8 @@ import app.kiosksync.core.PlaybackSyncResponse
 import app.kiosksync.core.PlaylistApplyResponse
 import app.kiosksync.core.ReceiverStatusResponse
 import app.kiosksync.core.SyncStateResponse
+import app.kiosksync.core.UpdateUploadResponse
+import app.kiosksync.core.isValidAppVersion
 import app.kiosksync.core.isValidUnlockSequence
 import app.kiosksync.feature.pairing.PairResult
 import app.kiosksync.feature.pairing.PairingManager
@@ -59,7 +62,8 @@ class KtorReceiverServer(
     private val playlistBridge: ReceiverPlaylistBridge,
     private val playbackSyncBridge: ReceiverPlaybackSyncBridge,
     private val kioskLockManager: KioskLockManager,
-    private val statusProvider: () -> ReceiverStatusResponse
+    private val statusProvider: () -> ReceiverStatusResponse,
+    private val updateManager: ReceiverUpdateManager
 ) : ReceiverServer {
 
     private val json = Json {
@@ -125,7 +129,8 @@ class KtorReceiverServer(
                         deviceName = deviceName,
                         role = "receiver",
                         paired = pairingManager.uiState.value.isPaired,
-                        appVersion = APP_VERSION
+                        appVersion = APP_VERSION,
+                        skippedUpdateVersion = updateManager.skippedVersion
                     )
                 )
             }
@@ -187,7 +192,12 @@ class KtorReceiverServer(
             get("/status") {
                 try {
                     if (!call.requireAuthorization()) return@get
-                    call.respond(statusProvider())
+                    call.respond(
+                        statusProvider().copy(
+                            appVersion = APP_VERSION,
+                            skippedUpdateVersion = updateManager.skippedVersion
+                        )
+                    )
                 } catch (error: Exception) {
                     logger.error("Error handling GET /status", error)
                     runCatching {
@@ -362,6 +372,75 @@ class KtorReceiverServer(
                         applied = true,
                         version = playlist.version
                     )
+                )
+            }
+
+            put("/update/{version}") {
+                if (!call.requireAuthorization()) return@put
+
+                val version = call.parameters["version"].orEmpty().trim()
+                if (!isValidAppVersion(version)) {
+                    call.respond(HttpStatusCode.BadRequest, ErrorResponse("invalid_version"))
+                    return@put
+                }
+
+                val expectedHash = call.request.headers[HEADER_CONTENT_SHA256]
+                    ?.trim()
+                    ?.lowercase()
+                if (expectedHash.isNullOrBlank() || expectedHash.length != 64) {
+                    call.respond(HttpStatusCode.BadRequest, ErrorResponse("missing_hash"))
+                    return@put
+                }
+
+                val declaredLength = call.request.headers[HttpHeaders.ContentLength]?.toLongOrNull()
+                if (declaredLength != null && declaredLength > MAX_UPDATE_PACKAGE_BYTES) {
+                    call.respond(
+                        HttpStatusCode.PayloadTooLarge,
+                        ErrorResponse("update_too_large")
+                    )
+                    return@put
+                }
+
+                val bytes = runCatching { call.receive<ByteArray>() }.getOrNull()
+                if (bytes == null || bytes.isEmpty()) {
+                    call.respond(HttpStatusCode.BadRequest, ErrorResponse("invalid_body"))
+                    return@put
+                }
+                if (bytes.size.toLong() > MAX_UPDATE_PACKAGE_BYTES) {
+                    call.respond(
+                        HttpStatusCode.PayloadTooLarge,
+                        ErrorResponse("update_too_large")
+                    )
+                    return@put
+                }
+
+                val actualHash = Sha256.hex(bytes)
+                if (!actualHash.equals(expectedHash, ignoreCase = true)) {
+                    call.respond(HttpStatusCode.BadRequest, ErrorResponse("hash_mismatch"))
+                    return@put
+                }
+
+                val staged = updateManager.stagePackage(version, actualHash, bytes)
+                staged.fold(
+                    onSuccess = { forced ->
+                        logger.info(
+                            "Update package $version staged (${bytes.size} bytes, forced=$forced)"
+                        )
+                        call.respond(
+                            UpdateUploadResponse(
+                                accepted = true,
+                                version = version,
+                                forced = forced
+                            )
+                        )
+                    },
+                    onFailure = { error ->
+                        logger.warn("Rejected update package $version: ${error.message}")
+                        call.respond(
+                            HttpStatusCode.BadRequest,
+                            ErrorResponse("update_rejected", error.message)
+                        )
+                    }
                 )
             }
 

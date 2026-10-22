@@ -257,6 +257,43 @@ object Strings {
     const val PROJECT_NO_PLAYLIST = "Agrega al menos una imagen antes de proyectar."
     const val PROJECT_SHORTCUT_HINT = "Atajo: Win (Super) + V"
 
+    // Version updates
+    const val VERSION_UNKNOWN = "Versión desconocida"
+    const val UPDATE_TITLE = "Actualización disponible"
+    const val UPDATE_FORCED_TITLE = "Actualización obligatoria"
+    const val UPDATE_NOW = "Actualizar ahora"
+    const val UPDATE_LATER = "Ahora no"
+    const val UPDATE_BUTTON = "Actualizar"
+    const val UPDATE_APPLYING = "Instalando actualización… La pantalla se reiniciará."
+    const val UPDATE_NOT_SUPPORTED =
+        "Esta Pantalla no se está ejecutando desde una instalación actualizable."
+    const val UPDATE_INSTALL_ERROR =
+        "No se pudo iniciar la actualización. La Pantalla seguirá funcionando."
+    const val UPDATE_INVALID_PACKAGE = "El paquete de actualización no es válido."
+    const val UPDATE_SEND_PREPARING = "Preparando actualización…"
+    const val UPDATE_SEND_UPLOADING = "Enviando actualización…"
+    const val UPDATE_SEND_WAITING = "Esperando confirmación en la Pantalla…"
+    const val UPDATE_SEND_APPLYING = "La Pantalla se está actualizando…"
+    const val UPDATE_SEND_FAILED = "No se pudo enviar la actualización."
+    const val UPDATE_SEND_UNAVAILABLE =
+        "Ejecuta el Controlador desde la versión instalada para poder enviar actualizaciones."
+
+    fun screenVersion(version: String?): String =
+        version?.let { "v$it" } ?: VERSION_UNKNOWN
+
+    fun updateAvailable(version: String, current: String): String =
+        "Hay una versión nueva disponible ($version). Esta Pantalla usa la versión $current. " +
+            "Puedes actualizar ahora o seguir con la versión actual."
+
+    fun updateForced(version: String): String =
+        "Esta Pantalla usa una versión incompatible con el Controlador. " +
+            "Para seguir funcionando, debe actualizarse a la versión $version."
+
+    fun updateSkipped(version: String): String =
+        "La Pantalla decidió seguir en la versión $version."
+
+    fun updateSent(version: String): String = "Actualización $version enviada."
+
     // Sending content
     const val SEND_TITLE = "Enviar"
     const val SEND_SUBTITLE = "Envía la playlist activa a las pantallas seleccionadas."

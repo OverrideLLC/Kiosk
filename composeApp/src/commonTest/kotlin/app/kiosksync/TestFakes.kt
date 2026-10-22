@@ -11,7 +11,14 @@ import app.kiosksync.feature.playlist.PlaylistLibrary
 import app.kiosksync.feature.role.AppConfig
 import app.kiosksync.platform.LocalStorage
 import app.kiosksync.platform.MediaImportResult
+import app.kiosksync.platform.ReceiverUpdateManager
+import app.kiosksync.platform.ReceiverUpdateUi
 import app.kiosksync.platform.StoredMedia
+import app.kiosksync.platform.UpdatePackage
+import app.kiosksync.platform.UpdatePackageProvider
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class FakeLocalStorage(
     var playlist: Playlist? = null,
@@ -130,6 +137,59 @@ class FakeLocalStorage(
         mediaBytes.remove(mediaId)
         return storedMedia.remove(mediaId) != null
     }
+}
+
+class FakeReceiverUpdateManager : ReceiverUpdateManager {
+    private val state = MutableStateFlow(ReceiverUpdateUi())
+    override val uiState: StateFlow<ReceiverUpdateUi> = state.asStateFlow()
+    override var skippedVersion: String? = null
+
+    var stagedVersion: String? = null
+    var stagedBytes: ByteArray? = null
+    var stageResult: Result<Boolean> = Result.success(false)
+    var acceptResult: Boolean = true
+    var declineCount: Int = 0
+
+    override suspend fun stagePackage(
+        version: String,
+        sha256: String,
+        bytes: ByteArray
+    ): Result<Boolean> {
+        stagedVersion = version
+        stagedBytes = bytes
+        return stageResult.onSuccess { forced ->
+            state.value = ReceiverUpdateUi(
+                version = version,
+                forced = forced
+            )
+        }
+    }
+
+    override fun acceptUpdate(): Boolean {
+        if (acceptResult) {
+            state.value = state.value.copy(applying = true)
+        }
+        return acceptResult
+    }
+
+    override fun declineUpdate() {
+        declineCount++
+        state.value = ReceiverUpdateUi()
+    }
+
+    override fun dismissError() {
+        state.value = state.value.copy(error = null)
+    }
+}
+
+class FakeUpdatePackageProvider(
+    private val update: UpdatePackage? = null
+) : UpdatePackageProvider {
+    override fun isAvailable(): Boolean = update != null
+
+    override suspend fun getPackage(): Result<UpdatePackage> =
+        update?.let { Result.success(it) }
+            ?: Result.failure(IllegalStateException("No package available"))
 }
 
 class NoOpLogger : AppLogger {
