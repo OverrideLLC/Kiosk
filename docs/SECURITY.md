@@ -28,6 +28,7 @@ hostil; es una herramienta para decidir dónde usarlo.
 | Un segundo Controlador no puede vincular una Pantalla ya vinculada | `PairRun.AlreadyPaired` |
 | El Controlador no abre puertos ni se publica por mDNS | Diseño de roles |
 | Bloqueo tipo kiosco con secuencia + contraseña, 5 intentos y 30 s | `KioskLockManager` |
+| Bloqueo de teclado y mouse/touchpad con hooks de bajo nivel mientras el kiosco está bloqueado | `WindowsKioskKeyboardGuard`, `WindowsKioskMouseGuard` |
 | Bloqueo de nuevas vinculaciones al alcanzar 5 fallos | `PairingManager` |
 | Log local con rotación; no registra tokens ni códigos | `FileAppLogger` |
 | Ninguna llamada a internet ni telemetría | Todo el código |
@@ -88,11 +89,16 @@ solo sirve contra ese servicio falso.
 
 - `Ctrl+Alt+Del` no se puede interceptar; el usuario siempre puede llegar a la
   pantalla de seguridad de Windows.
-- El hook de teclado es de bajo nivel y **solo existe en Windows**. Esta versión se
-  verificó en Windows 11 (el hook se instala), pero el bloqueo efectivo de atajos
-  del sistema requiere una prueba manual en el equipo destino. En Linux o con
-  `--windowed` se usa un manejo de teclas de Compose, que no bloquea atajos del
-  sistema.
+- Los hooks de teclado y mouse son de bajo nivel y **solo existen en Windows**.
+  Esta versión se verificó en Windows 11 (los hooks se instalan), pero el bloqueo
+  efectivo de atajos y gestos del sistema requiere una prueba manual en el equipo
+  destino. En Linux o con `--windowed` se usa un manejo de teclas de Compose, que
+  no bloquea atajos del sistema ni el mouse.
+- El hook de mouse descarta movimiento, clics, rueda y los toques del touchpad que
+  Windows entrega como eventos de mouse. Los gestos de precisión de tres o cuatro
+  dedos que maneja el shell pueden escapar; desactívalos en la configuración del
+  touchpad si el equipo queda expuesto al público. Al desbloquear se libera el
+  puntero solo para la card de opciones; al cerrarla se vuelve a capturar.
 - La app no impide apagar el equipo, desconectar la red ni cerrar sesión.
 - El bloqueo no sustituye una cuenta de Windows restringida ni una política de
   grupo.

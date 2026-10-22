@@ -1,8 +1,8 @@
 # Desbloqueo de una Pantalla (modo kiosco)
 
-Una Pantalla se bloquea sola al arrancar y no responde a nada del teclado
-salvo la secuencia de desbloqueo. El Controlador, cuando proyecta, también se
-bloquea con la misma contraseña.
+Una Pantalla se bloquea sola al arrancar y no responde a nada del teclado ni del
+mouse/touchpad salvo la secuencia de desbloqueo. El Controlador, cuando proyecta,
+también se bloquea con la misma contraseña.
 
 ## Secuencia de desbloqueo
 
@@ -64,9 +64,28 @@ propia (entre 8 y 64 letras o números).
 
 Tras 5 intentos fallidos, el desbloqueo se rechaza durante 30 segundos.
 
+## Mouse y touchpad
+
+- En modo kiosco (Pantalla a pantalla completa o Controlador proyectando) se
+  instala un hook `WH_MOUSE_LL`: se descartan movimiento, clics, rueda y los
+  toques del touchpad. El puntero no puede alcanzar la barra de tareas, los bordes
+  de la ventana ni otra aplicación. Mientras está bloqueado, el cursor se fija
+  además en un píxel para que el primer movimiento no alcance a escapar.
+- Al desbloquear con la secuencia, el hook libera el puntero para que la card
+  **Opciones de Pantalla** se pueda usar con mouse o touchpad. Al pulsar
+  **Volver a bloquear** o cerrar la card, el puntero se captura de nuevo.
+- La ventana de la Pantalla no es redimensionable y, si Windows la minimiza o la
+  restaura por un evento externo, vuelve a pantalla completa mientras el bloqueo
+  siga activo.
+- En `--windowed` (solo depuración) el mouse no se bloquea, para poder usar la
+  interfaz y cerrar la app.
+
 ## Límites conocidos
 
 - `Ctrl + Alt + Supr` no se puede interceptar (limitación del sistema).
+- Los gestos de precisión de tres o cuatro dedos que maneja Windows directamente
+  pueden escapar del hook de mouse. Si el equipo queda expuesto al público,
+  desactívalos en la configuración del touchpad.
 - En modo `--windowed` (solo depuración) el bloqueo es "blando": algunos atajos
-  del sistema (Alt+Tab, tecla Windows) pueden escapar. En modo normal, el
-  enganche nativo de Windows los bloquea.
+  del sistema (Alt+Tab, tecla Windows) pueden escapar y el mouse sigue activo. En
+  modo normal, los enganches nativos de Windows bloquean teclado y mouse.

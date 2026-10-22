@@ -35,6 +35,7 @@ import app.kiosksync.platform.KtorEmitterClient
 import app.kiosksync.platform.KtorReceiverServer
 import app.kiosksync.platform.Sha256
 import app.kiosksync.platform.createKioskKeyboardGuard
+import app.kiosksync.platform.createKioskMouseGuard
 import app.kiosksync.ui.App
 import app.kiosksync.ui.ProjectionScreen
 import java.awt.FileDialog
@@ -137,6 +138,11 @@ fun main(args: Array<String>) {
         onProjectionToggle = { projectionController.requestToggle() },
         logger = logger
     )
+    val mouseGuard = createKioskMouseGuard(
+        enabled = kioskLockAvailable,
+        isLocked = { kioskLockManager.uiState.value.isLocked },
+        logger = logger
+    )
 
     val statusTracker = ReceiverStatusTracker()
     val playlistBridge = ReceiverPlaylistBridge()
@@ -179,6 +185,7 @@ fun main(args: Array<String>) {
         receiverPlaylistBridge = playlistBridge,
         kioskLockManager = kioskLockManager,
         kioskKeyboardGuard = keyboardGuard,
+        kioskMouseGuard = mouseGuard,
         projectionController = projectionController,
         passwordHasher = passwordHasher,
         newDeviceId = { UUID.randomUUID().toString() },
@@ -188,6 +195,7 @@ fun main(args: Array<String>) {
     )
 
     keyboardGuard.start()
+    mouseGuard.start()
 
     application {
         val windowState = rememberWindowState(
@@ -198,6 +206,26 @@ fun main(args: Array<String>) {
 
         val projectionPlaylist by projectionController.playlist.collectAsState()
         val lockState by kioskLockManager.uiState.collectAsState()
+
+        // The screen is a kiosk. If Windows ever minimizes or restores the
+        // fullscreen window (remote session, shell shortcut, display change),
+        // put it back while the lock is active. The native input guards should
+        // prevent the user from doing this; this is a second barrier.
+        LaunchedEffect(
+            isFullscreenReceiver,
+            lockState.isLocked,
+            windowState.placement,
+            windowState.isMinimized
+        ) {
+            if (isFullscreenReceiver && lockState.isLocked) {
+                if (windowState.isMinimized) {
+                    windowState.isMinimized = false
+                }
+                if (windowState.placement != WindowPlacement.Fullscreen) {
+                    windowState.placement = WindowPlacement.Fullscreen
+                }
+            }
+        }
 
         LaunchedEffect(projectionPlaylist != null) {
             val isProjecting = projectionPlaylist != null
@@ -214,6 +242,10 @@ fun main(args: Array<String>) {
         }
 
         LaunchedEffect(lockState.isLocked) {
+            // Capture/release the pointer exactly when the kiosk lock changes.
+            // Releasing it here is what makes the screen options card usable
+            // with the mouse or touchpad right after the unlock sequence.
+            mouseGuard.setLocked(lockState.isLocked)
             if (!lockState.isLocked && projectionController.isProjecting) {
                 logger.info("Projection stopped after unlocking the controller")
                 projectionController.stop()
@@ -241,6 +273,7 @@ fun main(args: Array<String>) {
             state = windowState,
             undecorated = isFullscreenReceiver,
             alwaysOnTop = isFullscreenReceiver,
+            resizable = !isFullscreenReceiver,
             onKeyEvent = { keyEvent ->
                 when {
                     // The native hook already swallows keys on Windows. This is a

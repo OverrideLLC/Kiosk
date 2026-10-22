@@ -10,6 +10,7 @@ import app.kiosksync.feature.projection.ProjectionController
 import app.kiosksync.platform.DeviceDiscovery
 import app.kiosksync.platform.EmitterClient
 import app.kiosksync.platform.KioskKeyboardGuard
+import app.kiosksync.platform.KioskMouseGuard
 import app.kiosksync.platform.LocalStorage
 import app.kiosksync.platform.ReceiverServer
 import kotlinx.coroutines.CoroutineDispatcher
@@ -40,6 +41,7 @@ class AppContainer(
     val receiverPlaylistBridge: ReceiverPlaylistBridge,
     val kioskLockManager: KioskLockManager,
     val kioskKeyboardGuard: KioskKeyboardGuard,
+    val kioskMouseGuard: KioskMouseGuard,
     val projectionController: ProjectionController,
     val passwordHasher: (String) -> String,
     val newDeviceId: () -> String,
@@ -55,6 +57,7 @@ class AppContainer(
      */
     fun shutdown() {
         runCatching { kioskKeyboardGuard.stop() }
+        runCatching { kioskMouseGuard.stop() }
         serviceScope.launch {
             runCatching { discovery.unregisterService() }
             runCatching { discovery.stopDiscovery() }

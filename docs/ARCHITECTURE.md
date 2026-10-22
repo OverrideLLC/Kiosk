@@ -154,13 +154,15 @@ Pantalla no cambia su comportamiento por estar desconectada.
 
 ### 5. Bloqueo tipo kiosco
 
-La Pantalla arranca bloqueada. En Windows se instala un hook de teclado de bajo
-nivel; en Linux o con `--windowed` se usa el manejo de teclas de Compose. La
-secuencia de desbloqueo (solo Shift/Ctrl/Alt) se configura desde el Controlador y
-se envía con la playlist o con `PUT /lock`. Si hay contraseña, después de la
-secuencia se pide. Hay 5 intentos y 30 segundos de bloqueo. La recuperación usa
-una frase universal compilada en la app; ver [KIOSK_UNLOCK.md](KIOSK_UNLOCK.md) y
-los riesgos en [SECURITY.md](SECURITY.md).
+La Pantalla arranca bloqueada. En Windows se instalan hooks de bajo nivel para
+teclado (`WH_KEYBOARD_LL`) y mouse/touchpad (`WH_MOUSE_LL`); en Linux o con
+`--windowed` se usa el manejo de teclas de Compose y el mouse no se bloquea. Al
+desbloquear se libera el puntero para la card de opciones y se vuelve a capturar
+al cerrarla. La secuencia de desbloqueo (solo Shift/Ctrl/Alt) se configura desde
+el Controlador y se envía con la playlist o con `PUT /lock`. Si hay contraseña,
+después de la secuencia se pide. Hay 5 intentos y 30 segundos de bloqueo. La
+recuperación usa una frase universal compilada en la app; ver
+[KIOSK_UNLOCK.md](KIOSK_UNLOCK.md) y los riesgos en [SECURITY.md](SECURITY.md).
 
 ## Persistencia
 

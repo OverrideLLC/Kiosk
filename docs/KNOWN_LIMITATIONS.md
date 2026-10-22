@@ -6,11 +6,12 @@ prometer funciones o de instalar la app en un comercio real.
 ## Plataforma y empaquetado
 
 - **Windows 10/11 es la plataforma objetivo.** Esta versión se compiló y se
-  ejecutó en Windows 11 con JDK 21; el hook de teclado nativo se instala
-  correctamente, pero el bloqueo de atajos del sistema requiere una prueba manual
-  en el equipo destino.
-- El instalador `.exe`/`.msi` requiere **WiX Toolset** en la máquina que compila.
-  Sin WiX solo se genera la carpeta portable.
+  ejecutó en Windows 11 con JDK 21; los hooks nativos de teclado y mouse se
+  instalan correctamente, pero el bloqueo efectivo de atajos y gestos del sistema
+  requiere una prueba manual en el equipo destino.
+- Para generar el instalador `.exe`/`.msi` el plugin de Compose descarga WiX 3.11
+  automáticamente la primera vez; no hace falta instalarlo a mano. Sin conexión
+  en esa primera compilación solo se genera la carpeta portable.
 - `jpackage` **no** produce un único `.exe` autocontenido: la versión portable es
   una carpeta con un `.exe` dentro, comprimible en `.zip`.
 - No hay actualización automática ni instalador silencioso.
@@ -35,10 +36,21 @@ prometer funciones o de instalar la app en un comercio real.
 ## Bloqueo kiosco
 
 - `Ctrl+Alt+Del` no se puede interceptar.
-- El hook de teclado de bajo nivel solo existe en Windows y no está probado en
-  Linux.
+- Los hooks de teclado (`WH_KEYBOARD_LL`) y de mouse (`WH_MOUSE_LL`) solo existen
+  en Windows y no están probados en Linux.
+- El bloqueo de mouse/touchpad descarta movimiento, clics, rueda y los toques que
+  Windows entrega como eventos de mouse. Los gestos de precisión de tres o cuatro
+  dedos que maneja el shell directamente pueden escapar; para un kiosco estricto,
+  desactiva esos gestos en la configuración del touchpad o usa una cuenta de
+  Windows restringida.
+- Al desbloquear, el puntero se libera para poder usar la card de opciones; solo
+  vuelve a quedar capturado cuando se cierra la card o se elige **Volver a
+  bloquear**.
 - En `--windowed` o en Linux, el bloqueo usa el manejo de teclas de Compose y no
-  bloquea atajos del sistema.
+  bloquea atajos del sistema ni el mouse; es solo para depuración.
+- Si Windows minimiza o restaura la ventana por un evento externo, un vigilante
+  la devuelve a pantalla completa mientras el bloqueo siga activo. Eso no impide
+  `Ctrl+Alt+Del` ni el acceso físico al equipo.
 - La frase de recuperación es universal y está compilada en la app; no es un
   secreto.
 - La contraseña se guarda con SHA-256 sin sal ni derivación lenta.
