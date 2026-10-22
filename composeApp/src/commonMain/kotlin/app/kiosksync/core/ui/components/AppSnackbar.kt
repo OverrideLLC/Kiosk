@@ -1,4 +1,7 @@
-package app.kiosksync.designsystem
+package app.kiosksync.core.ui.components
+
+import app.kiosksync.core.ui.theme.KioskColors
+import app.kiosksync.core.ui.theme.KioskShape
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Snackbar

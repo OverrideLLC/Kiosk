@@ -1,9 +1,10 @@
-package app.kiosksync.designsystem
+package app.kiosksync.core.ui
 
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.unit.Density
 import app.kiosksync.core.AppTheme
-import app.kiosksync.designsystem.catalog.CatalogContent
+import app.kiosksync.core.ui.theme.KioskTheme
+import app.kiosksync.core.ui.catalog.CatalogContent
 import java.io.File
 import kotlin.test.Test
 import org.jetbrains.skia.EncodedImageFormat

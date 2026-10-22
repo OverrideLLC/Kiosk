@@ -15,7 +15,7 @@ import app.kiosksync.core.PlaylistApplyResponse
 import app.kiosksync.core.ReceiverStatusResponse
 import app.kiosksync.core.SyncStateResponse
 import app.kiosksync.core.UpdateUploadResponse
-import app.kiosksync.designsystem.KioskTheme
+import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.feature.kiosk.KioskLockManager
 import app.kiosksync.feature.playlist.Playlist
 import app.kiosksync.feature.playlist.PlaylistEditorStateHolder

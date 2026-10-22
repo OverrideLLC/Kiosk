@@ -1,8 +1,11 @@
-package app.kiosksync.designsystem
+package app.kiosksync.core.ui.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.Color
+import com.materialkolor.dynamiccolor.ColorSpec
+import com.materialkolor.material3.rememberDynamicColorScheme
 import app.kiosksync.core.AppTheme
 
 /**
@@ -19,12 +22,17 @@ fun KioskTheme(
     content: @Composable () -> Unit,
 ) {
     val isDark = theme == AppTheme.DARK
+    val colorScheme = rememberDynamicColorScheme(
+        seedColor = Color(0xFF3D7AF5),
+        isDark = isDark,
+        specVersion = ColorSpec.SpecVersion.SPEC_2025,
+    )
     CompositionLocalProvider(
-        LocalKioskExtraColors provides if (isDark) DarkExtraColors else LightExtraColors,
+        LocalKioskExtraColors provides kioskExtraColors(isDark, colorScheme),
         LocalReduceMotion provides reduceMotion,
     ) {
         MaterialTheme(
-            colorScheme = if (isDark) KioskDarkColorScheme else KioskLightColorScheme,
+            colorScheme = colorScheme,
             typography = kioskTypography(),
             shapes = KioskShapes,
             content = content,

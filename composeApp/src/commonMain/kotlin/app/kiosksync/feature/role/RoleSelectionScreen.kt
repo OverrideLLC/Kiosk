@@ -32,17 +32,17 @@ import androidx.compose.ui.input.key.type
 import app.kiosksync.core.AppRole
 import app.kiosksync.core.AppTheme
 import app.kiosksync.core.Strings
-import app.kiosksync.designsystem.AppButton
-import app.kiosksync.designsystem.AppButtonSize
-import app.kiosksync.designsystem.AppButtonVariant
-import app.kiosksync.designsystem.AppIcon
-import app.kiosksync.designsystem.AppSelectableCard
-import app.kiosksync.designsystem.KioskColors
-import app.kiosksync.designsystem.KioskShape
-import app.kiosksync.designsystem.OverrideFooter
-import app.kiosksync.designsystem.OverrideLogo
-import app.kiosksync.designsystem.Sizes
-import app.kiosksync.designsystem.Space
+import app.kiosksync.core.ui.components.AppButton
+import app.kiosksync.core.ui.components.AppButtonSize
+import app.kiosksync.core.ui.components.AppButtonVariant
+import app.kiosksync.core.ui.components.AppIcon
+import app.kiosksync.core.ui.components.AppSelectableCard
+import app.kiosksync.core.ui.theme.KioskColors
+import app.kiosksync.core.ui.theme.KioskShape
+import app.kiosksync.core.ui.components.OverrideFooter
+import app.kiosksync.core.ui.components.OverrideLogo
+import app.kiosksync.core.ui.theme.Sizes
+import app.kiosksync.core.ui.theme.Space
 
 /**
  * First-run role choice. Two large cards, arrow-key navigation and a single

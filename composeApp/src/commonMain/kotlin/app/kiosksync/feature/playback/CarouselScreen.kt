@@ -15,10 +15,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import app.kiosksync.core.Strings
-import app.kiosksync.designsystem.KioskDisplayType
-import app.kiosksync.designsystem.KioskScreenColors
-import app.kiosksync.designsystem.Motion
-import app.kiosksync.designsystem.Space
+import app.kiosksync.core.ui.theme.KioskDisplayType
+import app.kiosksync.core.ui.theme.KioskScreenColors
+import app.kiosksync.core.ui.theme.Motion
+import app.kiosksync.core.ui.theme.Space
 
 private data class DisplayedImage(
     val contentKey: String,

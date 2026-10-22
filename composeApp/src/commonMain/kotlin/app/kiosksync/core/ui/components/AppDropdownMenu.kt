@@ -1,4 +1,8 @@
-package app.kiosksync.designsystem
+package app.kiosksync.core.ui.components
+
+import app.kiosksync.core.ui.theme.KioskColors
+import app.kiosksync.core.ui.theme.KioskShape
+import app.kiosksync.core.ui.theme.Sizes
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.DropdownMenu

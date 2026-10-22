@@ -16,11 +16,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import app.kiosksync.core.APP_NAME
-import app.kiosksync.designsystem.KioskDisplayType
-import app.kiosksync.designsystem.KioskScreenColors
-import app.kiosksync.designsystem.OverrideLogo
-import app.kiosksync.designsystem.Sizes
-import app.kiosksync.designsystem.Space
+import app.kiosksync.core.ui.theme.KioskDisplayType
+import app.kiosksync.core.ui.theme.KioskScreenColors
+import app.kiosksync.core.ui.components.OverrideLogo
+import app.kiosksync.core.ui.theme.Sizes
+import app.kiosksync.core.ui.theme.Space
 
 /**
  * Idle state for a Screen without content: a static, high-contrast brand mark

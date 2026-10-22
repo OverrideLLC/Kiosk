@@ -1,27 +1,21 @@
 # Sistema de diseño
 
-La arquitectura objetivo ubica el sistema visual compartido en
-`app.kiosksync.core.ui` (`commonMain`). En esta rama, la migración desde
-`app.kiosksync.designsystem` se hace en la fase 8; las pantallas nuevas deben usar
-los componentes globales y los componentes de una sola feature se quedan junto a
-esa pantalla. Ninguna pantalla debe duplicar tokens, colores, formas o
-animaciones globales.
+El sistema visual compartido vive en `app.kiosksync.core.ui` (`commonMain`), con
+temas en `core/ui/theme` y componentes globales en `core/ui/components`. Los
+componentes de una sola feature se quedan junto a esa pantalla. Ninguna pantalla
+debe duplicar tokens, colores, formas o animaciones globales.
 
 ## Base técnica actual y objetivo
 
-- La base actual del repositorio usa Compose Multiplatform **1.7.3**.
-- La fase 8 migrará a una combinación estable verificada de Compose Multiplatform
-  y Material Kolor; las versiones candidatas se registran en el plan integral.
-- Material Kolor **6.0.0** es la versión objetivo consultada para generar el
-  esquema Material 3 desde la semilla de marca.
+- Compose Multiplatform **1.12.2** (target Desktop JVM).
+- Material Kolor **6.0.0**, módulo `material-kolor-material3`.
 - Recursos de Compose (`composeResources`) para tipografías e íconos.
 
 ### Componentes compartidos
 
 Los controles de la app (`AppButton`, `AppDialog`, `AppTextField`, estados vacíos,
-indicadores y demás) continúan siendo componentes compartidos. La migración
-reubica los existentes a `core.ui`; no agrega copias ni depende de APIs
-experimentales para conseguir consistencia.
+indicadores y demás) son componentes compartidos. Se reutilizan desde las
+pantallas y no dependen de APIs experimentales para conseguir consistencia.
 
 ## Tema
 
@@ -40,51 +34,29 @@ KioskTheme(theme = AppTheme.DARK, reduceMotion = false) {
 
 ## Color
 
-El tema objetivo generará la paleta tonal desde el azul semilla **`#3D7AF5`** con
-Material Kolor Material 3. La especificación inicial será la predeterminada de
-Material Kolor 6 (`SPEC_2025`). Los valores de la tabla siguiente documentan la
-apariencia actual y sirven como referencia visual; la fase 8 los actualizará si
-el resultado generado difiere, después de revisar contraste y tema claro/oscuro.
+El tema genera la paleta tonal desde el azul semilla **`#3D7AF5`** con Material
+Kolor Material 3 y `ColorSpec.SpecVersion.SPEC_2025`. La galería de UI muestra los
+roles generados en claro y oscuro; los tokens de éxito, advertencia e información
+siguen definidos por la app.
 
 ### Roles principales
 
-| Rol | Oscuro | Claro |
-| --- | --- | --- |
-| `primary` | `#BBC3FF` | `#295AB9` |
-| `onPrimary` | `#002E6B` | `#FFFFFF` |
-| `primaryContainer` | `#21438B` | `#DEE0FF` |
-| `onPrimaryContainer` | `#DEE0FF` | `#001A43` |
-| `secondary` | `#C2C5E3` | `#5A5D77` |
-| `secondaryContainer` | `#42455E` | `#E2E2E7` |
-| `tertiary` | `#F3B5CD` | `#844E64` |
-| `surface` | `#131317` | `#F9F9FE` |
-| `onSurface` | `#E2E2E7` | `#1B1B1F` |
-| `surfaceContainerHigh` | `#292A2D` | `#E7E8ED` |
-| `surfaceContainerHighest` | `#343438` | `#E2E2E7` |
-| `onSurfaceVariant` | `#C4C5D8` | `#444655` |
-| `outline` | `#8E8FA1` | `#747687` |
-| `error` | `#FFB4AB` | `#9F3F3B` |
-| `errorContainer` | `#822525` | `#FFDAD6` |
+| Rol | Uso |
+| --- | --- |
+| `primary` | Acción principal y foco visual de marca |
+| `secondary` | Acciones y superficies tonales secundarias |
+| `tertiary` | Acentos generados a partir de la semilla |
+| `surface` / `surfaceContainer*` | Fondo de pantalla y jerarquía de superficies |
+| `error` | Errores destructivos y de seguridad |
+| `success` / `warning` / `infoContainer` | Estados semánticos adicionales de la app |
 
 Además hay roles que Material 3 no modela (`KioskExtraColors`): `success`,
-`warning`, `infoContainer`, `disabledContainer`, `disabledContent` y
-`hoverOverlay`.
+`warning`, `infoContainer`, `disabledContainer` y `disabledContent`.
 
-### Contraste (WCAG)
-
-| Par | Oscuro | Claro |
-| --- | --- | --- |
-| Texto normal / superficie | 14.35:1 | 16.36:1 |
-| Texto secundario / superficie | 10.88:1 | 8.88:1 |
-| Texto secundario / superficie alta | 8.42:1 | 7.62:1 |
-| Contorno / superficie | 5.82:1 | 4.27:1 |
-| Primario / superficie | 10.91:1 | 6.14:1 |
-| Sobre primario / primario | 7.71:1 | 6.45:1 |
-| Error / superficie | 10.91:1 | 6.16:1 |
-| Deshabilitado / contenedor | 7.27:1 | 7.22:1 |
-
-Todos los pares de texto superan AA (4.5:1). El contorno se usa para bordes e
-íconos (mínimo 3:1), nunca como color de texto.
+Revisar los pares de texto normal con una meta de contraste WCAG AA de 4.5:1 y
+los componentes gráficos con una meta de 3:1. El contorno se usa para bordes e
+íconos, nunca como color de texto pequeño. Repetir la revisión si cambia la
+semilla, el estilo de paleta o la versión de Material Kolor.
 
 Reglas:
 
@@ -163,23 +135,23 @@ La Pantalla en reproducción no tiene movimiento decorativo.
 
 | Componente | Archivo | Uso |
 | --- | --- | --- |
-| `AppButton` | `AppButton.kt` | 4 variantes × 3 tamaños, ícono, carga, motivo de deshabilitado |
-| `AppIconButton` | `AppButton.kt` | acción de solo ícono, 3 variantes |
-| `AppButtonGroup` | `AppButton.kt` | control segmentado tipo píldora |
-| `AppTextField` | `AppTextField.kt` | etiqueta, ayuda y error inline |
-| `AppStepper` | `AppStepper.kt` | número con −/+ y unidad |
-| `AppSelectableCard` | `AppSelectableCard.kt` | tarjeta con rol radio/check, foco y “morph” |
-| `AppStatusChip` | `AppStatusChip.kt` | estados con tono semántico |
-| `AppListItem` | `AppListItem.kt` | fila con miniatura y acciones |
-| `AppDialog` | `AppDialog.kt` | diálogo 480 dp (600 dp en el de seguridad) con ícono y acciones |
-| `AppDropdownMenu` | `AppDropdownMenu.kt` | menú de desbordamiento |
-| `AppSnackbarHost` | `AppSnackbar.kt` | aviso con “Deshacer” |
-| `AppLoadingIndicator` | `AppLoadingIndicator.kt` | puntos ondulados |
-| `AppLinearProgress` | `AppLoadingIndicator.kt` | progreso con etiqueta |
-| `AppCircularProgress` | `AppLoadingIndicator.kt` | espera circular |
-| `AppEmptyState` | `AppEmptyState.kt` | ícono + frase + acción |
-| `AppTooltip` | `AppTooltip.kt` | atajos y motivos |
-| `AppIcon` | `AppIcon.kt` | único punto de dibujo de íconos |
+| `AppButton` | `core/ui/components/AppButton.kt` | 4 variantes × 3 tamaños, ícono, carga, motivo de deshabilitado |
+| `AppIconButton` | `core/ui/components/AppButton.kt` | acción de solo ícono, 3 variantes |
+| `AppButtonGroup` | `core/ui/components/AppButton.kt` | control segmentado tipo píldora |
+| `AppTextField` | `core/ui/components/AppTextField.kt` | etiqueta, ayuda y error inline |
+| `AppStepper` | `core/ui/components/AppStepper.kt` | número con −/+ y unidad |
+| `AppSelectableCard` | `core/ui/components/AppSelectableCard.kt` | tarjeta con rol radio/check, foco y “morph” |
+| `AppStatusChip` | `core/ui/components/AppStatusChip.kt` | estados con tono semántico |
+| `AppListItem` | `core/ui/components/AppListItem.kt` | fila con miniatura y acciones |
+| `AppDialog` | `core/ui/components/AppDialog.kt` | diálogo 480 dp (600 dp en el de seguridad) con ícono y acciones |
+| `AppDropdownMenu` | `core/ui/components/AppDropdownMenu.kt` | menú de desbordamiento |
+| `AppSnackbarHost` | `core/ui/components/AppSnackbar.kt` | aviso con “Deshacer” |
+| `AppLoadingIndicator` | `core/ui/components/AppLoadingIndicator.kt` | puntos ondulados |
+| `AppLinearProgress` | `core/ui/components/AppLoadingIndicator.kt` | progreso con etiqueta |
+| `AppCircularProgress` | `core/ui/components/AppLoadingIndicator.kt` | espera circular |
+| `AppEmptyState` | `core/ui/components/AppEmptyState.kt` | ícono + frase + acción |
+| `AppTooltip` | `core/ui/components/AppTooltip.kt` | atajos y motivos |
+| `AppIcon` | `core/ui/components/AppIcon.kt` | único punto de dibujo de íconos |
 
 ## Pantallas
 

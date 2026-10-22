@@ -21,7 +21,7 @@ import app.kiosksync.core.AppArgs
 import app.kiosksync.core.AppRole
 import app.kiosksync.core.DATA_DIR_NAME
 import app.kiosksync.core.Strings
-import app.kiosksync.designsystem.catalog.CatalogScreen
+import app.kiosksync.core.ui.catalog.CatalogScreen
 import app.kiosksync.feature.kiosk.KioskKeyEvent
 import app.kiosksync.feature.kiosk.KioskKeyKind
 import app.kiosksync.feature.kiosk.KioskLockManager

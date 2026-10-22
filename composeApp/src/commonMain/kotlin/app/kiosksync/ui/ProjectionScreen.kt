@@ -11,7 +11,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import app.kiosksync.AppContainer
 import app.kiosksync.feature.kiosk.KioskLockUiState
-import app.kiosksync.designsystem.KioskScreenColors
+import app.kiosksync.core.ui.theme.KioskScreenColors
 import app.kiosksync.feature.kiosk.KioskUnlockOverlay
 import app.kiosksync.feature.playback.CarouselScreen
 import app.kiosksync.feature.playback.PlaybackStateHolder

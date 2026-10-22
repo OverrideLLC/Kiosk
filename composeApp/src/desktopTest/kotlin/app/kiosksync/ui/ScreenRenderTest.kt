@@ -11,7 +11,7 @@ import app.kiosksync.FakeLocalStorage
 import app.kiosksync.NoOpLogger
 import app.kiosksync.core.AppRole
 import app.kiosksync.core.AppTheme
-import app.kiosksync.designsystem.KioskTheme
+import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.feature.playback.CarouselScreen
 import app.kiosksync.feature.playback.PlaybackStateHolder
 import app.kiosksync.feature.playlist.Playlist

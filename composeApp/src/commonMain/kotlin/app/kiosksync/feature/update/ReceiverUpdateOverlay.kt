@@ -22,15 +22,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.kiosksync.core.Strings
-import app.kiosksync.designsystem.AppButton
-import app.kiosksync.designsystem.AppButtonSize
-import app.kiosksync.designsystem.AppButtonVariant
-import app.kiosksync.designsystem.AppIcon
-import app.kiosksync.designsystem.AppLoadingIndicator
-import app.kiosksync.designsystem.KioskColors
-import app.kiosksync.designsystem.KioskShape
-import app.kiosksync.designsystem.Sizes
-import app.kiosksync.designsystem.Space
+import app.kiosksync.core.ui.components.AppButton
+import app.kiosksync.core.ui.components.AppButtonSize
+import app.kiosksync.core.ui.components.AppButtonVariant
+import app.kiosksync.core.ui.components.AppIcon
+import app.kiosksync.core.ui.components.AppLoadingIndicator
+import app.kiosksync.core.ui.theme.KioskColors
+import app.kiosksync.core.ui.theme.KioskShape
+import app.kiosksync.core.ui.theme.Sizes
+import app.kiosksync.core.ui.theme.Space
 import app.kiosksync.platform.ReceiverUpdateUi
 
 /**

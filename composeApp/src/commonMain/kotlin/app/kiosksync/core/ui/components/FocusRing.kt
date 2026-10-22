@@ -1,4 +1,4 @@
-package app.kiosksync.designsystem
+package app.kiosksync.core.ui.components
 
 import androidx.compose.foundation.border
 import androidx.compose.material3.MaterialTheme

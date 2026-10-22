@@ -1,6 +1,7 @@
 [versions]
-kotlin = "2.1.0"
-compose-multiplatform = "1.7.3"
+kotlin = "2.4.21"
+compose-multiplatform = "1.12.2"
+material-kolor = "6.0.0"
 kotlinx-coroutines = "1.9.0"
 kotlinx-serialization = "1.7.3"
 ktor = "3.0.3"
@@ -24,6 +25,7 @@ ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negoti
 
 jmdns = { module = "org.jmdns:jmdns", version.ref = "jmdns" }
 jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
+material-kolor = { module = "com.materialkolor:material-kolor-material3", version.ref = "material-kolor" }
 
 [plugins]
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }

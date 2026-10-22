@@ -15,11 +15,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import app.kiosksync.core.Strings
-import app.kiosksync.designsystem.AppLoadingIndicator
-import app.kiosksync.designsystem.KioskDisplayType
-import app.kiosksync.designsystem.KioskScreenColors
-import app.kiosksync.designsystem.Sizes
-import app.kiosksync.designsystem.Space
+import app.kiosksync.core.ui.components.AppLoadingIndicator
+import app.kiosksync.core.ui.theme.KioskDisplayType
+import app.kiosksync.core.ui.theme.KioskScreenColors
+import app.kiosksync.core.ui.theme.Sizes
+import app.kiosksync.core.ui.theme.Space
 
 /**
  * Shown after pairing while the screen still has no blocking password. The

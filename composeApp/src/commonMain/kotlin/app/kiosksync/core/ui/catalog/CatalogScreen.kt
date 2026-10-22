@@ -1,6 +1,6 @@
 @file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 
-package app.kiosksync.designsystem.catalog
+package app.kiosksync.core.ui.catalog
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -45,37 +45,37 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import app.kiosksync.core.AppTheme
 import app.kiosksync.core.Strings
-import app.kiosksync.designsystem.AppButton
-import app.kiosksync.designsystem.AppCircularProgress
-import app.kiosksync.designsystem.AppButtonGroup
-import app.kiosksync.designsystem.AppButtonSize
-import app.kiosksync.designsystem.AppButtonVariant
-import app.kiosksync.designsystem.AppDialog
-import app.kiosksync.designsystem.AppDropdownMenu
-import app.kiosksync.designsystem.AppEmptyState
-import app.kiosksync.designsystem.AppIcon
-import app.kiosksync.designsystem.AppIconButton
-import app.kiosksync.designsystem.AppIconButtonSize
-import app.kiosksync.designsystem.AppIconButtonVariant
-import app.kiosksync.designsystem.AppLinearProgress
-import app.kiosksync.designsystem.AppListItem
-import app.kiosksync.designsystem.AppLoadingIndicator
-import app.kiosksync.designsystem.AppMenuItem
-import app.kiosksync.designsystem.AppSelectableCard
-import app.kiosksync.designsystem.AppSnackbarHost
-import app.kiosksync.designsystem.AppStatusChip
-import app.kiosksync.designsystem.AppStatusTone
-import app.kiosksync.designsystem.AppStepper
-import app.kiosksync.designsystem.AppTextField
-import app.kiosksync.designsystem.AppTooltip
-import app.kiosksync.designsystem.KioskColors
-import app.kiosksync.designsystem.KioskDisplayType
-import app.kiosksync.designsystem.KioskScreenColors
-import app.kiosksync.designsystem.KioskShape
-import app.kiosksync.designsystem.KioskShapes
-import app.kiosksync.designsystem.KioskTheme
-import app.kiosksync.designsystem.Sizes
-import app.kiosksync.designsystem.Space
+import app.kiosksync.core.ui.components.AppButton
+import app.kiosksync.core.ui.components.AppCircularProgress
+import app.kiosksync.core.ui.components.AppButtonGroup
+import app.kiosksync.core.ui.components.AppButtonSize
+import app.kiosksync.core.ui.components.AppButtonVariant
+import app.kiosksync.core.ui.components.AppDialog
+import app.kiosksync.core.ui.components.AppDropdownMenu
+import app.kiosksync.core.ui.components.AppEmptyState
+import app.kiosksync.core.ui.components.AppIcon
+import app.kiosksync.core.ui.components.AppIconButton
+import app.kiosksync.core.ui.components.AppIconButtonSize
+import app.kiosksync.core.ui.components.AppIconButtonVariant
+import app.kiosksync.core.ui.components.AppLinearProgress
+import app.kiosksync.core.ui.components.AppListItem
+import app.kiosksync.core.ui.components.AppLoadingIndicator
+import app.kiosksync.core.ui.components.AppMenuItem
+import app.kiosksync.core.ui.components.AppSelectableCard
+import app.kiosksync.core.ui.components.AppSnackbarHost
+import app.kiosksync.core.ui.components.AppStatusChip
+import app.kiosksync.core.ui.components.AppStatusTone
+import app.kiosksync.core.ui.components.AppStepper
+import app.kiosksync.core.ui.components.AppTextField
+import app.kiosksync.core.ui.components.AppTooltip
+import app.kiosksync.core.ui.theme.KioskColors
+import app.kiosksync.core.ui.theme.KioskDisplayType
+import app.kiosksync.core.ui.theme.KioskScreenColors
+import app.kiosksync.core.ui.theme.KioskShape
+import app.kiosksync.core.ui.theme.KioskShapes
+import app.kiosksync.core.ui.theme.KioskTheme
+import app.kiosksync.core.ui.theme.Sizes
+import app.kiosksync.core.ui.theme.Space
 import kotlinx.coroutines.launch
 
 /**

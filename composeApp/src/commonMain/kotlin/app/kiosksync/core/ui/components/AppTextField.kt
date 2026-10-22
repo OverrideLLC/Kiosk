@@ -1,4 +1,7 @@
-package app.kiosksync.designsystem
+package app.kiosksync.core.ui.components
+
+import app.kiosksync.core.ui.theme.KioskColors
+import app.kiosksync.core.ui.theme.KioskShape
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth

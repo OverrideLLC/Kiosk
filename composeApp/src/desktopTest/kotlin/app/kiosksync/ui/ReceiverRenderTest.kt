@@ -9,8 +9,8 @@ import androidx.compose.ui.unit.Density
 import app.kiosksync.FakeLocalStorage
 import app.kiosksync.NoOpLogger
 import app.kiosksync.core.AppTheme
-import app.kiosksync.designsystem.KioskScreenColors
-import app.kiosksync.designsystem.KioskTheme
+import app.kiosksync.core.ui.theme.KioskScreenColors
+import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.feature.kiosk.KioskLockUiState
 import app.kiosksync.feature.kiosk.KioskUnlockOverlay
 import app.kiosksync.feature.pairing.PairingCodeScreen

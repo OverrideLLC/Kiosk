@@ -1,4 +1,10 @@
-package app.kiosksync.designsystem
+package app.kiosksync.core.ui.components
+
+import app.kiosksync.core.ui.theme.KioskColors
+import app.kiosksync.core.ui.theme.KioskShape
+import app.kiosksync.core.ui.theme.Motion
+import app.kiosksync.core.ui.theme.Sizes
+import app.kiosksync.core.ui.theme.Space
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState

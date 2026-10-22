@@ -7,7 +7,7 @@ Override Kiosk usa **Material Symbols Rounded con `FILL = 1`** (peso 400, tamañ
 
 - Los SVG están en `composeApp/src/commonMain/composeResources/drawable/`
   con el prefijo `ic_` y nombre en minúsculas (`ic_add_photo_alternate.svg`).
-- El enum `AppIcon` (`designsystem/AppIcon.kt`) expone cada uno.
+- El enum `AppIcon` (`core/ui/components/AppIcon.kt`) expone cada uno.
 - El único composable que dibuja íconos de Material es
   `AppIcon(icon, contentDescription, …)`. El logo de marca usa `OverrideLogo(…)`.
 
@@ -43,7 +43,7 @@ desktop del proyecto; no hay targets Android/iOS/web que validar.
 
 El logo de marca no es un ícono de Material Symbols. Vive en
 `composeApp/src/commonMain/composeResources/drawable/override_logo.svg` y se dibuja
-con `OverrideLogo` (`designsystem/OverrideBrand.kt`), que aplica el tinte del tema.
+con `OverrideLogo` (`core/ui/components/OverrideBrand.kt`), que aplica el tinte del tema.
 El pie de las pantallas de ventana usa `OverrideFooter`; las pantallas de
 reproducción a pantalla completa no lo muestran.
 

@@ -1,4 +1,6 @@
-package app.kiosksync.designsystem
+package app.kiosksync.core.ui.components
+
+import app.kiosksync.core.ui.theme.KioskShape
 
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme

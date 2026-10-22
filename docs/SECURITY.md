@@ -116,7 +116,7 @@ solo sirve contra ese servicio falso.
 En la implementación actual, `config.json`, `paired.json` y `lock.json` están en
 `%APPDATA%\OverrideKiosk\` con los permisos del usuario de Windows. La arquitectura
 objetivo migra preferencias a DataStore y playlists, medios y emparejamientos a
-Room más archivos; Windows DPAPI cifra tokens e hashes sensibles antes de
+Room más archivos; Windows DPAPI cifra tokens y hashes sensibles antes de
 persistirlos. DPAPI protege frente a la copia de datos a otro perfil de Windows,
 pero cualquier proceso que se ejecute con el mismo usuario puede solicitar su
 descifrado. No sustituye la seguridad de la cuenta ni protege contra malware con

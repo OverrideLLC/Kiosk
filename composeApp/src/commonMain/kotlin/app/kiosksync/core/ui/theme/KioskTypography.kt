@@ -1,4 +1,4 @@
-package app.kiosksync.designsystem
+package app.kiosksync.core.ui.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography

@@ -23,13 +23,13 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import app.kiosksync.core.Strings
-import app.kiosksync.designsystem.AppIcon
-import app.kiosksync.designsystem.KioskColors
-import app.kiosksync.designsystem.KioskDisplayType
-import app.kiosksync.designsystem.KioskShape
-import app.kiosksync.designsystem.KioskScreenColors
-import app.kiosksync.designsystem.Sizes
-import app.kiosksync.designsystem.Space
+import app.kiosksync.core.ui.components.AppIcon
+import app.kiosksync.core.ui.theme.KioskColors
+import app.kiosksync.core.ui.theme.KioskDisplayType
+import app.kiosksync.core.ui.theme.KioskShape
+import app.kiosksync.core.ui.theme.KioskScreenColors
+import app.kiosksync.core.ui.theme.Sizes
+import app.kiosksync.core.ui.theme.Space
 
 /**
  * Small overlay shown while the keyboard is locked. The carousel keeps playing
