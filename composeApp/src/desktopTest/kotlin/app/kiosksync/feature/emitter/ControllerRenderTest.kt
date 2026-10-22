@@ -2,7 +2,7 @@ package app.kiosksync.feature.emitter
 
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.unit.Density
-import app.kiosksync.FakeLocalStorage
+import app.kiosksync.FakeRepositories
 import app.kiosksync.NoOpLogger
 import app.kiosksync.feature.emitter.presentation.EmitterScreen
 import app.kiosksync.feature.emitter.presentation.EmitterStateHolder
@@ -47,7 +47,7 @@ class ControllerRenderTest {
         val output = File("build/reports/ui").apply { mkdirs() }
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         try {
-            val storage = FakeLocalStorage().apply {
+            val storage = FakeRepositories().apply {
                 emitterPairedDevices = listOf(
                     EmitterPairedDevice(
                         deviceId = "rx-sala",
@@ -92,7 +92,9 @@ class ControllerRenderTest {
             val holder = EmitterStateHolder(
                 discovery = discovery,
                 client = FakeEmitterClient(),
-                storage = storage,
+                screensRepository = storage,
+                kioskLockRepository = storage,
+                mediaRepository = storage,
                 logger = NoOpLogger(),
                 emitterId = "tx-1",
                 emitterName = "Caja principal",
@@ -113,7 +115,8 @@ class ControllerRenderTest {
             holder.toggleSelection("rx-mostrador")
 
             val editor = PlaylistEditorStateHolder(
-                storage = storage,
+                playlistRepository = storage,
+                mediaRepository = storage,
                 logger = NoOpLogger(),
                 scope = scope,
                 newPlaylistId = { "new" },
@@ -123,7 +126,7 @@ class ControllerRenderTest {
                 EmitterScreen(
                     stateHolder = holder,
                     playlistStateHolder = editor,
-                    storage = storage,
+                    mediaRepository = storage,
                     onExitRequested = {},
                     onRoleReset = {},
                     theme = AppTheme.DARK,
@@ -134,7 +137,7 @@ class ControllerRenderTest {
                 EmitterScreen(
                     stateHolder = holder,
                     playlistStateHolder = editor,
-                    storage = storage,
+                    mediaRepository = storage,
                     onExitRequested = {},
                     onRoleReset = {},
                     theme = AppTheme.LIGHT,
@@ -145,7 +148,7 @@ class ControllerRenderTest {
                 EmitterScreen(
                     stateHolder = holder,
                     playlistStateHolder = editor,
-                    storage = storage,
+                    mediaRepository = storage,
                     onExitRequested = {},
                     onRoleReset = {},
                     theme = AppTheme.DARK,
@@ -156,7 +159,7 @@ class ControllerRenderTest {
                 EmitterScreen(
                     stateHolder = holder,
                     playlistStateHolder = editor,
-                    storage = storage,
+                    mediaRepository = storage,
                     onExitRequested = {},
                     onRoleReset = {},
                     theme = AppTheme.DARK,
@@ -168,7 +171,7 @@ class ControllerRenderTest {
                 EmitterScreen(
                     stateHolder = holder,
                     playlistStateHolder = editor,
-                    storage = storage,
+                    mediaRepository = storage,
                     onExitRequested = {},
                     onRoleReset = {},
                     theme = AppTheme.DARK,
@@ -182,7 +185,7 @@ class ControllerRenderTest {
                 EmitterScreen(
                     stateHolder = holder,
                     playlistStateHolder = editor,
-                    storage = storage,
+                    mediaRepository = storage,
                     onExitRequested = {},
                     onRoleReset = {},
                     theme = AppTheme.DARK,

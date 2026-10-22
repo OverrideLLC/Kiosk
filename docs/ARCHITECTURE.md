@@ -1,9 +1,9 @@
 # Arquitectura
 
-> **Estado:** este documento describe la arquitectura objetivo de la rama
-> `codex/architecture-improvements`. Las fases 7–12 migran el código por partes;
-> hasta que terminen, algunas rutas y adaptadores todavía corresponden al diseño
-> anterior basado en archivos JSON.
+> **Estado:** arquitectura aplicada en la rama `codex/architecture-improvements`.
+> Las fases 7–12 consolidan MVI ligero, `core.ui`, repositorios por capacidad,
+> DataStore para preferencias, Room para datos estructurados y archivos para
+> medios y paquetes.
 
 ## Vista general
 
@@ -40,8 +40,8 @@ Hay **un único módulo Gradle** (`composeApp`) con dos source sets:
 
 | Source set | Contenido |
 | --- | --- |
-| `commonMain` | Modelos y DTOs, lógica pura, contratos por feature, reducers/state holders, repositorios DataStore/Room, pantallas Compose y `core.ui`. |
-| `desktopMain` | Servidor y cliente Ktor, JmDNS, builders DataStore/Room, DPAPI, archivos, ventana, argumentos y arranque. |
+| `commonMain` | Modelos y DTOs, lógica pura, contratos por feature, reducers/state holders, pantallas Compose y `core.ui`. |
+| `desktopMain` | Adaptadores DataStore/Room/archivos, Ktor, JmDNS, DPAPI, ventana, argumentos y arranque. |
 
 ```
 composeApp/src/
@@ -58,13 +58,15 @@ composeApp/src/
 │   │   ├── update/      # aviso de actualización en la Pantalla
 │   │   ├── kiosk/       # bloqueo, secuencia y recuperación
 │   │   └── role/        # selección y persistencia del rol
-│   ├── platform/        # puertos de red, protección de secretos y archivos
-│   ├── data/            # database, migración y ensamblado de persistencia
+│   ├── platform/        # contratos de repositorios y servicios de plataforma
 │   ├── ui/              # App.kt, navegación y pantallas por rol
 │   └── AppContainer.kt  # inyección manual
 └── desktopMain/kotlin/app/kiosksync/
-    ├── platform/        # JmDNS, Ktor, builders de almacenamiento, media y DPAPI
-    └── Main.kt          # argumentos, logger, composición y ventana
+    ├── data/local/      # adaptadores Room por capacidad y composición
+    ├── platform/        # DataStore, JmDNS, Ktor, media, migración y DPAPI
+    ├── platform/server/ # rutas HTTP agrupadas por responsabilidad
+    ├── Desktop*.kt      # fábrica del contenedor y ciclo de ventanas
+    └── Main.kt          # argumentos, logger y punto de entrada
 ```
 
 Las dependencias apuntan hacia contratos de dominio por feature. Los repositorios
@@ -90,8 +92,9 @@ un `AppContainer` manual y la navegación existente.
 
 ## Composición de la aplicación
 
-`AppContainer` construye una sola instancia de DataStore y Room y las entrega a
-los repositorios; también construye una sola vez:
+`DesktopContainerFactory` inicializa de forma asíncrona una sola instancia de
+DataStore y Room, migra JSON heredado antes de abrir la UI y entrega contratos
+pequeños a `AppContainer`. La composición crea una sola vez:
 
 - repositorios de preferencias, playlists, medios y credenciales; `FileMediaStore`,
   protector de secretos y `FileAppLogger`.
@@ -104,7 +107,9 @@ los repositorios; también construye una sola vez:
 - `LocalNetwork.detectLocalIpv4Address()` para mostrar la IP de la Pantalla en la
   pantalla de vinculación.
 
-`Main.kt` lee los argumentos, crea el contenedor y abre la ventana. Si el rol es
+`Main.kt` lee los argumentos, configura el logger y abre `DesktopApplicationRoot`.
+La raíz crea el contenedor fuera del hilo de UI y muestra carga o reintento.
+`DesktopWindowHost` posee las ventanas y el cierre de recursos. Si el rol es
 Pantalla y no se pasó `--windowed`, la ventana es fullscreen, sin bordes y siempre
 encima.
 
@@ -255,8 +260,10 @@ acción del usuario.
 
 ## Errores y logs
 
-- Las rutas del servidor capturan excepciones y responden JSON con un código de
-  error; nunca tumban el proceso.
+- Las rutas se separan en `platform/server/` por acceso público, vinculación,
+  contenido/sincronización, estado y actualización. Los payloads malformados se
+  responden como error de cliente y la cancelación de una petición se conserva.
+  Los errores de operación se registran en el límite que los conoce.
 - Las tareas en segundo plano capturan y registran sus fallos.
 - `Main.kt` instala un `Thread.setDefaultUncaughtExceptionHandler` como última
   red: cualquier excepción no capturada se escribe en `logs/app.log`.

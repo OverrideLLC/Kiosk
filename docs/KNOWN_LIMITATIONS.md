@@ -3,9 +3,8 @@
 Lista honesta de lo que el MVP **no** hace o hace con limitaciones. Úsala antes de
 prometer funciones o de instalar la app en un comercio real.
 
-> **Estado:** la persistencia con DataStore y Room, la migración JSON y la
-> separación principal de MVI/UI ya están aplicadas. La adaptación asíncrona del
-> almacenamiento, el arranque y el cierre continúa en la fase 12 de
+> **Estado:** DataStore, Room, migración JSON, repositorios asíncronos, MVI
+> ligero, rutas separadas y composición Desktop están aplicados en
 > `codex/architecture-improvements`.
 
 ## Plataforma y empaquetado
@@ -44,7 +43,8 @@ prometer funciones o de instalar la app en un comercio real.
 - La Pantalla debe estar encendida y en línea para recibir el paquete. No hay
   actualización por USB ni al arrancar.
 - El reinicio posterior a una actualización conserva vinculación, playlist, medios
-  y bloqueo; un arranque normal sigue borrando esos datos por diseño.
+  y bloqueo. El arranque normal también conserva esos datos; solo se eliminan
+  mediante un cambio de rol o una acción explícita de reinicio.
 
 ## Pantalla y reproducción
 
@@ -120,9 +120,7 @@ prometer funciones o de instalar la app en un comercio real.
 
 - La configuración pequeña usa DataStore Preferences; playlists, emparejamientos,
   metadatos de medios y bloqueo usan Room 3. Los bytes de imagen siguen en archivos.
-- `RoomLocalStorage` todavía ofrece una API síncrona de compatibilidad y bloquea
-  en IO; la fase 12 migrará el arranque y los flujos que aún dependen de esta
-  fachada a repositorios asíncronos.
+  La migración de JSON conserva una copia bajo `legacy/`.
 - Sin copia de seguridad automática. Si se borra `%APPDATA%\OverrideKiosk\`, se pierde
   la vinculación y la playlist local.
 - Los paquetes de actualización ocupan espacio en `updates\`: el Controlador guarda

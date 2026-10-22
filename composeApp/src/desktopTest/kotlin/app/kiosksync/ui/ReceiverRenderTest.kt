@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Density
-import app.kiosksync.FakeLocalStorage
+import app.kiosksync.FakeRepositories
 import app.kiosksync.NoOpLogger
 import app.kiosksync.core.AppTheme
 import app.kiosksync.core.ui.theme.KioskScreenColors
@@ -16,6 +16,7 @@ import app.kiosksync.feature.kiosk.KioskUnlockOverlay
 import app.kiosksync.feature.pairing.PairingCodeScreen
 import app.kiosksync.feature.pairing.PairingManager
 import java.io.File
+import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import org.jetbrains.skia.EncodedImageFormat
 
@@ -29,10 +30,11 @@ class ReceiverRenderTest {
     fun rendersReceiverStates() {
         val output = File("build/reports/ui").apply { mkdirs() }
         val pairingManager = PairingManager(
-            localStorage = FakeLocalStorage(),
+            repository = FakeRepositories(),
             logger = NoOpLogger(),
             codeGenerator = { "685853" },
         )
+        runBlocking { pairingManager.initialize() }
 
         render(output, "receiver-pairing") {
             PairingCodeScreen(

@@ -39,14 +39,14 @@ import app.kiosksync.feature.playlist.presentation.PlaylistEditorEffect
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorStateHolder
 import app.kiosksync.feature.playlist.domain.PlaylistItem
 import app.kiosksync.feature.playlist.presentation.PlaylistPanel
-import app.kiosksync.platform.LocalStorage
+import app.kiosksync.platform.MediaRepository
 import kotlinx.coroutines.CancellationException
 
 @Composable
 fun EmitterScreen(
     stateHolder: EmitterStateHolder,
     playlistStateHolder: PlaylistEditorStateHolder,
-    storage: LocalStorage,
+    mediaRepository: MediaRepository,
     onExitRequested: () -> Unit,
     onRoleReset: () -> Unit,
     theme: AppTheme = AppTheme.DARK,
@@ -144,7 +144,7 @@ fun EmitterScreen(
                     PlaylistPanel(
                         stateHolder = playlistStateHolder,
                         state = editorState,
-                        storage = storage,
+                        mediaRepository = mediaRepository,
                         fillHeight = true,
                         onRequestRemove = { removeTarget = it },
                         modifier = Modifier.weight(0.58f).fillMaxHeight(),
@@ -177,7 +177,7 @@ fun EmitterScreen(
                         PlaylistPanel(
                             stateHolder = playlistStateHolder,
                             state = editorState,
-                            storage = storage,
+                            mediaRepository = mediaRepository,
                             fillHeight = true,
                             onRequestRemove = { removeTarget = it },
                             modifier = Modifier.fillMaxSize(),

@@ -2,6 +2,7 @@ package app.kiosksync.platform
 
 import app.kiosksync.NoOpLogger
 import app.kiosksync.core.ReceiverPairedInfo
+import app.kiosksync.data.local.RoomRepositories
 import app.kiosksync.platform.db.KioskDao
 import app.kiosksync.platform.db.PairedDeviceEntity
 import app.kiosksync.platform.db.buildKioskDatabase
@@ -21,7 +22,7 @@ import kotlinx.coroutines.runBlocking
 
 class LegacyJsonMigratorTest {
     private lateinit var dir: File
-    private var storage: RoomLocalStorage? = null
+    private var repositories: RoomRepositories? = null
 
     @BeforeTest
     fun setUp() {
@@ -31,7 +32,7 @@ class LegacyJsonMigratorTest {
 
     @AfterTest
     fun tearDown() {
-        storage?.close()
+        repositories?.close()
         dir.deleteRecursively()
     }
 
@@ -58,16 +59,16 @@ class LegacyJsonMigratorTest {
 
         val database = openDatabase()
         val migrator = migrator(database)
-        val localStorage = RoomLocalStorage(dir, NoOpLogger(), database, DevelopmentSecretProtector)
-        storage = localStorage
+        val data = RoomRepositories(dir, NoOpLogger(), database, DevelopmentSecretProtector)
+        repositories = data
 
         migrator.migrate()
 
-        assertEquals("emitter-token", localStorage.loadEmitterPairedDevices().single().token)
-        assertEquals("library-1", localStorage.loadPlaylistLibrary()?.activePlaylistId)
-        assertEquals("receiver", localStorage.loadPlaylist()?.id)
-        assertEquals(hash, localStorage.listStoredMedia().single().sha256)
-        assertEquals("password-hash", localStorage.loadKioskLock()?.passwordHash)
+        assertEquals("emitter-token", data.emitterScreens.loadPairedScreens().single().token)
+        assertEquals("library-1", data.playlists.loadEmitterPlaylistLibrary()?.activePlaylistId)
+        assertEquals("receiver", data.playlists.loadReceiverPlaylist()?.id)
+        assertEquals(hash, data.media.listStored().single().sha256)
+        assertEquals("password-hash", data.kioskLock.load()?.passwordHash)
         assertEquals(KioskDao.LEGACY_MIGRATION_COMPLETE, database.kioskDao().getMetadata(KioskDao.LEGACY_MIGRATION_KEY))
 
         val pairingBackup = File(dir, "legacy/paired.json.room-v1.dpapi")
@@ -82,27 +83,28 @@ class LegacyJsonMigratorTest {
         )
         assertFalse(File(dir, "paired.json").exists())
 
-        localStorage.saveReceiverPairedInfo(ReceiverPairedInfo("controller", "Control", "receiver-token"))
+        data.pairing.savePairedEmitter(ReceiverPairedInfo("controller", "Control", "receiver-token"))
         val receiverRow = database.kioskDao().getPairedDevices(KioskDao.PAIR_KIND_RECEIVER).single()
         assertNotEquals("receiver-token", receiverRow.tokenCiphertext)
         assertTrue(receiverRow.tokenCiphertext.startsWith("dev-only:v1:"))
 
         migrator.migrate()
-        assertEquals(1, localStorage.loadEmitterPairedDevices().size)
+        assertEquals(1, data.emitterScreens.loadPairedScreens().size)
 
-        localStorage.close()
+        data.close()
         val reopenedDatabase = openDatabase()
-        val reopenedStorage = RoomLocalStorage(dir, NoOpLogger(), reopenedDatabase, DevelopmentSecretProtector)
-        storage = reopenedStorage
-        assertEquals("receiver-token", reopenedStorage.loadReceiverPairedInfo()?.token)
-        assertEquals("receiver", reopenedStorage.loadPlaylist()?.id)
+        val reopenedData = RoomRepositories(dir, NoOpLogger(), reopenedDatabase, DevelopmentSecretProtector)
+        repositories = reopenedData
+        assertEquals("receiver-token", reopenedData.pairing.loadPairedEmitter()?.token)
+        assertEquals("receiver", reopenedData.playlists.loadReceiverPlaylist()?.id)
     }
 
     @Test
     fun invalidLegacyJsonDoesNotMarkMigrationOrDeleteSources() = runBlocking {
         val source = File(dir, "playlist.json").apply { writeText("{not-json") }
         val database = openDatabase()
-        storage = RoomLocalStorage(dir, NoOpLogger(), database, DevelopmentSecretProtector)
+        val data = RoomRepositories(dir, NoOpLogger(), database, DevelopmentSecretProtector)
+        repositories = data
         val migrator = migrator(database)
 
         val failure = runCatching { migrator.migrate() }.exceptionOrNull()
@@ -111,7 +113,7 @@ class LegacyJsonMigratorTest {
         assertEquals("{not-json", source.readText())
         assertEquals("{not-json", File(dir, "legacy/playlist.json.room-v1").readText())
         assertNull(database.kioskDao().getMetadata(KioskDao.LEGACY_MIGRATION_KEY))
-        assertNull(storage?.loadPlaylist())
+        assertNull(data.playlists.loadReceiverPlaylist())
     }
 
     @Test
@@ -132,10 +134,11 @@ class LegacyJsonMigratorTest {
             override fun protect(plainText: String): String = error("must not overwrite secrets")
             override fun unprotect(cipherText: String): String = error("DPAPI decryption failed")
         }
-        val localStorage = RoomLocalStorage(dir, NoOpLogger(), database, failingProtector)
-        storage = localStorage
+        val data = RoomRepositories(dir, NoOpLogger(), database, failingProtector)
+        repositories = data
 
-        assertNull(localStorage.loadReceiverPairedInfo())
+        val failure = runCatching { data.pairing.loadPairedEmitter() }.exceptionOrNull()
+        assertTrue(failure is IllegalStateException)
         assertEquals(ciphertext, database.kioskDao().getPairedDevices(KioskDao.PAIR_KIND_RECEIVER).single().tokenCiphertext)
     }
 

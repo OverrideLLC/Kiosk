@@ -6,7 +6,7 @@ import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.PlaylistRejectedException
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.platform.EmitterClient
-import app.kiosksync.platform.LocalStorage
+import app.kiosksync.platform.MediaRepository
 import kotlinx.coroutines.CancellationException
 
 data class SyncProgress(
@@ -32,7 +32,7 @@ class LocalMediaMissingException(val mediaId: String) :
  */
 class EmitterSyncService(
     private val client: EmitterClient,
-    private val storage: LocalStorage,
+    private val mediaRepository: MediaRepository,
     private val logger: AppLogger
 ) {
     suspend fun sync(
@@ -50,7 +50,7 @@ class EmitterSyncService(
             val plan = SyncPlanner.plan(playlist, remoteState)
 
             val payloads = plan.uploads.map { item ->
-                val bytes = storage.getMediaBytes(item.mediaId, item.fileName)
+                val bytes = mediaRepository.getBytes(item.mediaId, item.fileName)
                     ?: throw LocalMediaMissingException(item.mediaId)
                 item to bytes
             }

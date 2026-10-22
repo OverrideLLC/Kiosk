@@ -31,7 +31,8 @@ fun ProjectionScreen(
     val scope = rememberCoroutineScope()
     val stateHolder = remember(playlist.id, playlist.version) {
         PlaybackStateHolder(
-            localStorage = container.localStorage,
+            playlistRepository = container.playlistRepository,
+            mediaRepository = container.mediaRepository,
             logger = container.logger,
             scope = scope,
             statusTracker = null,

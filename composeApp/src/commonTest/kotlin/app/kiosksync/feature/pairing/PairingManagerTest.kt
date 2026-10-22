@@ -1,6 +1,6 @@
 package app.kiosksync.feature.pairing
 
-import app.kiosksync.FakeLocalStorage
+import app.kiosksync.FakeRepositories
 import app.kiosksync.NoOpLogger
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -8,26 +8,26 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.runBlocking
 
 class PairingManagerTest {
-
     private var now = 1_000_000L
     private var nextCode = 100_000
-    private var storage = FakeLocalStorage()
+    private var repositories = FakeRepositories()
     private val fixedToken = "0123456789abcdef".repeat(4)
 
-    private fun createManager(): PairingManager = PairingManager(
-        localStorage = storage,
-        logger = NoOpLogger(),
-        timeProvider = { now },
-        tokenGenerator = { fixedToken },
-        codeGenerator = { (nextCode++).toString() }
-    )
+    private suspend fun createManager(): PairingManager =
+        PairingManager(
+            repository = repositories,
+            logger = NoOpLogger(),
+            timeProvider = { now },
+            tokenGenerator = { fixedToken },
+            codeGenerator = { (nextCode++).toString() },
+        ).also { it.initialize() }
 
     @Test
-    fun testInitialStateGeneratesCode() {
+    fun testInitialStateGeneratesCode() = runBlocking {
         val manager = createManager()
-
         val state = manager.uiState.value
         assertFalse(state.isPaired)
         assertEquals("100000", state.currentCode)
@@ -36,62 +36,48 @@ class PairingManagerTest {
     }
 
     @Test
-    fun testSuccessfulPairingStoresTokenAndLeavesPairingMode() {
+    fun testSuccessfulPairingStoresTokenAndLeavesPairingMode() = runBlocking {
         val manager = createManager()
-        val code = manager.uiState.value.currentCode
-
-        val result = manager.attemptPair("emitter-1", "Controlador", code)
+        val result = manager.attemptPair("emitter-1", "Controlador", manager.uiState.value.currentCode)
 
         assertTrue(result is PairResult.Success)
         assertEquals(fixedToken, (result as PairResult.Success).token)
-        assertEquals(fixedToken, storage.receiverPairedInfo?.token)
-        assertEquals("emitter-1", storage.receiverPairedInfo?.emitterId)
-
-        val state = manager.uiState.value
-        assertTrue(state.isPaired)
-        assertEquals("", state.currentCode)
+        assertEquals(fixedToken, repositories.receiverPairedInfo?.token)
+        assertEquals("emitter-1", repositories.receiverPairedInfo?.emitterId)
+        assertTrue(manager.uiState.value.isPaired)
+        assertEquals("", manager.uiState.value.currentCode)
         assertEquals("", manager.getOrRefreshCode())
     }
 
     @Test
-    fun testWrongCodeDecrementsRemainingAttempts() {
+    fun testWrongCodeDecrementsRemainingAttempts() = runBlocking {
         val manager = createManager()
-
         val result = manager.attemptPair("emitter-1", "Controlador", "000000")
-
         assertEquals(PairResult.InvalidCode(4), result)
         assertFalse(manager.uiState.value.isPaired)
-        assertNull(storage.receiverPairedInfo)
+        assertNull(repositories.receiverPairedInfo)
     }
 
     @Test
-    fun testExpiredCodeIsRenewed() {
+    fun testExpiredCodeIsRenewed() = runBlocking {
         val manager = createManager()
         val firstCode = manager.uiState.value.currentCode
-
         now += PairingManager.CODE_VALIDITY_MS
-
         val refreshedCode = manager.getOrRefreshCode()
         assertNotEquals(firstCode, refreshedCode)
         assertEquals("100001", refreshedCode)
-
-        val oldCodeResult = manager.attemptPair("emitter-1", "Controlador", firstCode)
-        assertTrue(oldCodeResult is PairResult.InvalidCode)
-
-        val newCodeResult = manager.attemptPair("emitter-1", "Controlador", refreshedCode)
-        assertTrue(newCodeResult is PairResult.Success)
+        assertTrue(manager.attemptPair("emitter-1", "Controlador", firstCode) is PairResult.InvalidCode)
+        assertTrue(manager.attemptPair("emitter-1", "Controlador", refreshedCode) is PairResult.Success)
     }
 
     @Test
-    fun testFiveFailuresLockOutAndRenewCode() {
+    fun testFiveFailuresLockOutAndRenewCode() = runBlocking {
         val manager = createManager()
         val firstCode = manager.uiState.value.currentCode
-
         var lastResult: PairResult? = null
         repeat(PairingManager.MAX_FAILED_ATTEMPTS) {
             lastResult = manager.attemptPair("emitter-1", "Controlador", "999999")
         }
-
         assertEquals(PairResult.LockedOut(30), lastResult)
         assertTrue(manager.uiState.value.isLocked)
         assertNotEquals(firstCode, manager.uiState.value.currentCode)
@@ -99,46 +85,41 @@ class PairingManagerTest {
         val blocked = manager.attemptPair(
             "emitter-1",
             "Controlador",
-            manager.uiState.value.currentCode
+            manager.uiState.value.currentCode,
         )
         assertTrue(blocked is PairResult.LockedOut)
-
         now += PairingManager.LOCKOUT_DURATION_MS
         manager.tick()
         assertFalse(manager.uiState.value.isLocked)
-
-        val accepted = manager.attemptPair(
-            "emitter-1",
-            "Controlador",
-            manager.uiState.value.currentCode
+        assertTrue(
+            manager.attemptPair(
+                "emitter-1",
+                "Controlador",
+                manager.uiState.value.currentCode,
+            ) is PairResult.Success,
         )
-        assertTrue(accepted is PairResult.Success)
     }
 
     @Test
-    fun testAlreadyPairedRejectsFurtherPairing() {
+    fun testAlreadyPairedRejectsFurtherPairing() = runBlocking {
         val manager = createManager()
         manager.attemptPair("emitter-1", "Controlador", manager.uiState.value.currentCode)
-
         val secondAttempt = manager.attemptPair(
             "emitter-2",
             "Otro Controlador",
-            manager.uiState.value.currentCode.ifEmpty { "123456" }
+            manager.uiState.value.currentCode.ifEmpty { "123456" },
         )
-
         assertEquals(PairResult.AlreadyPaired, secondAttempt)
-        assertEquals("emitter-1", storage.receiverPairedInfo?.emitterId)
+        assertEquals("emitter-1", repositories.receiverPairedInfo?.emitterId)
     }
 
     @Test
-    fun testUnpairClearsStorageAndShowsNewCode() {
+    fun testUnpairClearsStorageAndShowsNewCode() = runBlocking {
         val manager = createManager()
         manager.attemptPair("emitter-1", "Controlador", manager.uiState.value.currentCode)
-
         manager.unpair()
-
-        assertNull(storage.receiverPairedInfo)
-        assertTrue(storage.clearPairingCalled)
+        assertNull(repositories.receiverPairedInfo)
+        assertTrue(repositories.clearPairingCalled)
         val state = manager.uiState.value
         assertFalse(state.isPaired)
         assertTrue(state.currentCode.isNotBlank())
@@ -146,10 +127,9 @@ class PairingManagerTest {
     }
 
     @Test
-    fun testAuthorizationChecksEmitterAndToken() {
+    fun testAuthorizationChecksEmitterAndToken() = runBlocking {
         val manager = createManager()
         manager.attemptPair("emitter-1", "Controlador", manager.uiState.value.currentCode)
-
         assertTrue(manager.isAuthorized("emitter-1", fixedToken))
         assertFalse(manager.isAuthorized("emitter-2", fixedToken))
         assertFalse(manager.isAuthorized("emitter-1", "wrong-token"))

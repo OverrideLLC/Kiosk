@@ -1,7 +1,7 @@
 package app.kiosksync.feature.playback
 
 import androidx.compose.ui.graphics.ImageBitmap
-import app.kiosksync.FakeLocalStorage
+import app.kiosksync.FakeRepositories
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.MAX_DURATION_SEC
 import app.kiosksync.core.MIN_DURATION_SEC
@@ -74,8 +74,8 @@ class PlaybackTest {
     @Test
     fun testPlaybackLoopSkipsDamagedImage() = runTest {
         val dummyBitmap = androidx.compose.ui.graphics.ImageBitmap(1, 1)
-        val storage = FakeLocalStorage(
-            playlist = Playlist(
+        val storage = FakeRepositories(
+            initialPlaylist = Playlist(
                 version = 1,
                 items = listOf(
                     PlaylistItem("damaged", "bad.png", "sha-bad", 5),
@@ -87,9 +87,10 @@ class PlaybackTest {
         val logger = TestLogger()
 
         val stateHolder = PlaybackStateHolder(
-            storage,
-            logger,
-            this,
+            playlistRepository = storage,
+            mediaRepository = storage,
+            logger = logger,
+            scope = this,
             backgroundDispatcher = Dispatchers.Unconfined
         )
         stateHolder.start()
@@ -107,8 +108,8 @@ class PlaybackTest {
     @Test
     fun testPlaybackLoopReusesBitmapForRepeatedContent() = runTest {
         val dummyBitmap = ImageBitmap(1, 1)
-        val storage = FakeLocalStorage(
-            playlist = Playlist(
+        val storage = FakeRepositories(
+            initialPlaylist = Playlist(
                 version = 1,
                 items = listOf(
                     PlaylistItem("first", "first.png", "same-sha", 3),
@@ -122,9 +123,10 @@ class PlaybackTest {
         )
 
         val stateHolder = PlaybackStateHolder(
-            storage,
-            TestLogger(),
-            this,
+            playlistRepository = storage,
+            mediaRepository = storage,
+            logger = TestLogger(),
+            scope = this,
             backgroundDispatcher = Dispatchers.Unconfined
         )
         stateHolder.start()

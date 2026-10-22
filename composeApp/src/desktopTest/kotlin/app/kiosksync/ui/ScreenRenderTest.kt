@@ -7,7 +7,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.unit.Density
-import app.kiosksync.FakeLocalStorage
+import app.kiosksync.FakeRepositories
 import app.kiosksync.NoOpLogger
 import app.kiosksync.core.AppRole
 import app.kiosksync.core.AppTheme
@@ -65,8 +65,8 @@ class ScreenRenderTest {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         try {
             val bitmap = solidBitmap(Color(0xFF21438B))
-            val storage = FakeLocalStorage(
-                playlist = Playlist(
+            val storage = FakeRepositories(
+                initialPlaylist = Playlist(
                     id = "p1",
                     name = "Promociones",
                     version = 3,
@@ -78,7 +78,8 @@ class ScreenRenderTest {
                 availableBitmaps = mutableMapOf("m1" to bitmap),
             )
             val holder = PlaybackStateHolder(
-                localStorage = storage,
+                playlistRepository = storage,
+                mediaRepository = storage,
                 logger = NoOpLogger(),
                 scope = scope,
                 backgroundDispatcher = Dispatchers.Unconfined,

@@ -2,11 +2,13 @@ package app.kiosksync.feature.pairing
 
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.ReceiverPairedInfo
-import app.kiosksync.platform.LocalStorage
+import app.kiosksync.feature.pairing.domain.PairingRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlin.random.Random
 
 sealed interface PairResult {
@@ -26,13 +28,11 @@ data class PairingUiState(
 )
 
 class PairingManager(
-    private val localStorage: LocalStorage,
+    private val repository: PairingRepository,
     private val logger: AppLogger,
     private val timeProvider: () -> Long = { System.currentTimeMillis() },
     private val tokenGenerator: () -> String = { defaultGenerateToken() },
     private val codeGenerator: () -> String = { defaultGenerateCode() },
-    initializePairingMode: Boolean = true,
-    loadStoredPairingOnInit: Boolean = true
 ) {
     companion object {
         const val CODE_VALIDITY_MS = 5 * 60 * 1000L // 5 minutes
@@ -69,30 +69,12 @@ class PairingManager(
     private var failedAttempts: Int = 0
     private var lockedUntilMs: Long = 0
 
-    init {
-        if (initializePairingMode) {
-            checkInitialPairing()
-        } else if (loadStoredPairingOnInit) {
-            loadStoredPairing()
-        }
-    }
+    private val pairingMutex = Mutex()
+    private var isInitialized = false
 
-    private fun loadStoredPairing() {
-        val pairedInfo = localStorage.loadReceiverPairedInfo() ?: return
-        _uiState.update {
-            it.copy(
-                isPaired = true,
-                pairedInfo = pairedInfo,
-                currentCode = "",
-                codeExpiresInSeconds = 0,
-                isLocked = false
-            )
-        }
-        logger.info("Receiver is already paired with emitter '${pairedInfo.emitterName}' (id: ${pairedInfo.emitterId})")
-    }
-
-    fun checkInitialPairing() {
-        val pairedInfo = localStorage.loadReceiverPairedInfo()
+    suspend fun initialize() = pairingMutex.withLock {
+        if (isInitialized) return@withLock
+        val pairedInfo = repository.loadPairedEmitter()
         if (pairedInfo != null) {
             _uiState.update {
                 it.copy(
@@ -109,28 +91,27 @@ class PairingManager(
             lockedUntilMs = 0
             generateNewCode()
         }
+        isInitialized = true
     }
 
-    @Synchronized
-    fun getOrRefreshCode(): String {
+    suspend fun getOrRefreshCode(): String = pairingMutex.withLock {
         if (_uiState.value.isPaired) {
-            return ""
+            return@withLock ""
         }
         val now = timeProvider()
         if (activeCode.isEmpty() || now - codeCreatedAtMs >= CODE_VALIDITY_MS) {
             generateNewCode()
         }
-        return activeCode
+        activeCode
     }
 
     /**
      * Updates countdowns and renews the code when it expires. Meant to be called
      * once per second by the receiver UI.
      */
-    @Synchronized
-    fun tick() {
+    suspend fun tick() = pairingMutex.withLock {
         if (_uiState.value.isPaired) {
-            return
+            return@withLock
         }
 
         val now = timeProvider()
@@ -139,7 +120,7 @@ class PairingManager(
             _uiState.update {
                 it.copy(isLocked = true, lockRemainingSeconds = remainingSec)
             }
-            return
+            return@withLock
         }
 
         if (_uiState.value.isLocked) {
@@ -160,10 +141,9 @@ class PairingManager(
         }
     }
 
-    @Synchronized
-    fun attemptPair(emitterId: String, emitterName: String, code: String): PairResult {
+    suspend fun attemptPair(emitterId: String, emitterName: String, code: String): PairResult = pairingMutex.withLock {
         if (_uiState.value.isPaired) {
-            return PairResult.AlreadyPaired
+            return@withLock PairResult.AlreadyPaired
         }
 
         val now = timeProvider()
@@ -172,7 +152,7 @@ class PairingManager(
         if (now < lockedUntilMs) {
             val remainingSec = ((lockedUntilMs - now) / 1000L).coerceAtLeast(1)
             logger.warn("Pair attempt rejected: locked out for $remainingSec more seconds")
-            return PairResult.LockedOut(remainingSec)
+            return@withLock PairResult.LockedOut(remainingSec)
         }
 
         // Check if code has expired
@@ -189,7 +169,7 @@ class PairingManager(
                 emitterName = emitterName,
                 token = token
             )
-            localStorage.saveReceiverPairedInfo(pairedInfo)
+            repository.savePairedEmitter(pairedInfo)
             failedAttempts = 0
             activeCode = ""
 
@@ -203,7 +183,7 @@ class PairingManager(
                 )
             }
             logger.info("Pairing successful with emitter '$emitterName' ($emitterId)")
-            return PairResult.Success(token)
+            return@withLock PairResult.Success(token)
         } else {
             // Failure
             failedAttempts++
@@ -220,31 +200,30 @@ class PairingManager(
                         lockRemainingSeconds = remainingSec
                     )
                 }
-                return PairResult.LockedOut(remainingSec)
+                return@withLock PairResult.LockedOut(remainingSec)
             } else {
                 val remaining = MAX_FAILED_ATTEMPTS - failedAttempts
-                return PairResult.InvalidCode(remaining)
+                return@withLock PairResult.InvalidCode(remaining)
             }
         }
     }
 
-    @Synchronized
-    fun unpair(): Boolean {
+    suspend fun unpair(): Boolean = pairingMutex.withLock {
         logger.info("Unpairing receiver. Clearing paired info and returning to pairing mode.")
-        localStorage.clearPairing()
+        repository.clearPairedEmitter()
         failedAttempts = 0
         lockedUntilMs = 0
         generateNewCode()
-        return true
+        isInitialized = true
+        true
     }
 
     fun isAuthorized(emitterId: String?, token: String?): Boolean {
         if (emitterId == null || token == null) return false
-        val paired = _uiState.value.pairedInfo ?: localStorage.loadReceiverPairedInfo() ?: return false
+        val paired = _uiState.value.pairedInfo ?: return false
         return constantTimeEquals(paired.emitterId, emitterId) && constantTimeEquals(paired.token, token)
     }
 
-    @Synchronized
     private fun generateNewCode() {
         activeCode = codeGenerator()
         codeCreatedAtMs = timeProvider()

@@ -1,6 +1,6 @@
 package app.kiosksync.feature.emitter
 
-import app.kiosksync.FakeLocalStorage
+import app.kiosksync.FakeRepositories
 import app.kiosksync.FakeUpdatePackageProvider
 import app.kiosksync.NoOpLogger
 import app.kiosksync.feature.emitter.presentation.DeviceUpdateStatus
@@ -38,7 +38,7 @@ class EmitterUpdateTest {
     @Test
     fun sendsUpdateAutomaticallyToAnIncompatibleScreen() = runBlocking {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
-        val storage = FakeLocalStorage().apply {
+        val storage = FakeRepositories().apply {
             emitterPairedDevices = listOf(
                 EmitterPairedDevice(
                     deviceId = "rx-1",
@@ -65,7 +65,9 @@ class EmitterUpdateTest {
         val holder = EmitterStateHolder(
             discovery = discovery,
             client = client,
-            storage = storage,
+            screensRepository = storage,
+            kioskLockRepository = storage,
+            mediaRepository = storage,
             logger = NoOpLogger(),
             emitterId = "tx-1",
             emitterName = "Caja",

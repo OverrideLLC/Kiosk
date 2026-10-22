@@ -24,11 +24,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.input.KeyboardType
@@ -57,7 +59,7 @@ import app.kiosksync.feature.playlist.presentation.PlaylistEditorAction
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorStateHolder
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorUiState
 import app.kiosksync.feature.playlist.domain.PlaylistItem
-import app.kiosksync.platform.LocalStorage
+import app.kiosksync.platform.MediaRepository
 
 @Composable
 internal fun PlaylistItemRow(
@@ -66,15 +68,15 @@ internal fun PlaylistItemRow(
     lastIndex: Int,
     defaultDurationSec: Int,
     durationDraft: String?,
-    storage: LocalStorage,
+    mediaRepository: MediaRepository,
     onDurationChange: (String) -> Unit,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onRemove: () -> Unit,
 ) {
     val colors = KioskColors.scheme
-    val bitmap = remember(item.mediaId) {
-        storage.loadMediaBitmap(item.mediaId, item.fileName)
+    val bitmap by produceState<ImageBitmap?>(null, item.mediaId, item.fileName, mediaRepository) {
+        value = mediaRepository.loadBitmap(item.mediaId, item.fileName)
     }
 
     Row(
@@ -97,9 +99,10 @@ internal fun PlaylistItemRow(
                 .background(KioskScreenColors.background),
             contentAlignment = Alignment.Center,
         ) {
-            if (bitmap != null) {
+            val loadedBitmap = bitmap
+            if (loadedBitmap != null) {
                 Image(
-                    bitmap = bitmap,
+                    bitmap = loadedBitmap,
                     contentDescription = null,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,

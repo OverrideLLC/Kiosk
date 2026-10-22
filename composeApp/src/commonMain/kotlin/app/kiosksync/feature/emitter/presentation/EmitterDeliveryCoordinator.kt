@@ -10,7 +10,7 @@ import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.sync.EmitterSyncService
 import app.kiosksync.feature.sync.LocalMediaMissingException
 import app.kiosksync.platform.EmitterClient
-import app.kiosksync.platform.LocalStorage
+import app.kiosksync.platform.MediaRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
@@ -24,7 +24,7 @@ import kotlinx.coroutines.withContext
 internal class EmitterDeliveryCoordinator(
     private val uiState: MutableStateFlow<EmitterUiState>,
     private val client: EmitterClient,
-    storage: LocalStorage,
+    mediaRepository: MediaRepository,
     private val logger: AppLogger,
     private val emitterId: String,
     private val scope: CoroutineScope,
@@ -32,7 +32,7 @@ internal class EmitterDeliveryCoordinator(
     private val getStoredDevices: () -> List<EmitterPairedDevice>,
     private val targetFor: (EmitterPairedDevice) -> Pair<String, Int>?,
 ) {
-    private val syncService = EmitterSyncService(client, storage, logger)
+    private val syncService = EmitterSyncService(client, mediaRepository, logger)
 
     fun synchronizePlayback() {
         val state = uiState.value

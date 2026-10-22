@@ -28,7 +28,9 @@ fun EmitterHomeScreen(
         EmitterStateHolder(
             discovery = container.discovery,
             client = container.emitterClient,
-            storage = container.localStorage,
+            screensRepository = container.screensRepository,
+            kioskLockRepository = container.kioskLockRepository,
+            mediaRepository = container.mediaRepository,
             logger = container.logger,
             emitterId = config.deviceId,
             emitterName = container.deviceName,
@@ -44,7 +46,8 @@ fun EmitterHomeScreen(
 
     val playlistStateHolder = remember(config.deviceId) {
         PlaylistEditorStateHolder(
-            storage = container.localStorage,
+            playlistRepository = container.playlistRepository,
+            mediaRepository = container.mediaRepository,
             logger = container.logger,
             scope = scope,
             newPlaylistId = container.newDeviceId
@@ -65,7 +68,7 @@ fun EmitterHomeScreen(
     EmitterScreen(
         stateHolder = stateHolder,
         playlistStateHolder = playlistStateHolder,
-        storage = container.localStorage,
+        mediaRepository = container.mediaRepository,
         onExitRequested = onExitRequested,
         onRoleReset = onRoleReset,
         theme = theme,

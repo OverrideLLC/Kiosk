@@ -3,6 +3,8 @@ package app.kiosksync
 import app.kiosksync.core.AppArgs
 import app.kiosksync.core.AppLogger
 import app.kiosksync.feature.kiosk.KioskLockManager
+import app.kiosksync.feature.kiosk.domain.KioskLockRepository
+import app.kiosksync.feature.emitter.domain.EmitterScreensRepository
 import app.kiosksync.feature.pairing.PairingManager
 import app.kiosksync.feature.playback.ReceiverPlaybackSyncBridge
 import app.kiosksync.feature.playback.ReceiverPlaylistBridge
@@ -10,11 +12,13 @@ import app.kiosksync.feature.playback.ReceiverStatusTracker
 import app.kiosksync.feature.projection.ProjectionController
 import app.kiosksync.feature.role.AppConfig
 import app.kiosksync.feature.role.AppConfigStore
+import app.kiosksync.feature.playlist.domain.PlaylistRepository
 import app.kiosksync.platform.DeviceDiscovery
 import app.kiosksync.platform.EmitterClient
 import app.kiosksync.platform.KioskKeyboardGuard
 import app.kiosksync.platform.KioskMouseGuard
-import app.kiosksync.platform.LocalStorage
+import app.kiosksync.platform.MediaRepository
+import app.kiosksync.platform.ReceiverDataResetter
 import app.kiosksync.platform.ReceiverServer
 import app.kiosksync.platform.ReceiverUpdateManager
 import app.kiosksync.platform.UpdatePackageProvider
@@ -22,6 +26,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 /**
@@ -36,7 +41,11 @@ class AppContainer(
     val args: AppArgs,
     val dataDirPath: String,
     val logger: AppLogger,
-    val localStorage: LocalStorage,
+    val screensRepository: EmitterScreensRepository,
+    val playlistRepository: PlaylistRepository,
+    val kioskLockRepository: KioskLockRepository,
+    val mediaRepository: MediaRepository,
+    val receiverDataResetter: ReceiverDataResetter,
     val configStore: AppConfigStore,
     val initialConfig: AppConfig?,
     val deviceName: String,
@@ -57,24 +66,37 @@ class AppContainer(
     val passwordHasher: (String) -> String,
     val newDeviceId: () -> String,
     val pickImageFiles: suspend () -> List<String>,
+    private val closePersistence: () -> Unit,
+    private val closeServiceDispatcher: () -> Unit = {},
     val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
     val serviceDispatcher: CoroutineDispatcher = backgroundDispatcher
 ) {
     val serviceScope: CoroutineScope = CoroutineScope(SupervisorJob() + serviceDispatcher)
+    private val shutdownStarted = MutableStateFlow(false)
 
     /**
      * Starts cleanup without blocking the caller. The window can close immediately;
      * the operating system releases the port if the process ends before cleanup.
      */
     fun shutdown() {
+        if (!shutdownStarted.compareAndSet(expect = false, update = true)) return
         runCatching { kioskKeyboardGuard.stop() }
         runCatching { kioskMouseGuard.stop() }
         serviceScope.launch {
             runCatching { discovery.unregisterService() }
+                .onFailure { logger.warn("Could not unregister mDNS service during shutdown", it) }
             runCatching { discovery.stopDiscovery() }
+                .onFailure { logger.warn("Could not stop mDNS discovery during shutdown", it) }
             runCatching { receiverServer.stop() }
+                .onFailure { logger.warn("Could not stop Receiver server during shutdown", it) }
             runCatching { emitterClient.close() }
-            runCatching { localStorage.close() }
+                .onFailure { logger.warn("Could not close Emitter client during shutdown", it) }
+            runCatching { configStore.close() }
+                .onFailure { logger.warn("Could not close DataStore during shutdown", it) }
+            runCatching { closePersistence() }
+                .onFailure { logger.warn("Could not close Room during shutdown", it) }
+            runCatching { closeServiceDispatcher() }
+                .onFailure { logger.warn("Could not close service dispatcher during shutdown", it) }
         }
     }
 }

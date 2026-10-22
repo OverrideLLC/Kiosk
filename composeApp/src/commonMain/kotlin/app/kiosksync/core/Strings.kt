@@ -2,6 +2,9 @@ package app.kiosksync.core
 
 object Strings {
     const val APP_TITLE = APP_NAME
+    const val STARTUP_LOADING = "Iniciando Override Kiosk…"
+    const val STARTUP_ERROR = "No se pudo iniciar la aplicación. Revisa el registro e inténtalo de nuevo."
+    const val STARTUP_RETRY = "Reintentar"
 
     // Role selection
     const val ROLE_SELECTION_TITLE = "¿Qué rol tendrá este equipo?"
@@ -19,6 +22,8 @@ object Strings {
     const val OVERRIDE_NAME = "Override"
     const val CHANGE_ROLE = "Cambiar de rol"
     const val CHANGE_ROLE_CONFIRM = "¿Seguro que deseas cambiar de rol? Se borrará la vinculación actual."
+    const val ROLE_RESET_ERROR = "No se pudo completar el cambio de rol. Revisa el registro de la aplicación."
+    const val ROLE_RESETTING = "Cambiando rol…"
 
     // Status & messages
     const val WAITING_CONTENT = "Esperando contenido"
@@ -142,6 +147,7 @@ object Strings {
     const val PLAYLIST_NAME_EXISTS = "Ya existe una playlist con ese nombre."
     const val PLAYLIST_DELETE_CONFIRM = "¿Seguro que deseas eliminar esta playlist? Las imágenes compartidas con otras playlists no se borran."
     const val PLAYLIST_DELETE_LAST_ERROR = "Debe quedar al menos una playlist."
+    const val PLAYLIST_SAVE_ERROR = "No se pudieron guardar los cambios de la playlist."
     const val ADD_IMAGES = "Agregar imágenes"
     const val ADDING_IMAGES = "Agregando…"
     const val PLAYLIST_EMPTY = "Todavía no hay imágenes. Agrega archivos JPG, PNG o WEBP."
@@ -226,6 +232,7 @@ object Strings {
     const val SECURITY_SEQUENCE_MIN_HINT = "Entre 2 y 12 teclas."
     const val SECURITY_SEQUENCE_INVALID = "La secuencia debe tener entre 2 y 12 teclas (Shift, Ctrl o Alt)."
     const val SECURITY_SEQUENCE_SAVED = "Secuencia de desbloqueo guardada."
+    const val SECURITY_STORAGE_ERROR = "No se pudo guardar la configuración de seguridad."
     const val SECURITY_RECOVERY_SECTION = "Frase de recuperación"
     const val SECURITY_RECOVERY_DEFAULT = "Se está usando la frase universal del manual."
     const val SECURITY_RECOVERY_CUSTOM = "Se está usando una frase de recuperación personalizada."

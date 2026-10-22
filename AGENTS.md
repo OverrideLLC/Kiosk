@@ -133,13 +133,15 @@ composeApp/src/
 │   │   ├── playlist/    # Playlist, PlaylistItem, editor (StateHolder)
 │   │   └── playback/    # estado del carrusel (índice, temporizador)
 │   ├── core/ui/         # tema y componentes compartidos (actual design system)
-│   ├── platform/        # puertos de plataforma y medios
-│   ├── data/            # ensamblado de Room y migración local
+│   ├── platform/        # contratos de repositorios y servicios de plataforma
 │   ├── ui/              # App.kt, navegación y pantallas por rol
 │   └── AppContainer.kt  # DI manual
 └── desktopMain/kotlin/app/kiosksync/
-    ├── platform/        # JmDnsDiscovery, Ktor, DataStore/Room builders, media files y DPAPI
-    └── Main.kt          # argumentos de línea de comandos y arranque
+    ├── data/local/      # adaptadores Room por capacidad y composición
+    ├── platform/        # JmDnsDiscovery, Ktor, DataStore, media y DPAPI
+    ├── platform/server/ # rutas HTTP agrupadas por responsabilidad
+    ├── Desktop*.kt      # fábrica del contenedor y ciclo de ventanas
+    └── Main.kt          # argumentos de línea de comandos y punto de entrada
 ```
 
 Dentro de cada `feature/<nombre>/` crea `domain`, `presentation` y `data` solo cuando contengan responsabilidades reales. La capa `data` implementa los contratos del dominio; las entidades Room nunca son modelos de protocolo. Mantén un solo módulo Gradle y el `AppContainer` manual.

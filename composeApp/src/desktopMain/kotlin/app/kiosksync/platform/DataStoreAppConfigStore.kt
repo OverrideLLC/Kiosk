@@ -16,6 +16,7 @@ import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -29,6 +30,7 @@ class DataStoreAppConfigStore(
     private val logger: AppLogger,
     scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 ) : AppConfigStore {
+    private val dataStoreScope = scope
     private val legacyConfigFile = File(dataDir, "config.json")
     private val legacyBackupFile = File(dataDir, "legacy/config.json")
     private val migrationMutex = Mutex()
@@ -93,6 +95,10 @@ class DataStoreAppConfigStore(
             preferences.remove(THEME)
             preferences.remove(REDUCE_MOTION)
         }
+    }
+
+    override fun close() {
+        dataStoreScope.cancel()
     }
 
     private fun decodeConfig(preferences: Preferences): AppConfig? {

@@ -25,6 +25,9 @@ interface KioskDao {
     @Query("SELECT * FROM playlist_items WHERE playlistKey = :playlistKey ORDER BY position")
     fun observePlaylistItems(playlistKey: String): Flow<List<PlaylistItemEntity>>
 
+    @Query("SELECT * FROM playlist_items ORDER BY playlistKey, position")
+    fun observeAllPlaylistItems(): Flow<List<PlaylistItemEntity>>
+
     @Upsert
     suspend fun upsertPlaylist(playlist: PlaylistEntity)
 
@@ -69,6 +72,12 @@ interface KioskDao {
     @Upsert
     suspend fun upsertPairedDevices(devices: List<PairedDeviceEntity>)
 
+    @Transaction
+    suspend fun replacePairedDevices(kind: String, devices: List<PairedDeviceEntity>) {
+        deletePairedDevices(kind)
+        if (devices.isNotEmpty()) upsertPairedDevices(devices)
+    }
+
     @Query("DELETE FROM paired_devices WHERE kind = :kind")
     suspend fun deletePairedDevices(kind: String)
 
@@ -77,6 +86,9 @@ interface KioskDao {
 
     @Query("SELECT * FROM kiosk_lock WHERE id = :id LIMIT 1")
     suspend fun getKioskLock(id: Int): KioskLockEntity?
+
+    @Query("SELECT * FROM kiosk_lock WHERE id = :id LIMIT 1")
+    fun observeKioskLock(id: Int): Flow<KioskLockEntity?>
 
     @Upsert
     suspend fun upsertKioskLock(lock: KioskLockEntity)

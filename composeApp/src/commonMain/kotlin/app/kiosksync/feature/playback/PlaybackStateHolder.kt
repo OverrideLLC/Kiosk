@@ -4,7 +4,8 @@ import androidx.compose.ui.graphics.ImageBitmap
 import app.kiosksync.core.AppLogger
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.domain.PlaylistItem
-import app.kiosksync.platform.LocalStorage
+import app.kiosksync.feature.playlist.domain.PlaylistRepository
+import app.kiosksync.platform.MediaRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
@@ -36,7 +38,8 @@ private data class PlaybackRestartRequest(
 )
 
 class PlaybackStateHolder(
-    private val localStorage: LocalStorage,
+    private val playlistRepository: PlaylistRepository,
+    private val mediaRepository: MediaRepository,
     private val logger: AppLogger,
     private val scope: CoroutineScope,
     private val statusTracker: ReceiverStatusTracker? = null,
@@ -48,6 +51,7 @@ class PlaybackStateHolder(
 
     private var playbackJob: Job? = null
     private var syncJob: Job? = null
+    private var playlistJob: Job? = null
     private var nextRestartId = 0L
     private val activePlaylist = MutableStateFlow<Playlist?>(null)
     private val playbackStarted = MutableStateFlow(false)
@@ -62,6 +66,21 @@ class PlaybackStateHolder(
     fun start() {
         playbackStarted.value = true
         restartRequests.value = null
+
+        playlistJob?.cancel()
+        if (loadFromStorage) {
+            playlistJob = scope.launch {
+                playlistRepository.observeReceiverPlaylist()
+                    .catch { error ->
+                        if (error is CancellationException) throw error
+                        logger.error("Could not observe the Receiver playlist", error)
+                    }
+                    .collect { playlist ->
+                        activePlaylist.value = playlist
+                        _uiState.update { it.copy(playlist = playlist) }
+                    }
+            }
+        }
 
         playbackJob?.cancel()
         playbackJob = scope.launch {
@@ -88,6 +107,8 @@ class PlaybackStateHolder(
         restartRequests.value = null
         syncJob?.cancel()
         syncJob = null
+        playlistJob?.cancel()
+        playlistJob = null
         playbackJob?.cancel()
         playbackJob = null
     }
@@ -108,10 +129,20 @@ class PlaybackStateHolder(
     }
 
     fun reloadPlaylist() {
-        val loaded = localStorage.loadPlaylist()
-        activePlaylist.value = loaded
-        _uiState.update { it.copy(playlist = loaded) }
-        logger.info("Playlist reloaded: ${loaded?.items?.size ?: 0} items")
+        scope.launch {
+            try {
+                val loaded = withContext(backgroundDispatcher) {
+                    playlistRepository.loadReceiverPlaylist()
+                }
+                activePlaylist.value = loaded
+                _uiState.update { it.copy(playlist = loaded) }
+                logger.info("Playlist reloaded: ${loaded?.items?.size ?: 0} items")
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                logger.error("Could not reload the Receiver playlist", error)
+            }
+        }
     }
 
     fun updatePlaylist(newPlaylist: Playlist) {
@@ -126,18 +157,10 @@ class PlaybackStateHolder(
     }
 
     private suspend fun runPlaybackLoop(startIndex: Int = 0) {
-        if (loadFromStorage) {
-            activePlaylist.value = withContext(backgroundDispatcher) { localStorage.loadPlaylist() }
-        }
         var index = startIndex.coerceAtLeast(0)
 
         while (scope.isActive) {
             val playlist = activePlaylist.value
-                ?: if (loadFromStorage) {
-                    withContext(backgroundDispatcher) { localStorage.loadPlaylist() }
-                } else {
-                    null
-                }
             if (playlist == null || playlist.items.isEmpty()) {
                 _uiState.update {
                     it.copy(
@@ -175,9 +198,7 @@ class PlaybackStateHolder(
                 ) {
                     previousBitmap
                 } else {
-                    withContext(backgroundDispatcher) {
-                        localStorage.loadMediaBitmap(candidateItem.mediaId, candidateItem.fileName)
-                    }
+                    mediaRepository.loadBitmap(candidateItem.mediaId, candidateItem.fileName)
                 }
                 if (bitmap != null) {
                     loadedBitmap = bitmap

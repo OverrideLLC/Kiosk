@@ -8,7 +8,8 @@ import app.kiosksync.core.Strings
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.domain.PlaylistItem
 import app.kiosksync.feature.playlist.domain.PlaylistLibrary
-import app.kiosksync.platform.LocalStorage
+import app.kiosksync.feature.playlist.domain.PlaylistRepository
+import app.kiosksync.platform.MediaRepository
 import app.kiosksync.platform.MediaImportError
 import app.kiosksync.platform.MediaImportResult
 import kotlinx.coroutines.CoroutineScope
@@ -23,103 +24,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-enum class PlaylistNameDialogMode {
-    CREATE,
-    RENAME
-}
-
-data class PlaylistEditorUiState(
-    val playlist: Playlist = Playlist(),
-    val playlists: List<Playlist> = emptyList(),
-    val activePlaylistId: String? = null,
-    val durationDrafts: Map<String, String> = emptyMap(),
-    val defaultDurationDraft: String = DEFAULT_DURATION_SEC.toString(),
-    val isImporting: Boolean = false,
-    val message: String? = null,
-    val messageIsError: Boolean = false,
-    val nameDialogMode: PlaylistNameDialogMode? = null,
-    val nameDraft: String = "",
-    val nameError: String? = null,
-    val showDeleteDialog: Boolean = false
-)
-
-sealed interface PlaylistEditorAction {
-    data object OpenCreateDialog : PlaylistEditorAction
-    data object OpenRenameDialog : PlaylistEditorAction
-    data class UpdateNameDraft(val value: String) : PlaylistEditorAction
-    data object DismissNameDialog : PlaylistEditorAction
-    data object RequestDeletePlaylist : PlaylistEditorAction
-    data object DismissDeleteDialog : PlaylistEditorAction
-    data object DismissMessage : PlaylistEditorAction
-    data object AddImages : PlaylistEditorAction
-    data class ImagesSelected(val paths: List<String>) : PlaylistEditorAction
-    data class ImagePickerFailed(val error: Throwable) : PlaylistEditorAction
-    data class SelectPlaylist(val playlistId: String) : PlaylistEditorAction
-    data object ConfirmNameDialog : PlaylistEditorAction
-    data object ConfirmDeletePlaylist : PlaylistEditorAction
-    data class UpdateDefaultDuration(val value: String) : PlaylistEditorAction
-    data class UpdateItemDuration(val mediaId: String, val value: String) : PlaylistEditorAction
-    data class MoveItemUp(val index: Int) : PlaylistEditorAction
-    data class MoveItemDown(val index: Int) : PlaylistEditorAction
-    data class RemoveItem(val index: Int) : PlaylistEditorAction
-}
-
-sealed interface PlaylistEditorEffect {
-    data object SelectImageFiles : PlaylistEditorEffect
-}
-
-object PlaylistEditorReducer {
-    fun reduce(state: PlaylistEditorUiState, action: PlaylistEditorAction): PlaylistEditorUiState = when (action) {
-        PlaylistEditorAction.OpenCreateDialog -> state.copy(
-            nameDialogMode = PlaylistNameDialogMode.CREATE,
-            nameDraft = "",
-            nameError = null
-        )
-        PlaylistEditorAction.OpenRenameDialog -> state.copy(
-            nameDialogMode = PlaylistNameDialogMode.RENAME,
-            nameDraft = state.playlist.name,
-            nameError = null
-        )
-        is PlaylistEditorAction.UpdateNameDraft -> state.copy(nameDraft = action.value, nameError = null)
-        PlaylistEditorAction.DismissNameDialog -> state.copy(
-            nameDialogMode = null,
-            nameDraft = "",
-            nameError = null
-        )
-        PlaylistEditorAction.RequestDeletePlaylist -> if (state.playlists.size <= 1) {
-            state.copy(message = Strings.PLAYLIST_DELETE_LAST_ERROR, messageIsError = true)
-        } else {
-            state.copy(showDeleteDialog = true)
-        }
-        PlaylistEditorAction.DismissDeleteDialog -> state.copy(showDeleteDialog = false)
-        PlaylistEditorAction.DismissMessage -> state.copy(message = null, messageIsError = false)
-        PlaylistEditorAction.AddImages -> if (state.isImporting) state else state.copy(
-            isImporting = true,
-            message = null,
-            messageIsError = false
-        )
-        is PlaylistEditorAction.ImagePickerFailed -> state.copy(
-            isImporting = false,
-            message = Strings.PLAYLIST_IMPORT_ERROR,
-            messageIsError = true
-        )
-        is PlaylistEditorAction.SelectPlaylist,
-        is PlaylistEditorAction.ImagesSelected,
-        PlaylistEditorAction.ConfirmNameDialog,
-        PlaylistEditorAction.ConfirmDeletePlaylist,
-        is PlaylistEditorAction.UpdateDefaultDuration,
-        is PlaylistEditorAction.UpdateItemDuration,
-        is PlaylistEditorAction.MoveItemUp,
-        is PlaylistEditorAction.MoveItemDown,
-        is PlaylistEditorAction.RemoveItem -> state
-    }
-}
-
 class PlaylistEditorStateHolder(
-    private val storage: LocalStorage,
+    private val playlistRepository: PlaylistRepository,
+    private val mediaRepository: MediaRepository,
     private val logger: AppLogger,
     private val scope: CoroutineScope,
-    private val newPlaylistId: () -> String
+    private val newPlaylistId: () -> String,
+    private val ioDispatcher: kotlinx.coroutines.CoroutineDispatcher = Dispatchers.IO,
 ) {
     private val _uiState = MutableStateFlow(PlaylistEditorUiState())
     val uiState: StateFlow<PlaylistEditorUiState> = _uiState.asStateFlow()
@@ -127,18 +38,36 @@ class PlaylistEditorStateHolder(
     val effects: Flow<PlaylistEditorEffect> = effectChannel.receiveAsFlow()
 
     init {
-        val library = loadOrMigrateLibrary()
-        val active = library.activePlaylist()!!
-        _uiState.value = PlaylistEditorUiState(
-            playlist = active,
-            playlists = library.playlists,
-            activePlaylistId = active.id,
-            defaultDurationDraft = active.defaultDurationSec.toString()
-        )
-        logger.info(
-            "Emitter playlist library loaded: ${library.playlists.size} playlists, " +
-                "active='${active.name}'"
-        )
+        scope.launch {
+            try {
+                val library = withContext(ioDispatcher) { loadOrMigrateLibrary() }
+                val active = library.activePlaylist()!!
+                _uiState.update {
+                    it.copy(
+                        playlist = active,
+                        playlists = library.playlists,
+                        activePlaylistId = active.id,
+                        defaultDurationDraft = active.defaultDurationSec.toString(),
+                        isLoading = false,
+                    )
+                }
+                logger.info(
+                    "Emitter playlist library loaded: ${library.playlists.size} playlists, " +
+                        "active='${active.name}'"
+                )
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                logger.error("Could not load the Emitter playlist library", error)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        message = Strings.PLAYLIST_SAVE_ERROR,
+                        messageIsError = true,
+                    )
+                }
+            }
+        }
     }
 
     fun currentPlaylist(): Playlist = _uiState.value.playlist
@@ -182,14 +111,15 @@ class PlaylistEditorStateHolder(
         val state = _uiState.value
         if (state.activePlaylistId == playlistId) return
         val selected = state.playlists.firstOrNull { it.id == playlistId } ?: return
-        persist(state.playlists, playlistId)
-        _uiState.value = state.copy(
-            playlist = selected,
-            activePlaylistId = playlistId,
-            defaultDurationDraft = selected.defaultDurationSec.toString(),
-            durationDrafts = emptyMap(),
-            message = null
-        )
+        persistLibrary(PlaylistLibrary(state.playlists, playlistId)) { current ->
+            current.copy(
+                playlist = selected,
+                activePlaylistId = playlistId,
+                defaultDurationDraft = selected.defaultDurationSec.toString(),
+                durationDrafts = emptyMap(),
+                message = null,
+            )
+        }
         logger.info("Active playlist changed to '${selected.name}'")
     }
 
@@ -247,18 +177,19 @@ class PlaylistEditorStateHolder(
                 val library = PlaylistLibrary(state.playlists, state.activePlaylistId)
                     .upsert(created)
                     .select(created.id)
-                storage.savePlaylistLibrary(library)
-                _uiState.value = state.copy(
-                    playlist = created,
-                    playlists = library.playlists,
-                    activePlaylistId = created.id,
-                    defaultDurationDraft = created.defaultDurationSec.toString(),
-                    durationDrafts = emptyMap(),
-                    nameDialogMode = null,
-                    nameDraft = "",
-                    nameError = null,
-                    message = null
-                )
+                persistLibrary(library) { current ->
+                    current.copy(
+                        playlist = created,
+                        playlists = library.playlists,
+                        activePlaylistId = created.id,
+                        defaultDurationDraft = created.defaultDurationSec.toString(),
+                        durationDrafts = emptyMap(),
+                        nameDialogMode = null,
+                        nameDraft = "",
+                        nameError = null,
+                        message = null,
+                    )
+                }
                 logger.info("Created playlist '$name'")
             }
 
@@ -266,14 +197,15 @@ class PlaylistEditorStateHolder(
                 val renamed = state.playlist.copy(name = name)
                 val library = PlaylistLibrary(state.playlists, state.activePlaylistId)
                     .upsert(renamed)
-                storage.savePlaylistLibrary(library)
-                _uiState.value = state.copy(
-                    playlist = renamed,
-                    playlists = library.playlists,
-                    nameDialogMode = null,
-                    nameDraft = "",
-                    nameError = null
-                )
+                persistLibrary(library) { current ->
+                    current.copy(
+                        playlist = renamed,
+                        playlists = library.playlists,
+                        nameDialogMode = null,
+                        nameDraft = "",
+                        nameError = null,
+                    )
+                }
                 logger.info("Renamed playlist to '$name'")
             }
         }
@@ -299,16 +231,17 @@ class PlaylistEditorStateHolder(
         val library = PlaylistLibrary(state.playlists, state.activePlaylistId)
             .remove(state.playlist.id)
         val active = library.activePlaylist() ?: return
-        storage.savePlaylistLibrary(library)
-        _uiState.value = state.copy(
-            playlist = active,
-            playlists = library.playlists,
-            activePlaylistId = active.id,
-            defaultDurationDraft = active.defaultDurationSec.toString(),
-            durationDrafts = emptyMap(),
-            showDeleteDialog = false,
-            message = null
-        )
+        persistLibrary(library) { current ->
+            current.copy(
+                playlist = active,
+                playlists = library.playlists,
+                activePlaylistId = active.id,
+                defaultDurationDraft = active.defaultDurationSec.toString(),
+                durationDrafts = emptyMap(),
+                showDeleteDialog = false,
+                message = null,
+            )
+        }
         logger.info("Deleted playlist '${state.playlist.name}'")
     }
 
@@ -322,8 +255,8 @@ class PlaylistEditorStateHolder(
             return
         }
         scope.launch {
-            val results = withContext(Dispatchers.Default) {
-                paths.map { path -> storage.importMedia(path) }
+            val results = withContext(ioDispatcher) {
+                paths.map { path -> mediaRepository.import(path) }
             }
 
             val imported = results.mapNotNull { result ->
@@ -351,13 +284,15 @@ class PlaylistEditorStateHolder(
                 val updated = _uiState.value.playlist.copy(
                     items = _uiState.value.playlist.items + imported
                 )
+                _uiState.update {
+                    it.copy(
+                        playlist = updated,
+                        isImporting = false,
+                        message = Strings.playlistImportSummary(imported.size, rejected),
+                        messageIsError = rejected > 0
+                    )
+                }
                 saveActivePlaylist(updated)
-                _uiState.value = _uiState.value.copy(
-                    playlist = updated,
-                    isImporting = false,
-                    message = Strings.playlistImportSummary(imported.size, rejected),
-                    messageIsError = rejected > 0
-                )
                 logger.info("Added ${imported.size} images to playlist '${updated.name}'")
             } else {
                 _uiState.value = _uiState.value.copy(
@@ -381,11 +316,11 @@ class PlaylistEditorStateHolder(
         }
 
         val updated = state.playlist.copy(defaultDurationSec = parsed)
-        saveActivePlaylist(updated)
         _uiState.value = state.copy(
             playlist = updated,
             defaultDurationDraft = digits
         )
+        saveActivePlaylist(updated)
     }
 
     fun updateItemDuration(mediaId: String, value: String) {
@@ -428,11 +363,11 @@ class PlaylistEditorStateHolder(
         val updated = state.playlist.copy(
             items = state.playlist.items.filterNot { it.mediaId == item.mediaId }
         )
-        saveActivePlaylist(updated)
         _uiState.value = state.copy(
             playlist = updated,
             durationDrafts = state.durationDrafts - item.mediaId
         )
+        saveActivePlaylist(updated)
         logger.info("Removed '${item.fileName}' from playlist '${updated.name}'")
     }
 
@@ -450,44 +385,48 @@ class PlaylistEditorStateHolder(
         val moved = mutable.removeAt(index)
         mutable.add(target, moved)
         val updated = state.playlist.copy(items = mutable)
-        saveActivePlaylist(updated)
         _uiState.value = state.copy(playlist = updated)
+        saveActivePlaylist(updated)
     }
 
     private fun saveActivePlaylist(updated: Playlist) {
         val state = _uiState.value
         val library = PlaylistLibrary(state.playlists, state.activePlaylistId).upsert(updated)
-        storage.savePlaylistLibrary(library)
-        _uiState.value = state.copy(playlists = library.playlists)
+        persistLibrary(library) { it.copy(playlists = library.playlists) }
     }
 
-    private fun persist(playlists: List<Playlist>, activeId: String?) {
-        storage.savePlaylistLibrary(PlaylistLibrary(playlists = playlists, activePlaylistId = activeId))
+    private fun persistLibrary(
+        library: PlaylistLibrary,
+        onSuccess: (PlaylistEditorUiState) -> PlaylistEditorUiState = { it },
+    ) {
+        _uiState.update { it.copy(isSaving = true) }
+        scope.launch {
+            try {
+                withContext(ioDispatcher) { playlistRepository.saveEmitterPlaylistLibrary(library) }
+                _uiState.update { state -> onSuccess(state).copy(isSaving = false) }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                logger.error("Could not save the Emitter playlist library", error)
+                _uiState.update {
+                    it.copy(
+                        isSaving = false,
+                        message = Strings.PLAYLIST_SAVE_ERROR,
+                        messageIsError = true,
+                    )
+                }
+            }
+        }
     }
 
-    private fun loadOrMigrateLibrary(): PlaylistLibrary {
-        val stored = storage.loadPlaylistLibrary()
+    private suspend fun loadOrMigrateLibrary(): PlaylistLibrary {
+        val stored = playlistRepository.loadEmitterPlaylistLibrary()
         if (stored != null && stored.playlists.isNotEmpty()) {
             val activeId = stored.activePlaylist()?.id
             if (stored.activePlaylistId != activeId) {
-                storage.savePlaylistLibrary(stored.copy(activePlaylistId = activeId))
+                playlistRepository.saveEmitterPlaylistLibrary(stored.copy(activePlaylistId = activeId))
             }
             return stored.copy(activePlaylistId = activeId)
-        }
-
-        val legacy = storage.loadPlaylist()
-        if (legacy != null && (legacy.items.isNotEmpty() || legacy.name.isNotBlank())) {
-            val migrated = legacy.copy(
-                id = legacy.id.ifBlank { newPlaylistId() },
-                name = legacy.name.ifBlank { Strings.PLAYLIST_DEFAULT_NAME }
-            )
-            val library = PlaylistLibrary(
-                playlists = listOf(migrated),
-                activePlaylistId = migrated.id
-            )
-            storage.savePlaylistLibrary(library)
-            logger.info("Migrated playlist.json into the named playlist '${migrated.name}'")
-            return library
         }
 
         val fresh = Playlist(
@@ -498,7 +437,7 @@ class PlaylistEditorStateHolder(
             playlists = listOf(fresh),
             activePlaylistId = fresh.id
         )
-        storage.savePlaylistLibrary(library)
+        playlistRepository.saveEmitterPlaylistLibrary(library)
         return library
     }
 }

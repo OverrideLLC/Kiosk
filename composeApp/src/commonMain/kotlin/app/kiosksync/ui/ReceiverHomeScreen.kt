@@ -44,6 +44,7 @@ fun ReceiverHomeScreen(
     DisposableEffect(config.deviceId, config.port) {
         container.serviceScope.launch {
             try {
+                pairingManager.initialize()
                 val port = container.receiverServer.start(
                     port = config.port,
                     deviceId = config.deviceId,

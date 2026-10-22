@@ -1,7 +1,7 @@
 package app.kiosksync.feature.playlist
 
 import app.kiosksync.NoOpLogger
-import app.kiosksync.FakeLocalStorage
+import app.kiosksync.FakeRepositories
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorAction
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorEffect
@@ -46,9 +46,15 @@ class PlaylistEditorReducerTest {
 
     @Test
     fun addImagesEmitsPickerEffectOnceAndCancellationClearsLoading() = runBlocking {
-        val storage = FakeLocalStorage()
+        val storage = FakeRepositories()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
-        val holder = PlaylistEditorStateHolder(storage, NoOpLogger(), scope, newPlaylistId = { "new" })
+        val holder = PlaylistEditorStateHolder(
+            playlistRepository = storage,
+            mediaRepository = storage,
+            logger = NoOpLogger(),
+            scope = scope,
+            newPlaylistId = { "new" },
+        )
 
         holder.dispatch(PlaylistEditorAction.AddImages)
 

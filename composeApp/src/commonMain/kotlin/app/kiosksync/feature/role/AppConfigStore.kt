@@ -12,4 +12,6 @@ interface AppConfigStore {
     suspend fun save(config: AppConfig)
 
     suspend fun clear()
+
+    fun close() = Unit
 }

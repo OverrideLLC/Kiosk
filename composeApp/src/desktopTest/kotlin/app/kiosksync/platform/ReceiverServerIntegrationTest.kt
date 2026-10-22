@@ -1,6 +1,6 @@
 package app.kiosksync.platform
 
-import app.kiosksync.FakeLocalStorage
+import app.kiosksync.FakeRepositories
 import app.kiosksync.FakeReceiverUpdateManager
 import app.kiosksync.NoOpLogger
 import app.kiosksync.core.APP_VERSION
@@ -34,13 +34,14 @@ class ReceiverServerIntegrationTest {
 
     @Test
     fun fullPairingAndSyncFlow() = runBlocking {
-        val storage = FakeLocalStorage(hashProvider = { Sha256.hex(it) })
+        val storage = FakeRepositories(hashProvider = { Sha256.hex(it) })
         val pairing = PairingManager(
-            localStorage = storage,
+            repository = storage,
             logger = NoOpLogger(),
             codeGenerator = { "123456" },
             tokenGenerator = { "a".repeat(64) },
         )
+        pairing.initialize()
         val bridge = ReceiverPlaylistBridge()
         var appliedPlaylist: Playlist? = null
         bridge.setListener { appliedPlaylist = it }
@@ -61,13 +62,15 @@ class ReceiverServerIntegrationTest {
         val server = KtorReceiverServer(
             pairingManager = pairing,
             logger = NoOpLogger(),
-            storage = storage,
+            playlistRepository = storage,
+            mediaRepository = storage,
+            kioskLockRepository = storage,
             playlistBridge = bridge,
             playbackSyncBridge = playbackSyncBridge,
             kioskLockManager = lock,
             statusProvider = {
                 ReceiverStatusResponse(
-                    playlistVersion = storage.loadPlaylist()?.version ?: 0,
+                    playlistVersion = storage.playlist?.version ?: 0,
                 )
             },
             updateManager = updateManager,
@@ -114,7 +117,7 @@ class ReceiverServerIntegrationTest {
                     bytes = bytes,
                 ).isFailure,
             )
-            assertTrue(storage.listStoredMedia().isEmpty())
+            assertTrue(storage.listStored().isEmpty())
 
             val uploaded = client.uploadMedia(
                 host = "127.0.0.1",
@@ -162,14 +165,14 @@ class ReceiverServerIntegrationTest {
             val rejection = rejected.exceptionOrNull()
             assertTrue(rejection is PlaylistRejectedException)
             assertEquals(listOf("m2"), (rejection as PlaylistRejectedException).missingMediaIds)
-            assertEquals(null, storage.loadPlaylist())
+            assertEquals(null, storage.loadReceiverPlaylist())
 
             val applied = client.putPlaylist(
                 "127.0.0.1", port, "tx-1", paired.token, playlist, null,
             ).getOrThrow()
             assertTrue(applied.applied)
             assertEquals(1, applied.version)
-            assertEquals(playlist, storage.loadPlaylist())
+            assertEquals(playlist, storage.loadReceiverPlaylist())
             assertEquals(playlist, appliedPlaylist)
 
             val status = client.getStatus("127.0.0.1", port, "tx-1", paired.token).getOrThrow()
@@ -221,18 +224,21 @@ class ReceiverServerIntegrationTest {
     @Test
     fun rejectsInvalidMediaIdsAndFormats() = runBlocking {
         // Keep a separate server so the happy-path test stays independent.
-        val storage = FakeLocalStorage(hashProvider = { Sha256.hex(it) })
+        val storage = FakeRepositories(hashProvider = { Sha256.hex(it) })
         val pairing = PairingManager(
-            localStorage = storage,
+            repository = storage,
             logger = NoOpLogger(),
             codeGenerator = { "123456" },
             tokenGenerator = { "a".repeat(64) },
         )
+        pairing.initialize()
         val lockScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         val server = KtorReceiverServer(
             pairingManager = pairing,
             logger = NoOpLogger(),
-            storage = storage,
+            playlistRepository = storage,
+            mediaRepository = storage,
+            kioskLockRepository = storage,
             playlistBridge = ReceiverPlaylistBridge(),
             playbackSyncBridge = ReceiverPlaybackSyncBridge(),
             kioskLockManager = KioskLockManager(
@@ -260,7 +266,7 @@ class ReceiverServerIntegrationTest {
                     "127.0.0.1", port, "tx-1", token, "../escape", Sha256.hex(garbage), garbage,
                 ).isFailure,
             )
-            assertTrue(storage.listStoredMedia().isEmpty())
+            assertTrue(storage.listStored().isEmpty())
         } finally {
             client.close()
             server.stop()

@@ -36,6 +36,7 @@ import app.kiosksync.feature.role.RoleStateHolder
 import app.kiosksync.feature.update.ReceiverUpdateOverlay
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun App(
@@ -136,7 +137,8 @@ fun App(
 
     val playbackStateHolder = remember {
         PlaybackStateHolder(
-            localStorage = container.localStorage,
+            playlistRepository = container.playlistRepository,
+            mediaRepository = container.mediaRepository,
             logger = container.logger,
             scope = coroutineScope,
             statusTracker = container.receiverStatusTracker,
@@ -171,6 +173,8 @@ fun App(
     val receiverUpdateState by container.receiverUpdateManager.uiState.collectAsState()
     var showReceiverOptions by remember { mutableStateOf(false) }
     var showUnpairConfirm by remember { mutableStateOf(false) }
+    var showChangeRoleConfirm by remember { mutableStateOf(false) }
+    var isResettingRole by remember { mutableStateOf(false) }
     var wasLocked by remember { mutableStateOf(lockState.isLocked) }
 
     fun relockReceiverIfNeeded() {
@@ -187,29 +191,44 @@ fun App(
     }
 
     fun resetRole() {
-        if (currentScreen is Screen.ReceiverHome) {
-            container.localStorage.clearReceiverData()
-        }
-        roleStateHolder.confirmChangeRole()
-        currentConfig = null
+        if (isResettingRole) return
+        val changingFromReceiver = currentScreen is Screen.ReceiverHome
+        isResettingRole = true
         coroutineScope.launch {
             try {
+                withContext(container.serviceDispatcher) {
+                    container.discovery.unregisterService()
+                    container.discovery.stopDiscovery()
+                    container.receiverServer.stop()
+                }
+                if (changingFromReceiver) {
+                    container.receiverDataResetter.clearReceiverData()
+                } else {
+                    container.screensRepository.clearPairedScreens()
+                }
+                // Refresh the in-memory pairing state as well as its persisted row.
+                // A role change must return a Receiver to a newly generated pairing code.
+                container.pairingManager.unpair()
+                container.kioskLockRepository.clearLock()
                 container.configStore.clear()
-                container.localStorage.clearPairing()
-                container.localStorage.clearKioskLock()
+                roleStateHolder.confirmChangeRole()
+                currentConfig = null
+                container.kioskLockManager.release()
+                container.projectionController.stop()
+                showReceiverOptions = false
+                showUnpairConfirm = false
+                showChangeRoleConfirm = false
+                currentScreen = Screen.RoleSelection
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                container.logger.error("Could not clear role preferences", error)
+                container.logger.error("Could not reset local data while changing role", error)
+                showChangeRoleConfirm = true
+                // Keep the current role and its UI active when cleanup fails.
+            } finally {
+                isResettingRole = false
             }
         }
-        container.kioskLockManager.release()
-        container.projectionController.stop()
-        // Pairing is initialized only when the Receiver role is confirmed again,
-        // so changing role does not generate an unused code on the UI thread.
-        showReceiverOptions = false
-        showUnpairConfirm = false
-        currentScreen = Screen.RoleSelection
     }
 
     // The screen role is always a kiosk: lock the keyboard as soon as the
@@ -283,9 +302,6 @@ fun App(
                             stateHolder = roleStateHolder,
                             onRoleConfirmed = { confirmedConfig ->
                                 persistConfig(confirmedConfig)
-                                if (confirmedConfig.role == AppRole.RECEIVER) {
-                                    pairingManager.checkInitialPairing()
-                                }
                                 currentScreen = when (confirmedConfig.role) {
                                     AppRole.EMITTER -> Screen.EmitterHome(confirmedConfig)
                                     AppRole.RECEIVER -> Screen.ReceiverHome(confirmedConfig)
@@ -320,7 +336,7 @@ fun App(
                             pairingManager = pairingManager,
                             playbackStateHolder = playbackStateHolder,
                             onExitRequested = onExitRequested,
-                            onChangeRoleRequested = { resetRole() }
+                            onChangeRoleRequested = { showChangeRoleConfirm = true }
                         )
                     }
                 }
@@ -363,7 +379,10 @@ fun App(
                 actions = {
                     AppButton(
                         text = Strings.CHANGE_ROLE,
-                        onClick = { resetRole() },
+                        onClick = {
+                            showReceiverOptions = false
+                            showChangeRoleConfirm = true
+                        },
                         variant = AppButtonVariant.OUTLINED,
                         size = AppButtonSize.SMALL,
                         icon = AppIcon.SWAP_HORIZ,
@@ -416,13 +435,64 @@ fun App(
                     AppButton(
                         text = Strings.UNPAIR_BUTTON,
                         onClick = {
-                            pairingManager.unpair()
-                            showUnpairConfirm = false
-                            relockReceiverIfNeeded()
+                            coroutineScope.launch {
+                                try {
+                                    pairingManager.unpair()
+                                    showUnpairConfirm = false
+                                    relockReceiverIfNeeded()
+                                } catch (cancelled: CancellationException) {
+                                    throw cancelled
+                                } catch (error: Exception) {
+                                    container.logger.error("Could not unlink the Receiver", error)
+                                }
+                            }
                         },
                         variant = AppButtonVariant.DANGER,
                         size = AppButtonSize.SMALL,
                         icon = AppIcon.LINK,
+                    )
+                },
+            )
+        }
+
+        if (showChangeRoleConfirm) {
+            AppDialog(
+                title = Strings.CHANGE_ROLE,
+                icon = AppIcon.SWAP_HORIZ,
+                onDismissRequest = {
+                    if (!isResettingRole) {
+                        showChangeRoleConfirm = false
+                        relockReceiverIfNeeded()
+                    }
+                },
+                content = {
+                    M3Text(
+                        text = if (isResettingRole) Strings.ROLE_RESET_ERROR else Strings.CHANGE_ROLE_CONFIRM,
+                        style = M3MaterialTheme.typography.bodyLarge,
+                        color = KioskColors.scheme.onSurfaceVariant,
+                    )
+                },
+                actions = {
+                    AppButton(
+                        text = Strings.CANCEL_BUTTON,
+                        onClick = {
+                            if (!isResettingRole) {
+                                showChangeRoleConfirm = false
+                                relockReceiverIfNeeded()
+                            }
+                        },
+                        variant = AppButtonVariant.TEXT,
+                        size = AppButtonSize.SMALL,
+                        enabled = !isResettingRole,
+                    )
+                    AppButton(
+                        text = if (isResettingRole) Strings.ROLE_RESETTING else Strings.CHANGE_ROLE,
+                        onClick = { resetRole() },
+                        variant = AppButtonVariant.OUTLINED,
+                        size = AppButtonSize.SMALL,
+                        icon = AppIcon.SWAP_HORIZ,
+                        loading = isResettingRole,
+                        enabled = !isResettingRole,
                     )
                 },
             )

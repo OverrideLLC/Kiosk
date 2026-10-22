@@ -6,17 +6,17 @@ import app.kiosksync.core.DEFAULT_PORT
 import app.kiosksync.core.DiscoveredDevice
 import app.kiosksync.core.EmitterPairedDevice
 import app.kiosksync.core.KioskLockConfig
-import app.kiosksync.core.PairError
-import app.kiosksync.core.PairRejectedException
 import app.kiosksync.core.STATUS_FAILURE_THRESHOLD
 import app.kiosksync.core.STATUS_POLL_INTERVAL_MS
 import app.kiosksync.core.Strings
+import app.kiosksync.feature.emitter.domain.EmitterScreensRepository
+import app.kiosksync.feature.kiosk.domain.KioskLockRepository
 import app.kiosksync.feature.kiosk.KioskLockManager
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.projection.ProjectionController
 import app.kiosksync.platform.DeviceDiscovery
 import app.kiosksync.platform.EmitterClient
-import app.kiosksync.platform.LocalStorage
+import app.kiosksync.platform.MediaRepository
 import app.kiosksync.platform.UpdatePackageProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -35,7 +35,9 @@ import kotlinx.coroutines.withContext
 class EmitterStateHolder(
     private val discovery: DeviceDiscovery,
     private val client: EmitterClient,
-    private val storage: LocalStorage,
+    private val screensRepository: EmitterScreensRepository,
+    private val kioskLockRepository: KioskLockRepository,
+    private val mediaRepository: MediaRepository,
     private val logger: AppLogger,
     private val emitterId: String,
     private val emitterName: String,
@@ -47,9 +49,7 @@ class EmitterStateHolder(
     private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val updatePackageProvider: UpdatePackageProvider? = null
 ) {
-    private val _uiState = MutableStateFlow(
-        EmitterUiState(hasKioskPassword = storage.loadKioskLock()?.passwordHash != null)
-    )
+    private val _uiState = MutableStateFlow(EmitterUiState())
     val uiState: StateFlow<EmitterUiState> = _uiState.asStateFlow()
 
     private var discovered: List<DiscoveredDevice> = emptyList()
@@ -58,6 +58,8 @@ class EmitterStateHolder(
     private val onlineStatus = mutableMapOf<String, Boolean>()
     private val failedChecks = mutableMapOf<String, Int>()
     private var selectedIds = emptySet<String>()
+    private var started = false
+    private var staleCleanupJob: Job? = null
 
     /**
      * Screens paired in this session. mDNS takes a moment to report them as
@@ -82,7 +84,7 @@ class EmitterStateHolder(
     private val deliveryCoordinator = EmitterDeliveryCoordinator(
         uiState = _uiState,
         client = client,
-        storage = storage,
+        mediaRepository = mediaRepository,
         logger = logger,
         emitterId = emitterId,
         scope = scope,
@@ -93,7 +95,9 @@ class EmitterStateHolder(
 
     private val securityCoordinator = EmitterSecurityCoordinator(
         uiState = _uiState,
-        storage = storage,
+        repository = kioskLockRepository,
+        scope = scope,
+        backgroundDispatcher = backgroundDispatcher,
         logger = logger,
         kioskLockManager = kioskLockManager,
         passwordHasher = passwordHasher,
@@ -106,6 +110,60 @@ class EmitterStateHolder(
                 EmitterPendingAction.PAIR_LOCK -> dialog.deviceId?.let { pushLockToDevice(it, config) }
             }
         },
+    )
+
+    private val pairingCoordinator = EmitterPairingCoordinator(
+        uiState = _uiState,
+        client = client,
+        screensRepository = screensRepository,
+        kioskLockRepository = kioskLockRepository,
+        logger = logger,
+        emitterId = emitterId,
+        emitterName = emitterName,
+        scope = scope,
+        backgroundDispatcher = backgroundDispatcher,
+        getStoredDevices = { storedDevices },
+        setStoredDevices = { storedDevices = it },
+        targetFor = ::targetFor,
+        onPaired = { device ->
+            failedChecks[device.deviceId] = 0
+            onlineStatus[device.deviceId] = true
+            selectedIds = selectedIds + device.deviceId
+            justPairedIds += device.deviceId
+            device.appVersion?.let {
+                updateCoordinator.updateDeviceInfo(device.deviceId, it, skippedVersion = null)
+            }
+            updateCoordinator.forgetSkippedUpdate(device.deviceId)
+        },
+        onUnpaired = { deviceId ->
+            onlineStatus.remove(deviceId)
+            failedChecks.remove(deviceId)
+            selectedIds = selectedIds - deviceId
+            updateCoordinator.clearUpdateState(deviceId)
+        },
+        openPairLockDialog = { deviceId ->
+            securityCoordinator.openPasswordDialog(
+                action = EmitterPendingAction.PAIR_LOCK,
+                playlist = null,
+                deviceId = deviceId,
+            )
+        },
+        pushLockToDevice = ::pushLockToDevice,
+        rebuild = ::rebuild,
+    )
+
+    private val manualIpCoordinator = EmitterManualIpCoordinator(
+        uiState = _uiState,
+        client = client,
+        logger = logger,
+        scope = scope,
+        backgroundDispatcher = backgroundDispatcher,
+        onDeviceInfo = updateCoordinator::updateDeviceInfo,
+        onDeviceAdded = { device ->
+            manualDevices[device.deviceId] = device
+            rebuild()
+        },
+        parseHostPort = ::parseHostPort,
     )
 
     /** Accepts typed UI actions; transient state changes pass through a pure reducer. */
@@ -151,9 +209,8 @@ class EmitterStateHolder(
     }
 
     fun start() {
-        if (jobs.isNotEmpty()) return
-        storedDevices = storage.loadEmitterPairedDevices()
-        logger.info("Emitter '$emitterName' ($emitterId) started with ${storedDevices.size} paired screens")
+        if (started) return
+        started = true
         logger.info(
             "Automatic updates: " +
                 if (updatePackageProvider?.isAvailable() == true) {
@@ -163,18 +220,24 @@ class EmitterStateHolder(
                 }
         )
 
-        // Make sure already-paired screens have the current lock. Screens that
-        // were offline receive it as soon as they are reachable again.
-        val existingLock = storage.loadKioskLock()
-            ?.takeIf { it.enabled && it.passwordHash != null }
-        if (existingLock != null && storedDevices.isNotEmpty()) {
-            pushLockToAllPaired(existingLock)
+        jobs += scope.launch {
+            try {
+                storedDevices = withContext(backgroundDispatcher) { screensRepository.loadPairedScreens() }
+                logger.info("Emitter '$emitterName' ($emitterId) started with ${storedDevices.size} paired screens")
+                val existingLock = withContext(backgroundDispatcher) { kioskLockRepository.load() }
+                    ?.takeIf { it.enabled && it.passwordHash != null }
+                if (existingLock != null && storedDevices.isNotEmpty()) pushLockToAllPaired(existingLock)
+                rebuild()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                logger.error("Could not load Controller local data", error)
+                _uiState.update { it.copy(statusMessage = Strings.SECURITY_STORAGE_ERROR, statusIsError = true) }
+            }
         }
-
         jobs += scope.launch {
             discovery.discoveredDevices.collect { devices ->
-                discovered = devices
-                rebuild()
+                updateDiscoveredDevices(devices)
             }
         }
         jobs += scope.launch { pollStatuses() }
@@ -186,8 +249,11 @@ class EmitterStateHolder(
     }
 
     fun stop() {
+        started = false
         jobs.forEach { it.cancel() }
         jobs.clear()
+        staleCleanupJob?.cancel()
+        staleCleanupJob = null
         updateCoordinator.stop()
         serviceScope.launch { discovery.stopDiscovery() }
         logger.info("Emitter discovery stopped")
@@ -239,76 +305,7 @@ class EmitterStateHolder(
         _uiState.update { it.copy(pairingCode = digits, pairingError = null) }
     }
 
-    fun confirmPair() {
-        val state = _uiState.value
-        val device = state.pairingDevice ?: return
-        if (state.pairingCode.length != 6 || state.isPairing) return
-
-        scope.launch {
-            _uiState.update { it.copy(isPairing = true, pairingError = null) }
-            val result = withContext(backgroundDispatcher) {
-                client.pair(
-                    host = device.host,
-                    port = device.port,
-                    emitterId = emitterId,
-                    emitterName = emitterName,
-                    code = state.pairingCode
-                )
-            }
-            result.fold(
-                onSuccess = { response ->
-                    storage.addEmitterPairedDevice(
-                        EmitterPairedDevice(
-                            deviceId = device.deviceId,
-                            deviceName = device.deviceName,
-                            token = response.token,
-                            host = device.host,
-                            port = device.port
-                        )
-                    )
-                    storedDevices = storage.loadEmitterPairedDevices()
-                    failedChecks[device.deviceId] = 0
-                    onlineStatus[device.deviceId] = true
-                    selectedIds = selectedIds + device.deviceId
-                    justPairedIds += device.deviceId
-                    device.appVersion?.let {
-                        updateCoordinator.updateDeviceInfo(device.deviceId, it, skippedVersion = null)
-                    }
-                    updateCoordinator.forgetSkippedUpdate(device.deviceId)
-                    logger.info("Screen '${device.deviceName}' paired successfully")
-                    val existingLock = storage.loadKioskLock()
-                        ?.takeIf { it.enabled && it.passwordHash != null }
-                    if (existingLock == null) {
-                        securityCoordinator.openPasswordDialog(
-                            action = EmitterPendingAction.PAIR_LOCK,
-                            playlist = null,
-                            deviceId = device.deviceId,
-                        )
-                    }
-                    _uiState.update {
-                        it.copy(
-                            pairingDevice = null,
-                            pairingCode = "",
-                            pairingError = null,
-                            isPairing = false,
-                            statusMessage = Strings.PAIR_SUCCESS,
-                            statusIsError = false
-                        )
-                    }
-                    rebuild()
-                    if (existingLock != null) {
-                        pushLockToDevice(device.deviceId, existingLock)
-                    }
-                },
-                onFailure = { error ->
-                    logger.warn("Pairing failed for '${device.deviceName}': ${error.message}")
-                    _uiState.update {
-                        it.copy(isPairing = false, pairingError = mapPairError(error))
-                    }
-                }
-            )
-        }
-    }
+    fun confirmPair() = pairingCoordinator.confirmPair()
 
     fun requestUnpair(device: EmitterDeviceUi) {
         _uiState.update { it.copy(unpairDevice = device) }
@@ -318,134 +315,15 @@ class EmitterStateHolder(
         _uiState.update { it.copy(unpairDevice = null) }
     }
 
-    fun confirmUnpair() {
-        val device = _uiState.value.unpairDevice ?: return
-        val storedDevice = storedDevices.firstOrNull { it.deviceId == device.deviceId }
-        if (storedDevice == null) {
-            _uiState.update { it.copy(unpairDevice = null) }
-            return
-        }
+    fun confirmUnpair() = pairingCoordinator.confirmUnpair()
 
-        scope.launch {
-            _uiState.update { it.copy(unpairDevice = null) }
-            val target = targetFor(storedDevice)
-            if (target == null) {
-                _uiState.update { it.copy(statusMessage = Strings.UNPAIR_ERROR, statusIsError = true) }
-                return@launch
-            }
-            val result = withContext(backgroundDispatcher) {
-                client.unpair(target.first, target.second, emitterId, storedDevice.token)
-            }
-            result.fold(
-                onSuccess = {
-                    storage.removeEmitterPairedDevice(device.deviceId)
-                    storedDevices = storage.loadEmitterPairedDevices()
-                    onlineStatus.remove(device.deviceId)
-                    failedChecks.remove(device.deviceId)
-                    selectedIds = selectedIds - device.deviceId
-                    updateCoordinator.clearUpdateState(device.deviceId)
-                    logger.info("Screen '${device.deviceName}' unpaired")
-                    _uiState.update {
-                        it.copy(
-                            statusMessage = Strings.UNPAIR_SUCCESS,
-                            statusIsError = false,
-                            syncByDevice = it.syncByDevice - device.deviceId
-                        )
-                    }
-                    rebuild()
-                },
-                onFailure = { error ->
-                    logger.warn("Could not unpair '${device.deviceName}': ${error.message}")
-                    _uiState.update { it.copy(statusMessage = Strings.UNPAIR_ERROR, statusIsError = true) }
-                }
-            )
-        }
-    }
+    fun openManualIpDialog() = manualIpCoordinator.openDialog()
 
-    fun openManualIpDialog() {
-        _uiState.update {
-            it.copy(
-                showManualIpDialog = true,
-                manualIpInput = "",
-                manualIpError = null,
-                isManualIpLoading = false
-            )
-        }
-    }
+    fun dismissManualIpDialog() = manualIpCoordinator.dismissDialog()
 
-    fun dismissManualIpDialog() {
-        if (_uiState.value.isManualIpLoading) return
-        _uiState.update {
-            it.copy(showManualIpDialog = false, manualIpInput = "", manualIpError = null)
-        }
-    }
+    fun updateManualIp(value: String) = manualIpCoordinator.updateInput(value)
 
-    fun updateManualIp(value: String) {
-        _uiState.update { it.copy(manualIpInput = value, manualIpError = null) }
-    }
-
-    fun confirmManualIp() {
-        val state = _uiState.value
-        if (state.isManualIpLoading) return
-        val parsed = parseHostPort(state.manualIpInput)
-        if (parsed == null) {
-            _uiState.update { it.copy(manualIpError = Strings.MANUAL_IP_INVALID) }
-            return
-        }
-
-        val (host, port) = parsed
-        scope.launch {
-            _uiState.update { it.copy(isManualIpLoading = true, manualIpError = null) }
-            val result = withContext(backgroundDispatcher) {
-                client.getInfo(host, port)
-            }
-            result.fold(
-                onSuccess = { info ->
-                    if (info.role != "receiver") {
-                        _uiState.update {
-                            it.copy(
-                                isManualIpLoading = false,
-                                manualIpError = Strings.MANUAL_IP_NOT_RECEIVER
-                            )
-                        }
-                        return@fold
-                    }
-                    manualDevices[info.deviceId] = DiscoveredDevice(
-                        deviceId = info.deviceId,
-                        deviceName = info.deviceName,
-                        host = host,
-                        port = port,
-                        paired = info.paired,
-                        appVersion = info.appVersion
-                    )
-                    updateCoordinator.updateDeviceInfo(
-                        info.deviceId,
-                        info.appVersion,
-                        info.skippedUpdateVersion
-                    )
-                    logger.info("Screen '${info.deviceName}' added manually at $host:$port")
-                    _uiState.update {
-                        it.copy(
-                            showManualIpDialog = false,
-                            manualIpInput = "",
-                            manualIpError = null,
-                            isManualIpLoading = false
-                        )
-                    }
-                    rebuild()
-                },
-                onFailure = { error ->
-                    logger.warn("Manual screen $host:$port unreachable: ${error.message}")
-                    _uiState.update {
-                        it.copy(
-                            isManualIpLoading = false,
-                            manualIpError = Strings.MANUAL_IP_UNREACHABLE
-                        )
-                    }
-                }
-            )
-        }
-    }
+    fun confirmManualIp() = manualIpCoordinator.confirm()
 
     fun dismissStatusMessage() {
         _uiState.update { it.copy(statusMessage = null, statusIsError = false) }
@@ -469,13 +347,20 @@ class EmitterStateHolder(
             return
         }
 
-        val lock = storage.loadKioskLock()
-            ?.takeIf { it.enabled && it.passwordHash != null }
-        if (lock == null) {
-            securityCoordinator.openPasswordDialog(EmitterPendingAction.SEND, playlist)
-            return
+        scope.launch {
+            val lock = try {
+                withContext(backgroundDispatcher) { kioskLockRepository.load() }
+                    ?.takeIf { it.enabled && it.passwordHash != null }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                logger.error("Could not load kiosk security configuration", error)
+                _uiState.update { it.copy(statusMessage = Strings.SECURITY_STORAGE_ERROR, statusIsError = true) }
+                return@launch
+            }
+            if (lock == null) securityCoordinator.openPasswordDialog(EmitterPendingAction.SEND, playlist)
+            else deliveryCoordinator.send(playlist, lock)
         }
-        deliveryCoordinator.send(playlist, lock)
     }
 
     fun synchronizePlayback() = deliveryCoordinator.synchronizePlayback()
@@ -489,13 +374,20 @@ class EmitterStateHolder(
             return
         }
 
-        val lock = storage.loadKioskLock()
-            ?.takeIf { it.enabled && it.passwordHash != null }
-        if (lock == null) {
-            securityCoordinator.openPasswordDialog(EmitterPendingAction.PROJECT, playlist)
-            return
+        scope.launch {
+            val lock = try {
+                withContext(backgroundDispatcher) { kioskLockRepository.load() }
+                    ?.takeIf { it.enabled && it.passwordHash != null }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                logger.error("Could not load kiosk security configuration", error)
+                _uiState.update { it.copy(statusMessage = Strings.SECURITY_STORAGE_ERROR, statusIsError = true) }
+                return@launch
+            }
+            if (lock == null) securityCoordinator.openPasswordDialog(EmitterPendingAction.PROJECT, playlist)
+            else startProjection(playlist, lock)
         }
-        startProjection(playlist, lock)
     }
 
     fun openSecurityDialog() = securityCoordinator.openSecurityDialog()
@@ -588,34 +480,42 @@ class EmitterStateHolder(
     private fun allDiscovered(): List<DiscoveredDevice> =
         discovered + manualDevices.values.filter { manual -> discovered.none { it.deviceId == manual.deviceId } }
 
-    private fun rebuild() {
-        val discoveredById = allDiscovered().associateBy { it.deviceId }
-        var storedById = storedDevices.associateBy { it.deviceId }
-
-        // A screen can be reset locally. When discovery reports a stored screen
-        // as unpaired, forget the stale token so it can be paired again.
-        val staleIds = discoveredById.values
-            .filter { live -> live.deviceId in storedById.keys }
-            .filter { live -> !live.paired && live.deviceId !in justPairedIds }
-            .map { it.deviceId }
-
+    private suspend fun updateDiscoveredDevices(devices: List<DiscoveredDevice>) {
+        discovered = devices
+        val staleIds = devices.asSequence()
+            .filter { it.deviceId in storedDevices.map(EmitterPairedDevice::deviceId) }
+            .filter { !it.paired && it.deviceId !in justPairedIds }
+            .map(DiscoveredDevice::deviceId)
+            .toList()
         if (staleIds.isNotEmpty()) {
-            staleIds.forEach { storage.removeEmitterPairedDevice(it) }
-            storedDevices = storage.loadEmitterPairedDevices()
-            storedById = storedDevices.associateBy { it.deviceId }
-            staleIds.forEach { id ->
-                onlineStatus.remove(id)
-                failedChecks.remove(id)
-                selectedIds = selectedIds - id
-                updateCoordinator.clearUpdateState(id)
+            try {
+                storedDevices = withContext(backgroundDispatcher) {
+                    for (deviceId in staleIds) screensRepository.removePairedScreen(deviceId)
+                    screensRepository.loadPairedScreens()
+                }
+                staleIds.forEach { id ->
+                    onlineStatus.remove(id)
+                    failedChecks.remove(id)
+                    selectedIds = selectedIds - id
+                    updateCoordinator.clearUpdateState(id)
+                }
+                logger.info("Forgot ${staleIds.size} screen(s) that are no longer paired: $staleIds")
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                logger.error("Could not remove screens that are no longer paired", error)
             }
-            logger.info("Forgot ${staleIds.size} screen(s) that are no longer paired: $staleIds")
         }
 
-        // Once mDNS confirms the pairing, the exemption is no longer needed.
-        discoveredById.values
-            .filter { it.paired }
+        devices.asSequence()
+            .filter(DiscoveredDevice::paired)
             .forEach { justPairedIds.remove(it.deviceId) }
+        rebuild()
+    }
+
+    private fun rebuild() {
+        val discoveredById = allDiscovered().associateBy { it.deviceId }
+        val storedById = storedDevices.associateBy { it.deviceId }
 
         val devices = (storedById.keys + discoveredById.keys).mapNotNull { id ->
             val stored = storedById[id]
@@ -653,24 +553,6 @@ class EmitterStateHolder(
             it.copy(devices = devices, isSearching = false)
         }
         updateCoordinator.maybeAutoUpdateAll()
-    }
-
-    private fun mapPairError(error: Throwable): String {
-        if (error !is PairRejectedException) return Strings.PAIR_ERROR_NETWORK
-        return when (error.error) {
-            PairError.INVALID_CODE -> buildString {
-                append(Strings.PAIR_ERROR_INVALID_CODE)
-                error.remainingAttempts?.let { remaining ->
-                    append(' ')
-                    append(Strings.PAIR_ERROR_REMAINING_ATTEMPTS)
-                    append(' ')
-                    append(remaining)
-                }
-            }
-
-            PairError.LOCKED_OUT -> Strings.PAIR_ERROR_LOCKED
-            PairError.ALREADY_PAIRED -> Strings.PAIR_ERROR_ALREADY_PAIRED
-        }
     }
 
     companion object {

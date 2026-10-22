@@ -57,13 +57,13 @@ import app.kiosksync.feature.playlist.presentation.PlaylistEditorAction
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorStateHolder
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorUiState
 import app.kiosksync.feature.playlist.domain.PlaylistItem
-import app.kiosksync.platform.LocalStorage
+import app.kiosksync.platform.MediaRepository
 
 @Composable
 internal fun PlaylistPanel(
     stateHolder: PlaylistEditorStateHolder,
     state: PlaylistEditorUiState,
-    storage: LocalStorage,
+    mediaRepository: MediaRepository,
     fillHeight: Boolean,
     onRequestRemove: (PlaylistItem) -> Unit,
     modifier: Modifier = Modifier,
@@ -220,7 +220,7 @@ internal fun PlaylistPanel(
                         lastIndex = lastIndex,
                         defaultDurationSec = state.playlist.defaultDurationSec,
                         durationDraft = state.durationDrafts[item.mediaId],
-                        storage = storage,
+                        mediaRepository = mediaRepository,
                         onDurationChange = {
                             stateHolder.dispatch(PlaylistEditorAction.UpdateItemDuration(item.mediaId, it))
                         },
