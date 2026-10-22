@@ -28,8 +28,9 @@ Receptor debe conservar una copia local reproducible entre reinicios y sin red.
   de playlist y catálogo usan transacciones. El esquema compartido (base, entidades
   y DAO) vive en `commonMain/data/local/room`; las implementaciones de repositorio
   están en `desktopMain/feature/<nombre>/data` cuando pertenecen a una feature. Los
-  adaptadores compartidos de medios y limpieza viven en `desktopMain/data/local`.
-  Los DAOs no salen de la capa `data`.
+  adaptadores compartidos de medios y limpieza viven en `desktopMain/data/local`;
+  la migración JSON vive en `desktopMain/data/local/migration`. Los DAOs no salen
+  de la capa `data` ni del root de composición.
 - **Archivos** guardan imágenes, logs, paquetes de actualización y copias JSON
   heredadas. Los bytes de imagen no se guardan como BLOB en Room; se validan en un
   archivo temporal y se renombran antes de aplicar sus referencias en la base.

@@ -4,15 +4,18 @@ Lista honesta de lo que el MVP **no** hace o hace con limitaciones. Úsala antes
 prometer funciones o de instalar la app en un comercio real.
 
 > **Estado:** las fases de arquitectura 7–17 están aplicadas en
-> `codex/architecture-improvements`; la build y los recorridos de Windows 11 aún
-> requieren validación en esa plataforma.
+> `codex/architecture-improvements`. En la verificación de fase 18 (2026-10-22),
+> Linux pasó la build limpia (97 tests), `/info` del Receptor y descubrimiento
+> mDNS desde el Controlador. La build y los recorridos de Windows 11 aún requieren
+> validación en esa plataforma.
 
 ## Plataforma y empaquetado
 
 - **Windows 10/11 es la plataforma objetivo.** Esta revisión se compiló y ejecutó
-  en Linux con JDK 21, incluidos los recorridos de arranque de ambos roles. No se
-  volvió a ejecutar esta rama en Windows 11; los hooks nativos de teclado y mouse,
-  DPAPI y el empaquetado requieren validación en Windows antes de distribuirla.
+  en Linux con JDK 21: los dos roles arrancaron, el Receptor respondió `/info` y
+  el Controlador lo descubrió por mDNS. La suite reportó 97 tests sin fallos. No se
+  ejecutó la rama en Windows 11; los hooks nativos de teclado y mouse, DPAPI, la
+  migración y el empaquetado requieren validación en Windows antes de distribuirla.
 - Para generar el instalador `.exe`/`.msi` el plugin de Compose descarga WiX 3.11
   automáticamente la primera vez; no hace falta instalarlo a mano. Sin conexión
   en esa primera compilación solo se genera la carpeta portable.

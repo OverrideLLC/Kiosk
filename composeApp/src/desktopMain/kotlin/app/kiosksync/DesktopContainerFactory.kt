@@ -4,6 +4,7 @@ import app.kiosksync.core.AppArgs
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.AppRole
 import app.kiosksync.data.local.RoomRepositories
+import app.kiosksync.data.local.migration.LegacyJsonMigrator
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.kiosk.domain.KioskKeyEvent
 import app.kiosksync.feature.pairing.domain.PairingManager
@@ -17,7 +18,6 @@ import app.kiosksync.platform.FileReceiverUpdateManager
 import app.kiosksync.platform.JmDnsDiscovery
 import app.kiosksync.platform.KtorEmitterClient
 import app.kiosksync.platform.KtorReceiverServer
-import app.kiosksync.platform.LegacyJsonMigrator
 import app.kiosksync.platform.LocalUpdatePackageProvider
 import app.kiosksync.platform.Sha256
 import app.kiosksync.platform.createKioskKeyboardGuard

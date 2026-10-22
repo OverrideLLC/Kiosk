@@ -1,4 +1,4 @@
-package app.kiosksync.platform
+package app.kiosksync.data.local.migration
 
 import app.kiosksync.NoOpLogger
 import app.kiosksync.core.ReceiverPairedInfo
@@ -6,6 +6,8 @@ import app.kiosksync.data.local.RoomRepositories
 import app.kiosksync.data.local.room.KioskDao
 import app.kiosksync.data.local.room.PairedDeviceEntity
 import app.kiosksync.data.local.room.buildKioskDatabase
+import app.kiosksync.platform.FileMediaStore
+import app.kiosksync.platform.Sha256
 import app.kiosksync.platform.secret.DevelopmentSecretProtector
 import app.kiosksync.platform.secret.SecretProtector
 import java.io.File

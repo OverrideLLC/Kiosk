@@ -1,11 +1,9 @@
-package app.kiosksync.platform
+package app.kiosksync.data.local.migration
 
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.EmitterPairedDevice
 import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.ReceiverPairedInfo
-import app.kiosksync.feature.playlist.domain.Playlist
-import app.kiosksync.feature.playlist.domain.PlaylistLibrary
 import app.kiosksync.data.local.room.KioskDao
 import app.kiosksync.data.local.room.KioskDatabase
 import app.kiosksync.data.local.room.KioskLockEntity
@@ -14,6 +12,9 @@ import app.kiosksync.data.local.room.MediaEntity
 import app.kiosksync.data.local.room.PairedDeviceEntity
 import app.kiosksync.data.local.room.PlaylistEntity
 import app.kiosksync.data.local.room.PlaylistItemEntity
+import app.kiosksync.feature.playlist.domain.Playlist
+import app.kiosksync.feature.playlist.domain.PlaylistLibrary
+import app.kiosksync.platform.FileMediaStore
 import app.kiosksync.platform.secret.SecretProtector
 import java.io.File
 import java.io.IOException

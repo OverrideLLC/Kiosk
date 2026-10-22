@@ -143,9 +143,10 @@ composeApp/src/
 │   └── AppContainer.kt  # DI manual
 └── desktopMain/kotlin/app/kiosksync/
     ├── feature/*/data/  # adaptadores Room por feature y DataStore de role
-    ├── data/local/      # composition Room y adaptadores de medios/reset compartidos
+    ├── data/local/      # composición Room y adaptadores de medios/reset compartidos
+    ├── data/local/migration/ # importación transaccional de JSON heredado a Room
     ├── data/local/room/ # builder SQLite Desktop
-    ├── platform/        # JmDnsDiscovery, Ktor, media, migración y DPAPI
+    ├── platform/        # JmDnsDiscovery, Ktor, acceso a medios y DPAPI
     ├── platform/server/ # rutas HTTP agrupadas por responsabilidad
     ├── Desktop*.kt      # fábrica del contenedor y ciclo de ventanas
     └── Main.kt          # argumentos de línea de comandos y punto de entrada
@@ -344,14 +345,14 @@ Cada fase tiene: **objetivo**, **entregable**, **criterios de aceptación** y **
 
 ### Fases de arquitectura (autorizadas en la rama `codex/architecture-improvements`)
 
-La persona autorizó ejecutar las fases de arquitectura consecutivamente. Las fases 7–17 están completadas; se conservaron los commits por fase en `codex/architecture-improvements`. El plan unificado define los detalles de las fases 13–18. La fase 18 cierra la verificación de Linux y Windows. No declares completa la validación de Windows hasta ejecutar `.\gradlew.bat build` y los recorridos manuales en Windows 11.
+La persona autorizó ejecutar las fases de arquitectura consecutivamente. Las fases 7–17 están completadas; se conservaron los commits por fase en `codex/architecture-improvements`. El plan unificado define los detalles de las fases 13–18. En la fase 18, la build, los tests y los smoke checks de Linux ya pasaron; Windows sigue pendiente. No declares completa la validación de Windows hasta ejecutar `.\gradlew.bat build` y los recorridos manuales en Windows 11.
 
 - **Fases 7–12, completadas:** arquitectura por capas ligeras, DataStore + Room 3 + archivos, `core.ui`/Material Kolor, MVI selectivo, migración y adaptación Desktop.
 - **Fases 13–14, completadas:** arranque según rol y esquema Room dentro de `data/local/room`.
 - **Fase 15, completada:** paquetes feature-first y adaptadores de persistencia junto a sus features.
 - **Fase 16, completada:** tokens UI verificados y render test de ambos temas con contraste 4.5:1.
 - **Fase 17, completada:** `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/DESIGN_SYSTEM.md`, `docs/KNOWN_LIMITATIONS.md` y ADR-004 coinciden con los paquetes y la persistencia vigentes.
-- **Fase 18:** ejecutar build, pruebas y smoke checks en Linux y Windows 11; informar claramente qué plataforma no se pudo validar.
+- **Fase 18:** Linux verificado con build limpia, 97 tests y smoke check Receptor/Controlador por mDNS; falta ejecutar la build y los recorridos manuales en Windows 11.
 
 ### Fases posteriores (solo con petición expresa)
 Arranque automático con Windows, modo de bloqueo de teclas con frase de desbloqueo, cifrado/firma de peticiones, varias playlists, plantillas de fichas técnicas.

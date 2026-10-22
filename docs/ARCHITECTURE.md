@@ -3,7 +3,9 @@
 > **Estado:** arquitectura aplicada en la rama `codex/architecture-improvements`.
 > Las fases 7–17 consolidan MVI ligero, paquetes por feature, `core.ui`,
 > Material Kolor, DataStore para preferencias, Room para datos estructurados y
-> archivos para medios y paquetes. La validación final de Windows 11 sigue pendiente.
+> archivos para medios y paquetes. En la fase 18, Linux pasó la build limpia
+> (97 tests), `/info` y descubrimiento mDNS entre Controlador y Pantalla.
+> La validación final de Windows 11 sigue pendiente.
 
 ## Vista general
 
@@ -65,8 +67,9 @@ composeApp/src/
 └── desktopMain/kotlin/app/kiosksync/
     ├── feature/*/data/  # adaptadores Room por feature y DataStore de role
     ├── data/local/      # composición Room y adaptadores compartidos de medios/reset
+    ├── data/local/migration/ # importación transaccional de JSON heredado a Room
     ├── data/local/room/ # builder SQLite Desktop
-    ├── platform/        # JmDNS, Ktor, media, migración y DPAPI
+    ├── platform/        # JmDNS, Ktor, acceso a medios y DPAPI
     ├── platform/server/ # rutas HTTP agrupadas por responsabilidad
     ├── Desktop*.kt      # fábrica del contenedor y ciclo de ventanas
     └── Main.kt          # argumentos, logger y punto de entrada
