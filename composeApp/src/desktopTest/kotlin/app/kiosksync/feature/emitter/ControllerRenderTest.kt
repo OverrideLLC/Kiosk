@@ -18,12 +18,12 @@ import app.kiosksync.core.ReceiverStatusResponse
 import app.kiosksync.core.SyncStateResponse
 import app.kiosksync.core.UpdateUploadResponse
 import app.kiosksync.core.ui.theme.KioskTheme
-import app.kiosksync.feature.kiosk.KioskLockManager
+import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorStateHolder
 import app.kiosksync.feature.playlist.domain.PlaylistItem
 import app.kiosksync.feature.playlist.domain.PlaylistLibrary
-import app.kiosksync.feature.projection.ProjectionController
+import app.kiosksync.feature.projection.presentation.ProjectionController
 import app.kiosksync.platform.DeviceDiscovery
 import app.kiosksync.platform.EmitterClient
 import java.io.File

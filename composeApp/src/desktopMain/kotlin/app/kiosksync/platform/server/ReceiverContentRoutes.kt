@@ -11,7 +11,7 @@ import app.kiosksync.core.MediaUploadResponse
 import app.kiosksync.core.PlaylistApplyResponse
 import app.kiosksync.core.SyncStateResponse
 import app.kiosksync.core.isValidUnlockSequence
-import app.kiosksync.feature.sync.PlaylistUpdateRequest
+import app.kiosksync.core.PlaylistUpdateRequest
 import app.kiosksync.platform.Sha256
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode

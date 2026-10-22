@@ -2,8 +2,12 @@ package app.kiosksync.data.local
 
 import app.kiosksync.core.AppLogger
 import app.kiosksync.feature.emitter.domain.EmitterScreensRepository
+import app.kiosksync.feature.emitter.data.RoomEmitterScreensRepository
 import app.kiosksync.feature.kiosk.domain.KioskLockRepository
+import app.kiosksync.feature.kiosk.data.RoomKioskLockRepository
 import app.kiosksync.feature.pairing.domain.PairingRepository
+import app.kiosksync.feature.pairing.data.RoomPairingRepository
+import app.kiosksync.feature.playlist.data.RoomPlaylistRepository
 import app.kiosksync.feature.playlist.domain.PlaylistRepository
 import app.kiosksync.platform.FileMediaStore
 import app.kiosksync.platform.MediaRepository

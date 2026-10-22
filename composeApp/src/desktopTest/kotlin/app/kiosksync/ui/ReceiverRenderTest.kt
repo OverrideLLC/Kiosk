@@ -11,10 +11,10 @@ import app.kiosksync.NoOpLogger
 import app.kiosksync.core.AppTheme
 import app.kiosksync.core.ui.theme.KioskScreenColors
 import app.kiosksync.core.ui.theme.KioskTheme
-import app.kiosksync.feature.kiosk.KioskLockUiState
-import app.kiosksync.feature.kiosk.KioskUnlockOverlay
-import app.kiosksync.feature.pairing.PairingCodeScreen
-import app.kiosksync.feature.pairing.PairingManager
+import app.kiosksync.feature.kiosk.domain.KioskLockUiState
+import app.kiosksync.feature.kiosk.presentation.KioskUnlockOverlay
+import app.kiosksync.feature.pairing.presentation.PairingCodeScreen
+import app.kiosksync.feature.pairing.domain.PairingManager
 import java.io.File
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test

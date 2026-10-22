@@ -19,8 +19,8 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.rememberWindowState
 import app.kiosksync.core.APP_NAME
 import app.kiosksync.core.AppRole
-import app.kiosksync.feature.kiosk.KioskKeyEvent
-import app.kiosksync.feature.kiosk.KioskKeyKind
+import app.kiosksync.feature.kiosk.domain.KioskKeyEvent
+import app.kiosksync.feature.kiosk.domain.KioskKeyKind
 import app.kiosksync.ui.App
 import app.kiosksync.ui.ProjectionScreen
 import java.awt.Cursor

@@ -1,5 +1,7 @@
 package app.kiosksync.feature.pairing
 
+import app.kiosksync.feature.pairing.presentation.formatCountdown
+import app.kiosksync.feature.pairing.presentation.formatPairingCode
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

@@ -10,7 +10,7 @@ import app.kiosksync.core.AppTheme
 import app.kiosksync.feature.emitter.presentation.EmitterScreen
 import app.kiosksync.feature.emitter.presentation.EmitterStateHolder
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorStateHolder
-import app.kiosksync.feature.role.AppConfig
+import app.kiosksync.feature.role.domain.AppConfig
 
 @Composable
 fun EmitterHomeScreen(

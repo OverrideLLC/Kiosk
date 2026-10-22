@@ -1,6 +1,6 @@
 package app.kiosksync.ui
 
-import app.kiosksync.feature.role.AppConfig
+import app.kiosksync.feature.role.domain.AppConfig
 
 sealed interface Screen {
     data object RoleSelection : Screen

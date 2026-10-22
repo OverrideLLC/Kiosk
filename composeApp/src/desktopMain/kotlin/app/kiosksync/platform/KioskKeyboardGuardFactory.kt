@@ -1,7 +1,7 @@
 package app.kiosksync.platform
 
 import app.kiosksync.core.AppLogger
-import app.kiosksync.feature.kiosk.KioskKeyEvent
+import app.kiosksync.feature.kiosk.domain.KioskKeyEvent
 
 private object NoopKioskKeyboardGuard : KioskKeyboardGuard {
     override fun start() = Unit

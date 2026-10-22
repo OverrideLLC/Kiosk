@@ -3,6 +3,12 @@ package app.kiosksync.feature.role
 import app.kiosksync.NoOpLogger
 import app.kiosksync.core.AppRole
 import app.kiosksync.core.AppTheme
+import app.kiosksync.feature.role.domain.AppConfig
+import app.kiosksync.feature.role.presentation.RoleAction
+import app.kiosksync.feature.role.presentation.RoleEffect
+import app.kiosksync.feature.role.presentation.RoleReducer
+import app.kiosksync.feature.role.presentation.RoleStateHolder
+import app.kiosksync.feature.role.presentation.RoleUiState
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals

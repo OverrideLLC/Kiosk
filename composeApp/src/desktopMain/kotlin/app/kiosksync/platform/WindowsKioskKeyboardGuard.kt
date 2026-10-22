@@ -1,8 +1,8 @@
 package app.kiosksync.platform
 
 import app.kiosksync.core.AppLogger
-import app.kiosksync.feature.kiosk.KioskKeyEvent
-import app.kiosksync.feature.kiosk.KioskKeyKind
+import app.kiosksync.feature.kiosk.domain.KioskKeyEvent
+import app.kiosksync.feature.kiosk.domain.KioskKeyKind
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.Kernel32
 import com.sun.jna.platform.win32.User32

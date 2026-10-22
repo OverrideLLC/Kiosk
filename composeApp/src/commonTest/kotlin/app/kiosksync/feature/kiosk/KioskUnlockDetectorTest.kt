@@ -2,6 +2,12 @@ package app.kiosksync.feature.kiosk
 
 import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.UNIVERSAL_RECOVERY_PASSWORD
+import app.kiosksync.feature.kiosk.domain.KioskKeyEvent
+import app.kiosksync.feature.kiosk.domain.KioskKeyKind
+import app.kiosksync.feature.kiosk.domain.KioskUnlockDetector
+import app.kiosksync.feature.kiosk.domain.KioskUnlockResult
+import app.kiosksync.feature.kiosk.domain.UNLOCK_SEQUENCE
+import app.kiosksync.feature.kiosk.domain.unlockSequenceKinds
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

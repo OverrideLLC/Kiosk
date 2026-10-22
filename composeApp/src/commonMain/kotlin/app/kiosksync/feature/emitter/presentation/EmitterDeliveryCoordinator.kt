@@ -7,8 +7,8 @@ import app.kiosksync.core.PLAYBACK_SYNC_DELAY_MS
 import app.kiosksync.core.PlaylistRejectedException
 import app.kiosksync.core.Strings
 import app.kiosksync.feature.playlist.domain.Playlist
-import app.kiosksync.feature.sync.EmitterSyncService
-import app.kiosksync.feature.sync.LocalMediaMissingException
+import app.kiosksync.feature.sync.domain.EmitterSyncService
+import app.kiosksync.feature.sync.domain.LocalMediaMissingException
 import app.kiosksync.platform.EmitterClient
 import app.kiosksync.platform.MediaRepository
 import kotlinx.coroutines.CoroutineDispatcher

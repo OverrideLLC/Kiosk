@@ -7,7 +7,7 @@ import app.kiosksync.core.Strings
 import app.kiosksync.core.isValidKioskPassword
 import app.kiosksync.core.isValidRecoveryPhrase
 import app.kiosksync.core.isValidUnlockSequence
-import app.kiosksync.feature.kiosk.KioskLockManager
+import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.kiosk.domain.KioskLockRepository
 import app.kiosksync.feature.playlist.domain.Playlist
 import kotlinx.coroutines.CancellationException

@@ -3,7 +3,8 @@ package app.kiosksync.platform
 import app.kiosksync.NoOpLogger
 import app.kiosksync.core.AppRole
 import app.kiosksync.core.AppTheme
-import app.kiosksync.feature.role.AppConfig
+import app.kiosksync.feature.role.domain.AppConfig
+import app.kiosksync.feature.role.data.DataStoreAppConfigStore
 import java.io.File
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest

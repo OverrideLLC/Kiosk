@@ -2,6 +2,8 @@ package app.kiosksync.feature.pairing
 
 import app.kiosksync.FakeRepositories
 import app.kiosksync.NoOpLogger
+import app.kiosksync.feature.pairing.domain.PairingManager
+import app.kiosksync.feature.pairing.domain.PairResult
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

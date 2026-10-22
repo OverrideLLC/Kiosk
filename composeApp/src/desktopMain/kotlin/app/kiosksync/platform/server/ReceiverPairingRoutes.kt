@@ -3,7 +3,7 @@ package app.kiosksync.platform.server
 import app.kiosksync.core.ErrorResponse
 import app.kiosksync.core.PairRequest
 import app.kiosksync.core.PairResponse
-import app.kiosksync.feature.pairing.PairResult
+import app.kiosksync.feature.pairing.domain.PairResult
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondText

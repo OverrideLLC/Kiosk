@@ -10,11 +10,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import app.kiosksync.AppContainer
-import app.kiosksync.feature.kiosk.KioskLockUiState
+import app.kiosksync.feature.kiosk.domain.KioskLockUiState
 import app.kiosksync.core.ui.theme.KioskScreenColors
-import app.kiosksync.feature.kiosk.KioskUnlockOverlay
-import app.kiosksync.feature.playback.CarouselScreen
-import app.kiosksync.feature.playback.PlaybackStateHolder
+import app.kiosksync.feature.kiosk.presentation.KioskUnlockOverlay
+import app.kiosksync.feature.playback.presentation.CarouselScreen
+import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
 import app.kiosksync.feature.playlist.domain.Playlist
 
 /**

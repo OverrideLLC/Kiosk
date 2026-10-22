@@ -12,12 +12,12 @@ import app.kiosksync.NoOpLogger
 import app.kiosksync.core.AppRole
 import app.kiosksync.core.AppTheme
 import app.kiosksync.core.ui.theme.KioskTheme
-import app.kiosksync.feature.playback.CarouselScreen
-import app.kiosksync.feature.playback.PlaybackStateHolder
+import app.kiosksync.feature.playback.presentation.CarouselScreen
+import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.domain.PlaylistItem
-import app.kiosksync.feature.role.RoleSelectionScreen
-import app.kiosksync.feature.role.RoleStateHolder
+import app.kiosksync.feature.role.presentation.RoleSelectionScreen
+import app.kiosksync.feature.role.presentation.RoleStateHolder
 import java.io.File
 import kotlin.test.Test
 import kotlinx.coroutines.CoroutineScope

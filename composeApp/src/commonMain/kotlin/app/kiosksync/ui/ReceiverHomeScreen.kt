@@ -8,11 +8,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import app.kiosksync.AppContainer
 import app.kiosksync.core.Strings
-import app.kiosksync.feature.pairing.PairingCodeScreen
-import app.kiosksync.feature.pairing.PairingManager
-import app.kiosksync.feature.playback.CarouselScreen
-import app.kiosksync.feature.playback.PlaybackStateHolder
-import app.kiosksync.feature.role.AppConfig
+import app.kiosksync.feature.pairing.presentation.PairingCodeScreen
+import app.kiosksync.feature.pairing.domain.PairingManager
+import app.kiosksync.feature.playback.presentation.CarouselScreen
+import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
+import app.kiosksync.feature.role.domain.AppConfig
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

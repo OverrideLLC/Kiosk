@@ -11,9 +11,9 @@ import app.kiosksync.core.STATUS_POLL_INTERVAL_MS
 import app.kiosksync.core.Strings
 import app.kiosksync.feature.emitter.domain.EmitterScreensRepository
 import app.kiosksync.feature.kiosk.domain.KioskLockRepository
-import app.kiosksync.feature.kiosk.KioskLockManager
+import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.playlist.domain.Playlist
-import app.kiosksync.feature.projection.ProjectionController
+import app.kiosksync.feature.projection.presentation.ProjectionController
 import app.kiosksync.platform.DeviceDiscovery
 import app.kiosksync.platform.EmitterClient
 import app.kiosksync.platform.MediaRepository

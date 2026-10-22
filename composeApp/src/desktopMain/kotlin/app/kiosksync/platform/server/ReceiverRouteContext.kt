@@ -2,11 +2,11 @@ package app.kiosksync.platform.server
 
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.KioskLockConfig
-import app.kiosksync.feature.kiosk.KioskLockManager
+import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.kiosk.domain.KioskLockRepository
-import app.kiosksync.feature.pairing.PairingManager
-import app.kiosksync.feature.playback.ReceiverPlaybackSyncBridge
-import app.kiosksync.feature.playback.ReceiverPlaylistBridge
+import app.kiosksync.feature.pairing.domain.PairingManager
+import app.kiosksync.feature.playback.domain.ReceiverPlaybackSyncBridge
+import app.kiosksync.feature.playback.domain.ReceiverPlaylistBridge
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.domain.PlaylistRepository
 import app.kiosksync.platform.MediaRepository
