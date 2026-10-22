@@ -18,7 +18,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.kiosksync.core.Strings
@@ -50,7 +49,7 @@ fun ReceiverUpdateOverlay(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.84f))
+            .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.84f))
             .padding(Space.xl),
         contentAlignment = Alignment.Center,
     ) {
