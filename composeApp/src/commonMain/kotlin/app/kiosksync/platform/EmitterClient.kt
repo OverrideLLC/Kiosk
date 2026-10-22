@@ -8,7 +8,7 @@ import app.kiosksync.core.PlaylistApplyResponse
 import app.kiosksync.core.ReceiverStatusResponse
 import app.kiosksync.core.SyncStateResponse
 import app.kiosksync.core.UpdateUploadResponse
-import app.kiosksync.feature.playlist.Playlist
+import app.kiosksync.feature.playlist.domain.Playlist
 
 interface EmitterClient {
     suspend fun getInfo(host: String, port: Int): Result<DeviceInfo>

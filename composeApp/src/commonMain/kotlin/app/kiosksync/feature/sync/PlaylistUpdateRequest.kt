@@ -1,7 +1,7 @@
 package app.kiosksync.feature.sync
 
 import app.kiosksync.core.KioskLockConfig
-import app.kiosksync.feature.playlist.Playlist
+import app.kiosksync.feature.playlist.domain.Playlist
 import kotlinx.serialization.Serializable
 
 /**

@@ -1,8 +1,8 @@
 package app.kiosksync.feature.sync
 
 import app.kiosksync.core.SyncStateResponse
-import app.kiosksync.feature.playlist.Playlist
-import app.kiosksync.feature.playlist.PlaylistItem
+import app.kiosksync.feature.playlist.domain.Playlist
+import app.kiosksync.feature.playlist.domain.PlaylistItem
 
 data class SyncPlan(
     val uploads: List<PlaylistItem>,

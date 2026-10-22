@@ -3,7 +3,7 @@ package app.kiosksync.platform
 import app.kiosksync.NoOpLogger
 import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.ReceiverPairedInfo
-import app.kiosksync.feature.playlist.Playlist
+import app.kiosksync.feature.playlist.domain.Playlist
 import java.io.File
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest

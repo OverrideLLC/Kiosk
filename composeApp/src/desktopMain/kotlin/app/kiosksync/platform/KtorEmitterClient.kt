@@ -22,7 +22,7 @@ import app.kiosksync.core.SyncStateResponse
 import app.kiosksync.core.UPDATE_UPLOAD_TIMEOUT_MS
 import app.kiosksync.core.UPLOAD_TIMEOUT_MS
 import app.kiosksync.core.UpdateUploadResponse
-import app.kiosksync.feature.playlist.Playlist
+import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.sync.PlaylistUpdateRequest
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body

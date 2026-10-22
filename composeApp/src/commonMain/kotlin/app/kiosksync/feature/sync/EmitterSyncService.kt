@@ -4,7 +4,7 @@ import app.kiosksync.core.AppLogger
 import app.kiosksync.core.EmitterPairedDevice
 import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.PlaylistRejectedException
-import app.kiosksync.feature.playlist.Playlist
+import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.platform.EmitterClient
 import app.kiosksync.platform.LocalStorage
 import kotlinx.coroutines.CancellationException

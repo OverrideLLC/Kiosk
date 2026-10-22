@@ -5,8 +5,8 @@ import app.kiosksync.FakeLocalStorage
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.MAX_DURATION_SEC
 import app.kiosksync.core.MIN_DURATION_SEC
-import app.kiosksync.feature.playlist.Playlist
-import app.kiosksync.feature.playlist.PlaylistItem
+import app.kiosksync.feature.playlist.domain.Playlist
+import app.kiosksync.feature.playlist.domain.PlaylistItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceTimeBy

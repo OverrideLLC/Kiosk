@@ -14,8 +14,8 @@ import app.kiosksync.core.AppTheme
 import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.feature.playback.CarouselScreen
 import app.kiosksync.feature.playback.PlaybackStateHolder
-import app.kiosksync.feature.playlist.Playlist
-import app.kiosksync.feature.playlist.PlaylistItem
+import app.kiosksync.feature.playlist.domain.Playlist
+import app.kiosksync.feature.playlist.domain.PlaylistItem
 import app.kiosksync.feature.role.RoleSelectionScreen
 import app.kiosksync.feature.role.RoleStateHolder
 import java.io.File

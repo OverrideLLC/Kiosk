@@ -1,6 +1,6 @@
 package app.kiosksync.feature.playback
 
-import app.kiosksync.feature.playlist.Playlist
+import app.kiosksync.feature.playlist.domain.Playlist
 
 /**
  * Connects the Ktor server (which receives a new playlist) with the playback

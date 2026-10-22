@@ -1,9 +1,11 @@
-package app.kiosksync.feature.pairing
+package app.kiosksync.feature.emitter
 
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.unit.Density
 import app.kiosksync.FakeLocalStorage
 import app.kiosksync.NoOpLogger
+import app.kiosksync.feature.emitter.presentation.EmitterScreen
+import app.kiosksync.feature.emitter.presentation.EmitterStateHolder
 import app.kiosksync.core.AppTheme
 import app.kiosksync.core.DeviceInfo
 import app.kiosksync.core.DiscoveredDevice
@@ -17,10 +19,10 @@ import app.kiosksync.core.SyncStateResponse
 import app.kiosksync.core.UpdateUploadResponse
 import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.feature.kiosk.KioskLockManager
-import app.kiosksync.feature.playlist.Playlist
-import app.kiosksync.feature.playlist.PlaylistEditorStateHolder
-import app.kiosksync.feature.playlist.PlaylistItem
-import app.kiosksync.feature.playlist.PlaylistLibrary
+import app.kiosksync.feature.playlist.domain.Playlist
+import app.kiosksync.feature.playlist.presentation.PlaylistEditorStateHolder
+import app.kiosksync.feature.playlist.domain.PlaylistItem
+import app.kiosksync.feature.playlist.domain.PlaylistLibrary
 import app.kiosksync.feature.projection.ProjectionController
 import app.kiosksync.platform.DeviceDiscovery
 import app.kiosksync.platform.EmitterClient
@@ -114,7 +116,6 @@ class ControllerRenderTest {
                 storage = storage,
                 logger = NoOpLogger(),
                 scope = scope,
-                pickImageFiles = { emptyList() },
                 newPlaylistId = { "new" },
             )
 

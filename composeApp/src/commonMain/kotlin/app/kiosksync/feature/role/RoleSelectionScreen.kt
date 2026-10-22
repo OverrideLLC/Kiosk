@@ -19,8 +19,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,6 +62,14 @@ fun RoleSelectionScreen(
     reduceMotion: Boolean = false
 ) {
     val uiState by stateHolder.uiState.collectAsState()
+    val currentOnRoleConfirmed by rememberUpdatedState(onRoleConfirmed)
+    LaunchedEffect(stateHolder) {
+        stateHolder.effects.collect { effect ->
+            when (effect) {
+                is RoleEffect.RoleConfirmed -> currentOnRoleConfirmed(effect.config)
+            }
+        }
+    }
     val colors = KioskColors.scheme
     val selectedRole = uiState.selectedRole
 
@@ -103,12 +113,12 @@ fun RoleSelectionScreen(
                             if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                             when (event.key) {
                                 Key.DirectionLeft -> {
-                                    stateHolder.selectRole(AppRole.EMITTER)
+                                    stateHolder.dispatch(RoleAction.SelectRole(AppRole.EMITTER))
                                     true
                                 }
 
                                 Key.DirectionRight -> {
-                                    stateHolder.selectRole(AppRole.RECEIVER)
+                                    stateHolder.dispatch(RoleAction.SelectRole(AppRole.RECEIVER))
                                     true
                                 }
 
@@ -122,7 +132,7 @@ fun RoleSelectionScreen(
                         description = Strings.ROLE_EMITTER_DESC,
                         icon = AppIcon.CAST,
                         selected = selectedRole == AppRole.EMITTER,
-                        onClick = { stateHolder.selectRole(AppRole.EMITTER) },
+                        onClick = { stateHolder.dispatch(RoleAction.SelectRole(AppRole.EMITTER)) },
                         modifier = Modifier.weight(1f).height(Sizes.roleCardHeight),
                     )
                     AppSelectableCard(
@@ -130,7 +140,7 @@ fun RoleSelectionScreen(
                         description = Strings.ROLE_RECEIVER_DESC,
                         icon = AppIcon.TV,
                         selected = selectedRole == AppRole.RECEIVER,
-                        onClick = { stateHolder.selectRole(AppRole.RECEIVER) },
+                        onClick = { stateHolder.dispatch(RoleAction.SelectRole(AppRole.RECEIVER)) },
                         modifier = Modifier.weight(1f).height(Sizes.roleCardHeight),
                     )
                 }
@@ -140,16 +150,13 @@ fun RoleSelectionScreen(
                 AppButton(
                     text = Strings.ROLE_CONFIRM_BUTTON,
                     onClick = {
-                        val config = stateHolder.confirmRole(
+                        stateHolder.dispatch(RoleAction.ConfirmRole(
                             deviceId = deviceId,
                             deviceName = deviceName,
                             port = port,
                             theme = theme,
                             reduceMotion = reduceMotion,
-                        )
-                        if (config != null) {
-                            onRoleConfirmed(config)
-                        }
+                        ))
                     },
                     enabled = selectedRole != null,
                     disabledReason = Strings.ROLE_SELECT_FIRST,

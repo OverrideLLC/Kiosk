@@ -7,9 +7,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import app.kiosksync.AppContainer
 import app.kiosksync.core.AppTheme
-import app.kiosksync.feature.pairing.EmitterScreen
-import app.kiosksync.feature.pairing.EmitterStateHolder
-import app.kiosksync.feature.playlist.PlaylistEditorStateHolder
+import app.kiosksync.feature.emitter.presentation.EmitterScreen
+import app.kiosksync.feature.emitter.presentation.EmitterStateHolder
+import app.kiosksync.feature.playlist.presentation.PlaylistEditorStateHolder
 import app.kiosksync.feature.role.AppConfig
 
 @Composable
@@ -47,7 +47,6 @@ fun EmitterHomeScreen(
             storage = container.localStorage,
             logger = container.logger,
             scope = scope,
-            pickImageFiles = container.pickImageFiles,
             newPlaylistId = container.newDeviceId
         )
     }
@@ -72,6 +71,7 @@ fun EmitterHomeScreen(
         theme = theme,
         reduceMotion = reduceMotion,
         onThemeChange = onThemeChange,
-        onReduceMotionChange = onReduceMotionChange
+        onReduceMotionChange = onReduceMotionChange,
+        pickImageFiles = container.pickImageFiles
     )
 }

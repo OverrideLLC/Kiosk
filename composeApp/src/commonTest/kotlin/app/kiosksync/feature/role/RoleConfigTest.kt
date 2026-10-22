@@ -9,6 +9,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.first
 import kotlin.test.assertTrue
 
 class RoleConfigTest {
@@ -91,5 +93,38 @@ class RoleConfigTest {
         // Confirm change role
         stateHolder.confirmChangeRole()
         assertNull(stateHolder.uiState.value.selectedRole)
+    }
+
+    @Test
+    fun roleReducerChangesSelectionAndChangeDialogState() {
+        val selected = RoleReducer.reduce(RoleUiState(), RoleAction.SelectRole(AppRole.EMITTER))
+        assertEquals(AppRole.EMITTER, selected.selectedRole)
+
+        val opened = RoleReducer.reduce(selected, RoleAction.RequestChangeRole)
+        assertTrue(opened.showChangeRoleDialog)
+
+        val dismissed = RoleReducer.reduce(opened, RoleAction.DismissChangeRoleDialog)
+        assertFalse(dismissed.showChangeRoleDialog)
+
+        assertEquals(RoleUiState(), RoleReducer.reduce(dismissed, RoleAction.ConfirmChangeRole))
+    }
+
+    @Test
+    fun confirmingRoleEmitsSingleOneShotEffect() = runBlocking {
+        val holder = RoleStateHolder(NoOpLogger(), initialRole = AppRole.RECEIVER)
+        holder.dispatch(
+            RoleAction.ConfirmRole(
+                deviceId = "device-1",
+                deviceName = "Pantalla",
+                port = 8765,
+                theme = AppTheme.DARK,
+                reduceMotion = false
+            )
+        )
+
+        assertEquals(
+            RoleEffect.RoleConfirmed(AppConfig(AppRole.RECEIVER, "device-1", "Pantalla", 8765)),
+            holder.effects.first()
+        )
     }
 }

@@ -1,8 +1,10 @@
-package app.kiosksync.feature.pairing
+package app.kiosksync.feature.emitter
 
 import app.kiosksync.FakeLocalStorage
 import app.kiosksync.FakeUpdatePackageProvider
 import app.kiosksync.NoOpLogger
+import app.kiosksync.feature.emitter.presentation.DeviceUpdateStatus
+import app.kiosksync.feature.emitter.presentation.EmitterStateHolder
 import app.kiosksync.core.APP_VERSION
 import app.kiosksync.core.DeviceInfo
 import app.kiosksync.core.DiscoveredDevice
@@ -15,7 +17,7 @@ import app.kiosksync.core.ReceiverStatusResponse
 import app.kiosksync.core.SyncStateResponse
 import app.kiosksync.core.UpdateUploadResponse
 import app.kiosksync.feature.kiosk.KioskLockManager
-import app.kiosksync.feature.playlist.Playlist
+import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.projection.ProjectionController
 import app.kiosksync.platform.DeviceDiscovery
 import app.kiosksync.platform.EmitterClient

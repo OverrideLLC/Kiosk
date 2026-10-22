@@ -49,9 +49,10 @@ composeApp/src/
 │   ├── core/            # APP_NAME, constantes, Strings.kt, modelos, DTOs
 │   ├── core/ui/         # tema M3, tipografía, iconos y componentes compartidos
 │   ├── feature/
-│   │   ├── pairing/     # domain/, presentation/, data/ cuando aplique
+│   │   ├── emitter/     # presentation/: Controlador, coordinadores y componentes
+│   │   ├── pairing/     # código y reglas de vinculación del Receptor
 │   │   ├── sync/        # domain/, presentation/, data/ cuando aplique
-│   │   ├── playlist/    # domain/, presentation/, data/ cuando aplique
+│   │   ├── playlist/    # domain/ y presentation/ para biblioteca y editor
 │   │   ├── playback/    # domain/, presentation/, data/ cuando aplique
 │   │   ├── projection/  # proyección del Controlador a sus propias pantallas
 │   │   ├── update/      # aviso de actualización en la Pantalla
@@ -239,8 +240,10 @@ acción del usuario.
 
 ## UI y estado
 
-- Las features interactivas definen `State`, `Action`, reducer puro y `Effect`;
-  `StateHolder` recibe acciones, expone `StateFlow` y procesa trabajo asíncrono.
+- El Controlador, la selección de rol y el editor de playlist usan acciones y
+  reducers para sus transiciones visibles. Los efectos de una sola vez usan un
+  canal consumible (confirmar rol o abrir el selector de imágenes); las
+  operaciones de red y almacenamiento mantienen su progreso y error en el estado.
   No hay ViewModels de AndroidX ni framework MVI.
 - Navegación con `sealed interface Screen` y un `when` en `App.kt`.
 - El sistema de diseño compartido está en `core/ui/`: tema claro/oscuro, tipografía

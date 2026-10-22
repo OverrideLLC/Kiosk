@@ -2,8 +2,8 @@ package app.kiosksync.feature.playback
 
 import androidx.compose.ui.graphics.ImageBitmap
 import app.kiosksync.core.AppLogger
-import app.kiosksync.feature.playlist.Playlist
-import app.kiosksync.feature.playlist.PlaylistItem
+import app.kiosksync.feature.playlist.domain.Playlist
+import app.kiosksync.feature.playlist.domain.PlaylistItem
 import app.kiosksync.platform.LocalStorage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher

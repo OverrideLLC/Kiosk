@@ -1,18 +1,25 @@
-package app.kiosksync.feature.playlist
+package app.kiosksync.feature.playlist.presentation
 
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.DEFAULT_DURATION_SEC
 import app.kiosksync.core.MAX_DURATION_SEC
 import app.kiosksync.core.MIN_DURATION_SEC
 import app.kiosksync.core.Strings
+import app.kiosksync.feature.playlist.domain.Playlist
+import app.kiosksync.feature.playlist.domain.PlaylistItem
+import app.kiosksync.feature.playlist.domain.PlaylistLibrary
 import app.kiosksync.platform.LocalStorage
 import app.kiosksync.platform.MediaImportError
 import app.kiosksync.platform.MediaImportResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -36,15 +43,88 @@ data class PlaylistEditorUiState(
     val showDeleteDialog: Boolean = false
 )
 
+sealed interface PlaylistEditorAction {
+    data object OpenCreateDialog : PlaylistEditorAction
+    data object OpenRenameDialog : PlaylistEditorAction
+    data class UpdateNameDraft(val value: String) : PlaylistEditorAction
+    data object DismissNameDialog : PlaylistEditorAction
+    data object RequestDeletePlaylist : PlaylistEditorAction
+    data object DismissDeleteDialog : PlaylistEditorAction
+    data object DismissMessage : PlaylistEditorAction
+    data object AddImages : PlaylistEditorAction
+    data class ImagesSelected(val paths: List<String>) : PlaylistEditorAction
+    data class ImagePickerFailed(val error: Throwable) : PlaylistEditorAction
+    data class SelectPlaylist(val playlistId: String) : PlaylistEditorAction
+    data object ConfirmNameDialog : PlaylistEditorAction
+    data object ConfirmDeletePlaylist : PlaylistEditorAction
+    data class UpdateDefaultDuration(val value: String) : PlaylistEditorAction
+    data class UpdateItemDuration(val mediaId: String, val value: String) : PlaylistEditorAction
+    data class MoveItemUp(val index: Int) : PlaylistEditorAction
+    data class MoveItemDown(val index: Int) : PlaylistEditorAction
+    data class RemoveItem(val index: Int) : PlaylistEditorAction
+}
+
+sealed interface PlaylistEditorEffect {
+    data object SelectImageFiles : PlaylistEditorEffect
+}
+
+object PlaylistEditorReducer {
+    fun reduce(state: PlaylistEditorUiState, action: PlaylistEditorAction): PlaylistEditorUiState = when (action) {
+        PlaylistEditorAction.OpenCreateDialog -> state.copy(
+            nameDialogMode = PlaylistNameDialogMode.CREATE,
+            nameDraft = "",
+            nameError = null
+        )
+        PlaylistEditorAction.OpenRenameDialog -> state.copy(
+            nameDialogMode = PlaylistNameDialogMode.RENAME,
+            nameDraft = state.playlist.name,
+            nameError = null
+        )
+        is PlaylistEditorAction.UpdateNameDraft -> state.copy(nameDraft = action.value, nameError = null)
+        PlaylistEditorAction.DismissNameDialog -> state.copy(
+            nameDialogMode = null,
+            nameDraft = "",
+            nameError = null
+        )
+        PlaylistEditorAction.RequestDeletePlaylist -> if (state.playlists.size <= 1) {
+            state.copy(message = Strings.PLAYLIST_DELETE_LAST_ERROR, messageIsError = true)
+        } else {
+            state.copy(showDeleteDialog = true)
+        }
+        PlaylistEditorAction.DismissDeleteDialog -> state.copy(showDeleteDialog = false)
+        PlaylistEditorAction.DismissMessage -> state.copy(message = null, messageIsError = false)
+        PlaylistEditorAction.AddImages -> if (state.isImporting) state else state.copy(
+            isImporting = true,
+            message = null,
+            messageIsError = false
+        )
+        is PlaylistEditorAction.ImagePickerFailed -> state.copy(
+            isImporting = false,
+            message = Strings.PLAYLIST_IMPORT_ERROR,
+            messageIsError = true
+        )
+        is PlaylistEditorAction.SelectPlaylist,
+        is PlaylistEditorAction.ImagesSelected,
+        PlaylistEditorAction.ConfirmNameDialog,
+        PlaylistEditorAction.ConfirmDeletePlaylist,
+        is PlaylistEditorAction.UpdateDefaultDuration,
+        is PlaylistEditorAction.UpdateItemDuration,
+        is PlaylistEditorAction.MoveItemUp,
+        is PlaylistEditorAction.MoveItemDown,
+        is PlaylistEditorAction.RemoveItem -> state
+    }
+}
+
 class PlaylistEditorStateHolder(
     private val storage: LocalStorage,
     private val logger: AppLogger,
     private val scope: CoroutineScope,
-    private val pickImageFiles: suspend () -> List<String>,
     private val newPlaylistId: () -> String
 ) {
     private val _uiState = MutableStateFlow(PlaylistEditorUiState())
     val uiState: StateFlow<PlaylistEditorUiState> = _uiState.asStateFlow()
+    private val effectChannel = Channel<PlaylistEditorEffect>(Channel.BUFFERED)
+    val effects: Flow<PlaylistEditorEffect> = effectChannel.receiveAsFlow()
 
     init {
         val library = loadOrMigrateLibrary()
@@ -62,6 +142,41 @@ class PlaylistEditorStateHolder(
     }
 
     fun currentPlaylist(): Playlist = _uiState.value.playlist
+
+    fun dispatch(action: PlaylistEditorAction) {
+        when (action) {
+            is PlaylistEditorAction.SelectPlaylist -> selectPlaylist(action.playlistId)
+            PlaylistEditorAction.OpenCreateDialog,
+            PlaylistEditorAction.OpenRenameDialog,
+            is PlaylistEditorAction.UpdateNameDraft,
+            PlaylistEditorAction.DismissNameDialog,
+            PlaylistEditorAction.RequestDeletePlaylist,
+            PlaylistEditorAction.DismissDeleteDialog,
+            PlaylistEditorAction.DismissMessage -> _uiState.update {
+                PlaylistEditorReducer.reduce(it, action)
+            }
+            PlaylistEditorAction.AddImages -> {
+                val previous = _uiState.value
+                val next = PlaylistEditorReducer.reduce(previous, action)
+                if (next !== previous) {
+                    _uiState.value = next
+                    effectChannel.trySend(PlaylistEditorEffect.SelectImageFiles)
+                }
+            }
+            is PlaylistEditorAction.ImagesSelected -> importImages(action.paths)
+            is PlaylistEditorAction.ImagePickerFailed -> {
+                logger.error("Error opening the image picker", action.error)
+                _uiState.update { PlaylistEditorReducer.reduce(it, action) }
+            }
+            PlaylistEditorAction.ConfirmNameDialog -> confirmNameDialog()
+            PlaylistEditorAction.ConfirmDeletePlaylist -> confirmDeletePlaylist()
+            is PlaylistEditorAction.UpdateDefaultDuration -> updateDefaultDuration(action.value)
+            is PlaylistEditorAction.UpdateItemDuration -> updateItemDuration(action.mediaId, action.value)
+            is PlaylistEditorAction.MoveItemUp -> moveUp(action.index)
+            is PlaylistEditorAction.MoveItemDown -> moveDown(action.index)
+            is PlaylistEditorAction.RemoveItem -> removeItem(action.index)
+        }
+    }
 
     fun selectPlaylist(playlistId: String) {
         val state = _uiState.value
@@ -198,27 +313,15 @@ class PlaylistEditorStateHolder(
     }
 
     fun addImages() {
-        if (_uiState.value.isImporting) return
+        dispatch(PlaylistEditorAction.AddImages)
+    }
 
+    private fun importImages(paths: List<String>) {
+        if (paths.isEmpty()) {
+            _uiState.update { it.copy(isImporting = false) }
+            return
+        }
         scope.launch {
-            _uiState.value = _uiState.value.copy(
-                isImporting = true,
-                message = null,
-                messageIsError = false
-            )
-
-            val paths = try {
-                pickImageFiles()
-            } catch (error: Exception) {
-                logger.error("Error opening the image picker", error)
-                emptyList()
-            }
-
-            if (paths.isEmpty()) {
-                _uiState.value = _uiState.value.copy(isImporting = false)
-                return@launch
-            }
-
             val results = withContext(Dispatchers.Default) {
                 paths.map { path -> storage.importMedia(path) }
             }

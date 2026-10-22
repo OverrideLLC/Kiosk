@@ -5,8 +5,8 @@ import app.kiosksync.core.EmitterPairedDevice
 import app.kiosksync.core.ImageFormat
 import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.ReceiverPairedInfo
-import app.kiosksync.feature.playlist.Playlist
-import app.kiosksync.feature.playlist.PlaylistLibrary
+import app.kiosksync.feature.playlist.domain.Playlist
+import app.kiosksync.feature.playlist.domain.PlaylistLibrary
 
 data class StoredMedia(
     val mediaId: String,

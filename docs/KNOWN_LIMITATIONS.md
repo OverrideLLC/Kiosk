@@ -3,9 +3,10 @@
 Lista honesta de lo que el MVP **no** hace o hace con limitaciones. Úsala antes de
 prometer funciones o de instalar la app en un comercio real.
 
-> **Estado:** la persistencia con DataStore y Room y la migración de JSON ya están
-> aplicadas. La descomposición de MVI, adaptadores y documentación continúa en las
-> fases 11–12 de `codex/architecture-improvements`.
+> **Estado:** la persistencia con DataStore y Room, la migración JSON y la
+> separación principal de MVI/UI ya están aplicadas. La adaptación asíncrona del
+> almacenamiento, el arranque y el cierre continúa en la fase 12 de
+> `codex/architecture-improvements`.
 
 ## Plataforma y empaquetado
 
@@ -120,8 +121,8 @@ prometer funciones o de instalar la app en un comercio real.
 - La configuración pequeña usa DataStore Preferences; playlists, emparejamientos,
   metadatos de medios y bloqueo usan Room 3. Los bytes de imagen siguen en archivos.
 - `RoomLocalStorage` todavía ofrece una API síncrona de compatibilidad y bloquea
-  en IO; la fase 11 del refactor migrará los StateHolders a repositorios Flow y
-  operaciones suspend.
+  en IO; la fase 12 migrará el arranque y los flujos que aún dependen de esta
+  fachada a repositorios asíncronos.
 - Sin copia de seguridad automática. Si se borra `%APPDATA%\OverrideKiosk\`, se pierde
   la vinculación y la playlist local.
 - Los paquetes de actualización ocupan espacio en `updates\`: el Controlador guarda

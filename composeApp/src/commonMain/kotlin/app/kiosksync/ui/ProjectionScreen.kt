@@ -15,7 +15,7 @@ import app.kiosksync.core.ui.theme.KioskScreenColors
 import app.kiosksync.feature.kiosk.KioskUnlockOverlay
 import app.kiosksync.feature.playback.CarouselScreen
 import app.kiosksync.feature.playback.PlaybackStateHolder
-import app.kiosksync.feature.playlist.Playlist
+import app.kiosksync.feature.playlist.domain.Playlist
 
 /**
  * Fullscreen, borderless projection of the controller's active playlist.

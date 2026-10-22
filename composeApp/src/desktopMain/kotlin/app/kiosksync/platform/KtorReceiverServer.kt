@@ -31,7 +31,7 @@ import app.kiosksync.feature.pairing.PairResult
 import app.kiosksync.feature.pairing.PairingManager
 import app.kiosksync.feature.playback.ReceiverPlaybackSyncBridge
 import app.kiosksync.feature.playback.ReceiverPlaylistBridge
-import app.kiosksync.feature.playlist.Playlist
+import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.sync.PlaylistUpdateRequest
 import app.kiosksync.feature.kiosk.KioskLockManager
 import io.ktor.http.HttpHeaders

@@ -1,4 +1,4 @@
-package app.kiosksync.feature.playlist
+package app.kiosksync.feature.playlist.domain
 
 import app.kiosksync.core.DEFAULT_DURATION_SEC
 import app.kiosksync.core.MAX_DURATION_SEC

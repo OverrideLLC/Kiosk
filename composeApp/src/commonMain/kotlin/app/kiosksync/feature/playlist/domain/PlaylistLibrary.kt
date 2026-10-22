@@ -1,4 +1,4 @@
-package app.kiosksync.feature.playlist
+package app.kiosksync.feature.playlist.domain
 
 import kotlinx.serialization.Serializable
 
