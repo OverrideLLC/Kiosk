@@ -117,7 +117,7 @@ Reglas:
 3. **`desktopMain`** contiene lo que depende de JVM/Windows: servidor Ktor, JmDNS, acceso a archivos, ventana a pantalla completa, arranque de la aplicación.
 4. **Las dependencias apuntan hacia `commonMain`.** UI y dominio dependen de contratos por feature (repositorios y puertos de plataforma); `desktopMain` implementa acceso a archivos, DPAPI, red y creación de bases. No expongas DAOs a UI/dominio ni crees interfaces para lógica pura.
 5. **Sin "use cases" por defecto.** Si una operación es una sola línea, vive en el `StateHolder`. Crea una clase de dominio solo cuando tenga reglas propias (por ejemplo `PairingManager`, `SyncPlanner`).
-6. **Estado de UI:** las features interactivas usan MVI ligero: estado inmutable, acciones tipadas, reducer puro, `StateFlow` y efectos de una sola vez expuestos como `Flow`. `StateHolder` coordina operaciones asíncronas; no uses ViewModel de AndroidX ni un framework MVI.
+6. **Estado de UI:** usa MVI ligero (estado inmutable, acciones tipadas, reducer puro, `StateFlow` y efectos de una sola vez como `Flow`) en flujos con transiciones de UI claras, como rol, Controlador y editor de playlist. Pairing, reproducción y bloqueo kiosco pueden conservar managers/state holders especializados cuando coordinan temporizadores, recursos o eventos externos; no añadas un reducer mecánico. No uses ViewModel de AndroidX ni un framework MVI.
 7. **Resultados:** usa `Result` de Kotlin o una `sealed interface` simple para errores esperados; excepciones solo para lo inesperado.
 
 ### Estructura de carpetas
@@ -126,26 +126,32 @@ Reglas:
 composeApp/src/
 ├── commonMain/kotlin/app/kiosksync/
 │   ├── core/            # APP_NAME, constantes, Strings.kt, modelos compartidos, DTOs del protocolo
+│   ├── core/ui/         # tema, tokens y componentes realmente compartidos
+│   ├── data/local/room/ # entidades, DAO y esquema Room compartido
 │   ├── feature/
-│   │   ├── role/        # selección de rol y contratos de configuración
-│   │   ├── pairing/     # PairingManager (código, ventana de tiempo, intentos), modelos
-│   │   ├── sync/        # SyncPlanner (qué falta enviar), EmitterSyncService
-│   │   ├── playlist/    # Playlist, PlaylistItem, editor (StateHolder)
-│   │   └── playback/    # estado del carrusel (índice, temporizador)
-│   ├── data/local/room/ # esquema Room KMP: entidades, DAO y base de datos
-│   ├── core/ui/         # tema y componentes compartidos (actual design system)
+│   │   ├── role/{domain,presentation}/
+│   │   ├── pairing/{domain,presentation}/
+│   │   ├── emitter/{domain,presentation}/
+│   │   ├── playlist/{domain,presentation}/
+│   │   ├── sync/domain/
+│   │   ├── playback/{domain,presentation}/
+│   │   ├── kiosk/{domain,presentation}/
+│   │   ├── projection/presentation/
+│   │   └── update/presentation/
 │   ├── platform/        # contratos de repositorios y servicios de plataforma
 │   ├── ui/              # App.kt, navegación y pantallas por rol
 │   └── AppContainer.kt  # DI manual
 └── desktopMain/kotlin/app/kiosksync/
-    ├── data/local/      # builder SQLite Desktop y adaptadores Room por capacidad
-    ├── platform/        # JmDnsDiscovery, Ktor, DataStore, media y DPAPI
+    ├── feature/*/data/  # adaptadores Room por feature y DataStore de role
+    ├── data/local/      # composition Room y adaptadores de medios/reset compartidos
+    ├── data/local/room/ # builder SQLite Desktop
+    ├── platform/        # JmDnsDiscovery, Ktor, media, migración y DPAPI
     ├── platform/server/ # rutas HTTP agrupadas por responsabilidad
     ├── Desktop*.kt      # fábrica del contenedor y ciclo de ventanas
     └── Main.kt          # argumentos de línea de comandos y punto de entrada
 ```
 
-Dentro de cada `feature/<nombre>/` crea `domain`, `presentation` y `data` solo cuando contengan responsabilidades reales. La capa `data` implementa los contratos del dominio; las entidades Room nunca son modelos de protocolo. Mantén un solo módulo Gradle y el `AppContainer` manual.
+Dentro de cada `feature/<nombre>/` crea `domain`, `presentation` y `data` solo cuando contengan responsabilidades reales. La capa `data` implementa contratos del dominio; las entidades Room nunca son modelos de protocolo. Comparte un componente `core.ui` cuando tenga consumidores reales en más de una feature; los componentes exclusivos permanecen en su feature. Mantén un solo módulo Gradle y el `AppContainer` manual. DataStore Preferences almacena preferencias pequeñas; Room 3 datos estructurados; archivos, imágenes, logs y paquetes.
 
 ---
 
@@ -338,32 +344,14 @@ Cada fase tiene: **objetivo**, **entregable**, **criterios de aceptación** y **
 
 ### Fases de arquitectura (autorizadas en la rama `codex/architecture-improvements`)
 
-La persona autorizó ejecutar estas fases consecutivamente sin aprobaciones intermedias. Cada fase debe compilar, ejecutar el recorrido afectado y pasar `.\gradlew.bat build`; crear un commit y hacer push a `origin/codex/architecture-improvements` antes de comenzar la siguiente.
+La persona autorizó ejecutar las fases de arquitectura consecutivamente. Las fases 7–17 están completadas; se conservaron los commits por fase en `codex/architecture-improvements`. El plan unificado define los detalles de las fases 13–18. La fase 18 cierra la verificación de Linux y Windows. No declares completa la validación de Windows hasta ejecutar `.\gradlew.bat build` y los recorridos manuales en Windows 11.
 
-#### Fase 7: Reglas de arquitectura
-- Actualizar estas instrucciones y `docs/ARCHITECTURE.md` para reflejar capas ligeras, MVI, almacenamiento dividido y pruebas de persistencia.
-- Reemplazar el ADR que prohíbe base de datos por una decisión que documente DataStore, Room, archivos y DPAPI.
-
-#### Fase 8: Toolchain, Material Kolor y `core.ui`
-- Alinear el toolchain a versiones estables compatibles con Material Kolor 6, Room 3 y KSP para Desktop.
-- Reorganizar el diseño compartido en `core.ui`, integrar Material Kolor con semilla `#3D7AF5` y conservar colores semánticos.
-
-#### Fase 9: DataStore
-- Añadir preferencias asíncronas con ruta estable bajo `%APPDATA%`/`--data-dir` y migrar la configuración de `config.json`.
-- Refactorizar el arranque/selección de rol para consumir configuración sin bloquear Compose.
-
-#### Fase 10: Room, medios y migración
-- Añadir Room 3, KSP Desktop, esquema versionado, entidades y repositorios de playlists, medios, emparejamiento y bloqueo.
-- Cifrar secretos con DPAPI; migrar `paired.json`, `playlist.json`, `playlists.json` y `lock.json` idempotentemente y conservar respaldo.
-- Mantener los bytes de imágenes en archivos temporales/atómicos y actualizar la playlist en transacción.
-
-#### Fase 11: MVI y descomposición de UI
-- Aplicar contrato `State`/`Action`/reducer/`Effect` a las features interactivas y dividir los coordinadores y pantallas grandes por responsabilidad.
-- Mantener `Strings.kt` centralizado.
-
-#### Fase 12: Adaptadores y cierre
-- Separar rutas del servidor, almacenamiento de archivos y composición/arranque de Desktop.
-- Corregir el borrado destructivo del Receptor al iniciar, documentar la nueva arquitectura y verificar ambos roles, migraciones y modo offline.
+- **Fases 7–12, completadas:** arquitectura por capas ligeras, DataStore + Room 3 + archivos, `core.ui`/Material Kolor, MVI selectivo, migración y adaptación Desktop.
+- **Fases 13–14, completadas:** arranque según rol y esquema Room dentro de `data/local/room`.
+- **Fase 15, completada:** paquetes feature-first y adaptadores de persistencia junto a sus features.
+- **Fase 16, completada:** tokens UI verificados y render test de ambos temas con contraste 4.5:1.
+- **Fase 17, completada:** `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/DESIGN_SYSTEM.md`, `docs/KNOWN_LIMITATIONS.md` y ADR-004 coinciden con los paquetes y la persistencia vigentes.
+- **Fase 18:** ejecutar build, pruebas y smoke checks en Linux y Windows 11; informar claramente qué plataforma no se pudo validar.
 
 ### Fases posteriores (solo con petición expresa)
 Arranque automático con Windows, modo de bloqueo de teclas con frase de desbloqueo, cifrado/firma de peticiones, varias playlists, plantillas de fichas técnicas.

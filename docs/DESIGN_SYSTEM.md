@@ -14,8 +14,9 @@ debe duplicar tokens, colores, formas o animaciones globales.
 ### Componentes compartidos
 
 Los controles de la app (`AppButton`, `AppDialog`, `AppTextField`, estados vacíos,
-indicadores y demás) son componentes compartidos. Se reutilizan desde las
-pantallas y no dependen de APIs experimentales para conseguir consistencia.
+indicadores y demás) son componentes compartidos y se consumen desde varias
+features. Promueve un control a `core.ui` cuando haya al menos dos usos reales;
+los componentes específicos se quedan dentro de su feature.
 
 ## Tema
 
@@ -51,12 +52,19 @@ siguen definidos por la app.
 | `success` / `warning` / `infoContainer` | Estados semánticos adicionales de la app |
 
 Además hay roles que Material 3 no modela (`KioskExtraColors`): `success`,
-`warning`, `infoContainer`, `disabledContainer` y `disabledContent`.
+`onSuccess`, `successContainer`, `onSuccessContainer`, `warning`, `onWarning`,
+`warningContainer`, `onWarningContainer`, `infoContainer`, `onInfoContainer`,
+`disabledContainer` y `disabledContent`.
 
-Revisar los pares de texto normal con una meta de contraste WCAG AA de 4.5:1 y
-los componentes gráficos con una meta de 3:1. El contorno se usa para bordes e
-íconos, nunca como color de texto pequeño. Repetir la revisión si cambia la
-semilla, el estilo de paleta o la versión de Material Kolor.
+`CatalogRenderTest` renderiza ambos temas y comprueba un contraste WCAG AA mínimo
+de 4.5:1 para los pares de texto Material y semánticos de éxito, advertencia e
+información. Los componentes gráficos mantienen una meta de 3:1. El contorno se
+usa para bordes e íconos, nunca como color de texto pequeño. Repetir la revisión
+si cambia la semilla, el estilo de paleta o la versión de Material Kolor.
+
+La Pantalla de reproducción usa negro fijo vía `KioskScreenColors` por legibilidad
+a distancia; los diálogos usan los tokens del tema y el velo de actualización usa
+`MaterialTheme.colorScheme.scrim`.
 
 Reglas:
 
@@ -188,6 +196,7 @@ Abre una ventana de desarrollo (no forma parte del flujo de usuario) con:
   vacíos.
 
 El test `CatalogRenderTest` renderiza el catálogo fuera de pantalla en ambos
-temas y deja capturas en `composeApp/build/reports/ui/` para revisión visual.
+temas, verifica el contraste de los tokens y deja capturas en
+`composeApp/build/reports/ui/` para revisión visual.
 `ControllerRenderTest` y `ScreenRenderTest` hacen lo mismo con el Controlador
 (oscuro, claro, compacto y diálogos) y con la selección de rol y la reproducción.

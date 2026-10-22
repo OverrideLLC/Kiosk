@@ -3,9 +3,9 @@
 Lista honesta de lo que el MVP **no** hace o hace con limitaciones. Úsala antes de
 prometer funciones o de instalar la app en un comercio real.
 
-> **Estado:** DataStore, Room, migración JSON, repositorios asíncronos, MVI
-> ligero, rutas separadas y composición Desktop están aplicados en
-> `codex/architecture-improvements`.
+> **Estado:** las fases de arquitectura 7–17 están aplicadas en
+> `codex/architecture-improvements`; la build y los recorridos de Windows 11 aún
+> requieren validación en esa plataforma.
 
 ## Plataforma y empaquetado
 
@@ -118,9 +118,11 @@ prometer funciones o de instalar la app en un comercio real.
 
 ## Datos y operación
 
-- La configuración pequeña usa DataStore Preferences; playlists, emparejamientos,
-  metadatos de medios y bloqueo usan Room 3. Los bytes de imagen siguen en archivos.
-  La migración de JSON conserva una copia bajo `legacy/`.
+- La configuración pequeña usa `app-config.preferences_pb` mediante DataStore
+  Preferences; playlists, emparejamientos, metadatos de medios y bloqueo usan
+  `kiosk.db` mediante Room 3. Los bytes de imagen siguen en archivos. La migración
+  conserva `legacy/config.json` y copias de Room con sufijo `.room-v1`; las copias
+  de `paired.json` y `lock.json` están protegidas.
 - Sin copia de seguridad automática. Si se borra `%APPDATA%\OverrideKiosk\`, se pierde
   la vinculación y la playlist local.
 - Los paquetes de actualización ocupan espacio en `updates\`: el Controlador guarda

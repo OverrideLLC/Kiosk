@@ -1,9 +1,9 @@
 # Arquitectura
 
 > **Estado:** arquitectura aplicada en la rama `codex/architecture-improvements`.
-> Las fases 7–12 consolidan MVI ligero, `core.ui`, repositorios por capacidad,
-> DataStore para preferencias, Room para datos estructurados y archivos para
-> medios y paquetes.
+> Las fases 7–17 consolidan MVI ligero, paquetes por feature, `core.ui`,
+> Material Kolor, DataStore para preferencias, Room para datos estructurados y
+> archivos para medios y paquetes. La validación final de Windows 11 sigue pendiente.
 
 ## Vista general
 
@@ -48,14 +48,25 @@ composeApp/src/
 ├── commonMain/kotlin/app/kiosksync/
 │   ├── core/            # APP_NAME, constantes, Strings.kt, modelos, DTOs
 │   ├── core/ui/         # tema M3, tipografía, iconos y componentes compartidos
-│   ├── feature/         # features hermanas; domain/presentation/data solo donde aplique
+│   ├── feature/
+│   │   ├── role/{domain,presentation}/
+│   │   ├── pairing/{domain,presentation}/
+│   │   ├── emitter/{domain,presentation}/
+│   │   ├── playlist/{domain,presentation}/
+│   │   ├── sync/domain/
+│   │   ├── playback/{domain,presentation}/
+│   │   ├── kiosk/{domain,presentation}/
+│   │   ├── projection/presentation/
+│   │   └── update/presentation/
 │   ├── data/local/room/ # esquema Room compartido: entidades, DAO y base de datos
 │   ├── platform/        # contratos de repositorios y servicios de plataforma
 │   ├── ui/              # App.kt, navegación y pantallas por rol
 │   └── AppContainer.kt  # inyección manual
 └── desktopMain/kotlin/app/kiosksync/
-    ├── data/local/      # builder SQLite Desktop y adaptadores Room por capacidad
-    ├── platform/        # DataStore, JmDNS, Ktor, media, migración y DPAPI
+    ├── feature/*/data/  # adaptadores Room por feature y DataStore de role
+    ├── data/local/      # composición Room y adaptadores compartidos de medios/reset
+    ├── data/local/room/ # builder SQLite Desktop
+    ├── platform/        # JmDNS, Ktor, media, migración y DPAPI
     ├── platform/server/ # rutas HTTP agrupadas por responsabilidad
     ├── Desktop*.kt      # fábrica del contenedor y ciclo de ventanas
     └── Main.kt          # argumentos, logger y punto de entrada
@@ -63,10 +74,12 @@ composeApp/src/
 
 Las dependencias apuntan hacia contratos de dominio por feature. Los repositorios
 implementan esos contratos y ocultan DataStore, Room y el sistema de archivos. El
-esquema Room compartido vive en commonMain/data/local/room por compatibilidad KMP;
-sus DAOs y entidades son detalles de persistencia, y la UI, las rutas y el dominio
-solo consumen contratos de repositorio. La UI no conoce DAOs ni entidades Room. La
-app mantiene un módulo Gradle, un `AppContainer` manual y la navegación existente.
+esquema Room compartido vive en `commonMain/data/local/room` por compatibilidad KMP;
+los adaptadores de Room que pertenecen a una feature viven en
+`desktopMain/feature/<nombre>/data`, y los adaptadores compartidos de medios y
+limpieza en `desktopMain/data/local`. Sus DAOs y entidades son detalles de
+persistencia: presentación, dominio y rutas no los consumen. La app mantiene un
+módulo Gradle, un `AppContainer` manual y la navegación existente.
 
 ## Dependencias principales
 
@@ -87,8 +100,9 @@ app mantiene un módulo Gradle, un `AppContainer` manual y la navegación existe
 ## Composición de la aplicación
 
 `DesktopContainerFactory` inicializa de forma asíncrona una sola instancia de
-DataStore y Room, migra JSON heredado antes de abrir la UI y entrega contratos
-pequeños a `AppContainer`. La composición crea una sola vez:
+DataStore Preferences y Room para el `dataDir` efectivo del proceso, migra los JSON
+heredados antes de abrir la UI y entrega contratos pequeños a `AppContainer`.
+`AppContainer.shutdown()` cierra ambos recursos. La composición crea una sola vez:
 
 - repositorios de preferencias, playlists, medios y credenciales; `FileMediaStore`,
   protector de secretos y `FileAppLogger`.
@@ -220,9 +234,10 @@ DataStore, Room y una carpeta de imágenes en `%APPDATA%\OverrideKiosk\` (o
 
 | Archivo | Contenido |
 | --- | --- |
-| `preferences.preferences_pb` | Rol, `deviceId`, nombre, puerto, tema y movimiento reducido. |
+| `app-config.preferences_pb` | Rol, `deviceId`, nombre, puerto, tema y movimiento reducido. |
 | `kiosk.db` | Playlists, ítems ordenados, catálogo de medios, emparejamientos y configuración de kiosco. |
-| `legacy/` | Copia de JSON previos a la migración; no se carga después de migrar. |
+| `legacy/config.json` | Respaldo de la configuración previa que DataStore importó. |
+| `legacy/*.room-v1*` | Respaldos de pairing, playlists y bloqueo importados en Room; los respaldos de secretos están protegidos. |
 | `credentialCiphertext` en Room | Secretos cifrados con DPAPI en Windows; nunca valores en claro. |
 | `updates\` | Paquete propio del Controlador y paquetes recibidos por la Pantalla. |
 | `skipped-update.txt` | Versión opcional que la Pantalla decidió posponer. |
@@ -231,12 +246,13 @@ DataStore, Room y una carpeta de imágenes en `%APPDATA%\OverrideKiosk\` (o
 | `logs\app.log` | Log con rotación (5 archivos de 1 MB). |
 | `logs\update.log` | Detalle del ayudante de PowerShell que aplica la actualización. |
 
-DataStore escribe preferencias transaccionalmente. Room conserva sus esquemas
-versionados y migra sin borrar datos. Las imágenes se reciben a archivo temporal,
-se verifican y se renombrarán antes de confirmar la playlist; la transacción de
-Room aplica el manifiesto y la limpieza de archivos se hace después del commit.
-Los errores de almacenamiento se registran y se muestran cuando afectan a una
-acción del usuario.
+DataStore expone configuración mediante `Flow` y operaciones `suspend`; su
+implementación vive en `feature/role/data`. Room conserva esquemas versionados y
+los repositorios feature-specific implementan contratos de `domain`. Las imágenes
+se reciben a archivo temporal, se verifican y se renombran antes de confirmar la
+playlist; Room aplica el manifiesto en transacción y la limpieza de archivos ocurre
+después del commit. Los errores de almacenamiento se registran y se muestran
+cuando afectan a una acción del usuario.
 
 ## UI y estado
 
@@ -245,10 +261,16 @@ acción del usuario.
   canal consumible (confirmar rol o abrir el selector de imágenes); las
   operaciones de red y almacenamiento mantienen su progreso y error en el estado.
   No hay ViewModels de AndroidX ni framework MVI.
+- Pairing, playback y kiosk conservan managers/state holders especializados para
+  reglas con temporizadores, reproducción o eventos externos. Solo se introduce
+  un reducer cuando aclara transiciones de UI; no se fuerza el mismo patrón a toda
+  clase con `StateFlow`.
 - Navegación con `sealed interface Screen` y un `when` en `App.kt`.
 - El sistema de diseño compartido está en `core/ui/`: tema claro/oscuro, tipografía
   Sora/Inter, iconos Material Symbols y componentes propios. Ver
   [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md).
+- Los componentes compartidos se promueven a `core.ui` cuando tienen consumidores
+  reales en varias features; componentes específicos permanecen junto a su feature.
 - Todos los textos visibles están en `core/Strings.kt`.
 - El Controlador usa un layout de dos paneles en anchos ≥1100 dp y pestañas
   Pantallas/Playlist en anchos menores.
@@ -271,6 +293,8 @@ acción del usuario.
 - `commonTest`: reducers, lógica pura, mapeos de protocolo y reglas de migración.
 - `desktopTest`: DataStore/Room con datos temporales, migración JSON idempotente,
   DPAPI en Windows, operaciones atómicas de medios y recorridos UI existentes.
+- `CatalogRenderTest` renderiza ambos temas y comprueba contraste ≥4.5:1 en roles
+  Material y pares semánticos de éxito, advertencia e información.
 - Comando: `.\gradlew.bat build`.
 
 ## Decisiones de diseño
