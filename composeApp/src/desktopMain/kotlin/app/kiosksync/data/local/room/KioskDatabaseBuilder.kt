@@ -1,4 +1,4 @@
-package app.kiosksync.platform.db
+package app.kiosksync.data.local.room
 
 import androidx.room3.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver

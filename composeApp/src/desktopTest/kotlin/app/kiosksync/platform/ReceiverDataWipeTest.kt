@@ -5,7 +5,7 @@ import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.ReceiverPairedInfo
 import app.kiosksync.data.local.RoomRepositories
 import app.kiosksync.feature.playlist.domain.Playlist
-import app.kiosksync.platform.db.buildKioskDatabase
+import app.kiosksync.data.local.room.buildKioskDatabase
 import app.kiosksync.platform.secret.DevelopmentSecretProtector
 import java.io.File
 import kotlin.test.AfterTest

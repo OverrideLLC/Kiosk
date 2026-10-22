@@ -48,21 +48,13 @@ composeApp/src/
 ├── commonMain/kotlin/app/kiosksync/
 │   ├── core/            # APP_NAME, constantes, Strings.kt, modelos, DTOs
 │   ├── core/ui/         # tema M3, tipografía, iconos y componentes compartidos
-│   ├── feature/
-│   │   ├── emitter/     # presentation/: Controlador, coordinadores y componentes
-│   │   ├── pairing/     # código y reglas de vinculación del Receptor
-│   │   ├── sync/        # domain/, presentation/, data/ cuando aplique
-│   │   ├── playlist/    # domain/ y presentation/ para biblioteca y editor
-│   │   ├── playback/    # domain/, presentation/, data/ cuando aplique
-│   │   ├── projection/  # proyección del Controlador a sus propias pantallas
-│   │   ├── update/      # aviso de actualización en la Pantalla
-│   │   ├── kiosk/       # bloqueo, secuencia y recuperación
-│   │   └── role/        # selección y persistencia del rol
+│   ├── feature/         # features hermanas; domain/presentation/data solo donde aplique
+│   ├── data/local/room/ # esquema Room compartido: entidades, DAO y base de datos
 │   ├── platform/        # contratos de repositorios y servicios de plataforma
 │   ├── ui/              # App.kt, navegación y pantallas por rol
 │   └── AppContainer.kt  # inyección manual
 └── desktopMain/kotlin/app/kiosksync/
-    ├── data/local/      # adaptadores Room por capacidad y composición
+    ├── data/local/      # builder SQLite Desktop y adaptadores Room por capacidad
     ├── platform/        # DataStore, JmDNS, Ktor, media, migración y DPAPI
     ├── platform/server/ # rutas HTTP agrupadas por responsabilidad
     ├── Desktop*.kt      # fábrica del contenedor y ciclo de ventanas
@@ -70,9 +62,11 @@ composeApp/src/
 ```
 
 Las dependencias apuntan hacia contratos de dominio por feature. Los repositorios
-implementan esos contratos y ocultan DataStore, Room y el sistema de archivos. La
-UI no conoce DAOs ni entidades de persistencia. La app mantiene un módulo Gradle,
-un `AppContainer` manual y la navegación existente.
+implementan esos contratos y ocultan DataStore, Room y el sistema de archivos. El
+esquema Room compartido vive en commonMain/data/local/room por compatibilidad KMP;
+sus DAOs y entidades son detalles de persistencia, y la UI, las rutas y el dominio
+solo consumen contratos de repositorio. La UI no conoce DAOs ni entidades Room. La
+app mantiene un módulo Gradle, un `AppContainer` manual y la navegación existente.
 
 ## Dependencias principales
 

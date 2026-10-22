@@ -127,17 +127,18 @@ composeApp/src/
 ├── commonMain/kotlin/app/kiosksync/
 │   ├── core/            # APP_NAME, constantes, Strings.kt, modelos compartidos, DTOs del protocolo
 │   ├── feature/
-│   │   ├── role/        # selección de rol y persistencia de configuración
+│   │   ├── role/        # selección de rol y contratos de configuración
 │   │   ├── pairing/     # PairingManager (código, ventana de tiempo, intentos), modelos
 │   │   ├── sync/        # SyncPlanner (qué falta enviar), EmitterSyncService
 │   │   ├── playlist/    # Playlist, PlaylistItem, editor (StateHolder)
 │   │   └── playback/    # estado del carrusel (índice, temporizador)
+│   ├── data/local/room/ # esquema Room KMP: entidades, DAO y base de datos
 │   ├── core/ui/         # tema y componentes compartidos (actual design system)
 │   ├── platform/        # contratos de repositorios y servicios de plataforma
 │   ├── ui/              # App.kt, navegación y pantallas por rol
 │   └── AppContainer.kt  # DI manual
 └── desktopMain/kotlin/app/kiosksync/
-    ├── data/local/      # adaptadores Room por capacidad y composición
+    ├── data/local/      # builder SQLite Desktop y adaptadores Room por capacidad
     ├── platform/        # JmDnsDiscovery, Ktor, DataStore, media y DPAPI
     ├── platform/server/ # rutas HTTP agrupadas por responsabilidad
     ├── Desktop*.kt      # fábrica del contenedor y ciclo de ventanas

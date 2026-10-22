@@ -3,9 +3,9 @@ package app.kiosksync.platform
 import app.kiosksync.NoOpLogger
 import app.kiosksync.core.ReceiverPairedInfo
 import app.kiosksync.data.local.RoomRepositories
-import app.kiosksync.platform.db.KioskDao
-import app.kiosksync.platform.db.PairedDeviceEntity
-import app.kiosksync.platform.db.buildKioskDatabase
+import app.kiosksync.data.local.room.KioskDao
+import app.kiosksync.data.local.room.PairedDeviceEntity
+import app.kiosksync.data.local.room.buildKioskDatabase
 import app.kiosksync.platform.secret.DevelopmentSecretProtector
 import app.kiosksync.platform.secret.SecretProtector
 import java.io.File
@@ -144,7 +144,7 @@ class LegacyJsonMigratorTest {
 
     private fun openDatabase() = buildKioskDatabase(dir)
 
-    private fun migrator(database: app.kiosksync.platform.db.KioskDatabase) = LegacyJsonMigrator(
+    private fun migrator(database: app.kiosksync.data.local.room.KioskDatabase) = LegacyJsonMigrator(
         dataDir = dir,
         database = database,
         mediaStore = FileMediaStore(dir, NoOpLogger()),

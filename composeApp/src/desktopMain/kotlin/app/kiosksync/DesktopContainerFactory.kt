@@ -21,8 +21,8 @@ import app.kiosksync.platform.LocalUpdatePackageProvider
 import app.kiosksync.platform.Sha256
 import app.kiosksync.platform.createKioskKeyboardGuard
 import app.kiosksync.platform.createKioskMouseGuard
-import app.kiosksync.platform.db.KioskDatabase
-import app.kiosksync.platform.db.buildKioskDatabase
+import app.kiosksync.data.local.room.KioskDatabase
+import app.kiosksync.data.local.room.buildKioskDatabase
 import app.kiosksync.platform.detectLocalIpv4Address
 import app.kiosksync.platform.secret.SecretProtectorFactory
 import java.io.File

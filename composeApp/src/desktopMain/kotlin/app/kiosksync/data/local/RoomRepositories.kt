@@ -8,7 +8,7 @@ import app.kiosksync.feature.playlist.domain.PlaylistRepository
 import app.kiosksync.platform.FileMediaStore
 import app.kiosksync.platform.MediaRepository
 import app.kiosksync.platform.ReceiverDataResetter
-import app.kiosksync.platform.db.KioskDatabase
+import app.kiosksync.data.local.room.KioskDatabase
 import app.kiosksync.platform.secret.SecretProtector
 import java.io.File
 

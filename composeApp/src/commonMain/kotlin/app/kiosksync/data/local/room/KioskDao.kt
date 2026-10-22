@@ -1,4 +1,4 @@
-package app.kiosksync.platform.db
+package app.kiosksync.data.local.room
 
 import androidx.room3.Dao
 import androidx.room3.Insert

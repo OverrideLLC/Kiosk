@@ -1,4 +1,4 @@
-package app.kiosksync.platform.db
+package app.kiosksync.data.local.room
 
 import androidx.room3.ConstructedBy
 import androidx.room3.Database
