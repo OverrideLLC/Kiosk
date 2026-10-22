@@ -74,6 +74,7 @@ class AppContainer(
             runCatching { discovery.stopDiscovery() }
             runCatching { receiverServer.stop() }
             runCatching { emitterClient.close() }
+            runCatching { localStorage.close() }
         }
     }
 }

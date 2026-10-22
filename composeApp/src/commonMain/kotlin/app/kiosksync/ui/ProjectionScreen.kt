@@ -20,7 +20,7 @@ import app.kiosksync.feature.playlist.Playlist
 /**
  * Fullscreen, borderless projection of the controller's active playlist.
  * The playback holder works in memory: it never reads the receiver's
- * playlist.json, so projection and receiving cannot interfere.
+ * persisted receiver playlist, so projection and receiving cannot interfere.
  */
 @Composable
 fun ProjectionScreen(

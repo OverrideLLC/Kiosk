@@ -3,10 +3,9 @@
 Lista honesta de lo que el MVP **no** hace o hace con limitaciones. Úsala antes de
 prometer funciones o de instalar la app en un comercio real.
 
-> **Estado:** esta lista describe el código previo a completar las fases 7–12 de
-> `codex/architecture-improvements`. Los puntos sobre borrado al iniciar y JSON
-> documentan el comportamiento actual durante la migración; se actualizarán al
-> terminar la fase 12.
+> **Estado:** la persistencia con DataStore y Room y la migración de JSON ya están
+> aplicadas. La descomposición de MVI, adaptadores y documentación continúa en las
+> fases 11–12 de `codex/architecture-improvements`.
 
 ## Plataforma y empaquetado
 
@@ -48,20 +47,16 @@ prometer funciones o de instalar la app en un comercio real.
 
 ## Pantalla y reproducción
 
-- **La Pantalla se limpia al arrancar.** Por diseño, cada inicio borra contenido,
-  bloqueo y vinculación para no reproducir material viejo. La única excepción es el
-  primer arranque después de una actualización. Consecuencia: tras un corte de luz
-  o un reinicio, la pantalla queda en negro esperando que el Controlador la vuelva
-  a vincular y enviar. La reproducción sin red funciona **mientras el proceso
-  sigue vivo**, no después de reiniciar.
+- La Pantalla conserva su vinculación, playlist, medios y bloqueo al reiniciar.
+  Sigue reproduciendo la copia local aunque no haya red.
 - Solo hay **una playlist activa** por Controlador. No hay varias playlists por
   pantalla ni programación por horarios.
 - No hay video, audio, PDF ni animaciones. Solo JPG, PNG y WEBP de hasta 25 MB.
 - La transición es un fundido de 500 ms. No hay efectos configurionales.
 - Las imágenes dañadas o ausentes se omiten con un log; si todas fallan, la
   Pantalla muestra el estado vacío.
-- El carrusel no recuerda en qué imagen iba tras reiniciar; empieza de nuevo (y,
-  de hecho, arranca en blanco por la limpieza anterior).
+- El carrusel no recuerda en qué imagen iba tras reiniciar; comienza desde la
+  primera imagen de la playlist activa.
 - **La sincronización de reproducción es de mejor esfuerzo.** El Controlador envía
   un retardo común de 2 segundos y cada Pantalla reinicia su carrusel al vencerlo.
   No se sincronizan los relojes ni se corrige la latencia de la red o el tiempo de
@@ -122,9 +117,11 @@ prometer funciones o de instalar la app en un comercio real.
 
 ## Datos y operación
 
-- Las playlists, listas de pantallas vinculadas y la configuración del kiosco aún
-  usan archivos JSON hasta completar la fase 10 de migración a Room. Las imágenes
-  siguen en archivos por diseño.
+- La configuración pequeña usa DataStore Preferences; playlists, emparejamientos,
+  metadatos de medios y bloqueo usan Room 3. Los bytes de imagen siguen en archivos.
+- `RoomLocalStorage` todavía ofrece una API síncrona de compatibilidad y bloquea
+  en IO; la fase 11 del refactor migrará los StateHolders a repositorios Flow y
+  operaciones suspend.
 - Sin copia de seguridad automática. Si se borra `%APPDATA%\OverrideKiosk\`, se pierde
   la vinculación y la playlist local.
 - Los paquetes de actualización ocupan espacio en `updates\`: el Controlador guarda

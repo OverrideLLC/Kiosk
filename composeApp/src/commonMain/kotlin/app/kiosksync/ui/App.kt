@@ -187,6 +187,9 @@ fun App(
     }
 
     fun resetRole() {
+        if (currentScreen is Screen.ReceiverHome) {
+            container.localStorage.clearReceiverData()
+        }
         roleStateHolder.confirmChangeRole()
         currentConfig = null
         coroutineScope.launch {
@@ -281,8 +284,6 @@ fun App(
                             onRoleConfirmed = { confirmedConfig ->
                                 persistConfig(confirmedConfig)
                                 if (confirmedConfig.role == AppRole.RECEIVER) {
-                                    // Entering the Screen role always starts blank.
-                                    container.localStorage.clearReceiverData()
                                     pairingManager.checkInitialPairing()
                                 }
                                 currentScreen = when (confirmedConfig.role) {

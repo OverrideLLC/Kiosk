@@ -1,10 +1,13 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import androidx.room3.gradle.RoomExtension
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room3)
 }
 
 kotlin {
@@ -18,6 +21,8 @@ kotlin {
             implementation(compose.ui)
             implementation(compose.components.resources)
             implementation(libs.material.kolor)
+            implementation(libs.room3.runtime)
+            implementation(libs.sqlite.bundled)
 
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
@@ -53,6 +58,14 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
         }
     }
+}
+
+dependencies {
+    add("kspDesktop", libs.room3.compiler)
+}
+
+extensions.configure<RoomExtension> {
+    schemaDirectory("$projectDir/schemas")
 }
 
 compose.resources {

@@ -16,9 +16,9 @@ playlist vigente, su orden y los metadatos de medios. La reproducción lee siemp
 esa copia local y no consulta la red. El arranque normal conserva la copia; solo
 una acción explícita de reinicio o cambio de rol puede borrarla.
 
-Durante la migración de esta rama, el código previo todavía usa `playlist.json` y
-limpia datos al arrancar. La fase 12 debe retirar ese comportamiento y actualizar
-`KNOWN_LIMITATIONS.md`.
+La playlist y sus metadatos se guardan en Room. Al importar instalaciones
+anteriores, la app conserva una copia de los JSON en `legacy/` y después elimina
+los archivos de origen. El arranque normal no limpia los datos de la Pantalla.
 
 El envío es incremental: el Controlador compara hashes con `GET /sync/state` y
 solo sube lo que falta o cambió.
@@ -31,6 +31,5 @@ solo sube lo que falta o cambió.
 - Hay que reservar espacio en disco para las imágenes (hasta 25 MB por imagen).
 - La copia local puede quedar desactualizada si el Controlador no vuelve a enviar;
   el estado se muestra en el Controlador.
-- La Pantalla se limpia al arrancar por decisión de producto (no reproducir
-  contenido viejo); la caché protege la sesión en curso, no el reinicio. Ver
-  [KNOWN_LIMITATIONS.md](../KNOWN_LIMITATIONS.md).
+- La Pantalla reproduce la copia local después de un reinicio y sin red. Solo una
+  acción explícita de reinicio o cambio de rol la borra.

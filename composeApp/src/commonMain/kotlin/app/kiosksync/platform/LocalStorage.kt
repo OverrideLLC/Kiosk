@@ -27,21 +27,18 @@ enum class MediaImportError {
 }
 
 interface LocalStorage {
+    fun close() = Unit
+
     fun clearPairing()
 
-    /**
-     * Wipes everything that belongs to the Screen role (the active playlist, the
-     * stored images, the blocking password and the pairing) so that a screen
-     * always starts blank instead of replaying content from a previous session.
-     * It is never called for the Controller role, which keeps all of its data.
-     */
+    /** Removes Screen-owned playlist, media, kiosk lock and pairing on an explicit role reset. */
     fun clearReceiverData()
 
-    // Receiver pairing (paired.json on receiver)
+    // Receiver pairing
     fun loadReceiverPairedInfo(): ReceiverPairedInfo?
     fun saveReceiverPairedInfo(info: ReceiverPairedInfo)
 
-    // Emitter paired devices list (paired.json on emitter)
+    // Emitter paired devices list
     fun loadEmitterPairedDevices(): List<EmitterPairedDevice>
     fun saveEmitterPairedDevices(devices: List<EmitterPairedDevice>)
     fun addEmitterPairedDevice(device: EmitterPairedDevice)
@@ -51,11 +48,11 @@ interface LocalStorage {
     fun loadPlaylist(): Playlist?
     fun savePlaylist(playlist: Playlist)
 
-    // Emitter named playlists (playlists.json)
+    // Emitter named playlists
     fun loadPlaylistLibrary(): PlaylistLibrary?
     fun savePlaylistLibrary(library: PlaylistLibrary)
 
-    // Kiosk lock (lock.json)
+    // Kiosk lock
     fun loadKioskLock(): KioskLockConfig?
     fun saveKioskLock(config: KioskLockConfig)
     fun clearKioskLock()

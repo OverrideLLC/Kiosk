@@ -32,7 +32,11 @@ import app.kiosksync.feature.playback.ReceiverStatusTracker
 import app.kiosksync.feature.projection.ProjectionController
 import app.kiosksync.platform.DataStoreAppConfigStore
 import app.kiosksync.platform.FileAppLogger
-import app.kiosksync.platform.FileLocalStorage
+import app.kiosksync.platform.FileMediaStore
+import app.kiosksync.platform.LegacyJsonMigrator
+import app.kiosksync.platform.RoomLocalStorage
+import app.kiosksync.platform.db.buildKioskDatabase
+import app.kiosksync.platform.secret.SecretProtectorFactory
 import app.kiosksync.platform.FileReceiverUpdateManager
 import app.kiosksync.platform.JmDnsDiscovery
 import app.kiosksync.platform.KtorEmitterClient
@@ -94,7 +98,6 @@ fun main(args: Array<String>) {
     logger.info("Effective data directory: ${effectiveDataDir.absolutePath}")
     logger.info("Logs directory: ${logsDir.absolutePath}")
 
-    val localStorage = FileLocalStorage(effectiveDataDir, logger)
     val configStore = DataStoreAppConfigStore(effectiveDataDir, logger)
     val existingConfig = try {
         runBlocking { configStore.initialize() }
@@ -103,22 +106,26 @@ fun main(args: Array<String>) {
         null
     }
     val activeRole = appArgs.role ?: existingConfig?.role
-
-    if (activeRole == AppRole.RECEIVER) {
-        // A screen always starts blank: wipe any content, blocking password and
-        // pairing left by a previous session so it never replays stale content.
-        // The Controller role keeps all of its data untouched.
-        //
-        // The one exception is the first start after an update: the helper wrote
-        // a marker so pairing and content survive the restart. Consume it once.
-        val updateRestartMarker = File(effectiveDataDir, "update-restart.marker")
-        if (updateRestartMarker.isFile) {
-            logger.info("Update restart detected; preserving receiver pairing and content")
-            updateRestartMarker.delete()
-        } else {
-            localStorage.clearReceiverData()
+    val secretProtector = SecretProtectorFactory.create(logger)
+    val database = buildKioskDatabase(effectiveDataDir)
+    val localStorage = RoomLocalStorage(effectiveDataDir, logger, database, secretProtector)
+    try {
+        runBlocking {
+            LegacyJsonMigrator(
+                dataDir = effectiveDataDir,
+                database = database,
+                mediaStore = FileMediaStore(effectiveDataDir, logger),
+                secretProtector = secretProtector,
+                logger = logger
+            ).migrate()
         }
+    } catch (error: Exception) {
+        logger.error("Legacy JSON migration did not complete; originals were kept", error)
     }
+
+    // An update restart preserves all local data. Normal startup must also keep
+    // the receiver's offline playlist and media available.
+    File(effectiveDataDir, "update-restart.marker").takeIf(File::isFile)?.delete()
 
     val isFullscreenReceiver = !appArgs.windowed && activeRole == AppRole.RECEIVER
     val deviceName = try {

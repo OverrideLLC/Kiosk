@@ -14,17 +14,24 @@ import kotlin.test.assertNull
 class ReceiverDataWipeTest {
 
     private lateinit var dir: File
-    private lateinit var storage: FileLocalStorage
+    private lateinit var storage: RoomLocalStorage
 
     @BeforeTest
     fun setUp() {
         dir = File(System.getProperty("java.io.tmpdir"), "kiosksync-wipe-${System.nanoTime()}")
         dir.mkdirs()
-        storage = FileLocalStorage(dir, NoOpLogger())
+        val database = app.kiosksync.platform.db.buildKioskDatabase(dir)
+        storage = RoomLocalStorage(
+            dir,
+            NoOpLogger(),
+            database,
+            app.kiosksync.platform.secret.DevelopmentSecretProtector
+        )
     }
 
     @AfterTest
     fun tearDown() {
+        storage.close()
         dir.deleteRecursively()
     }
 

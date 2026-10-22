@@ -3,8 +3,8 @@ package app.kiosksync.feature.playlist
 import kotlinx.serialization.Serializable
 
 /**
- * Named playlists owned by the controller. Receivers still store only the
- * playlist that is currently playing (playlist.json).
+ * Named playlists owned by the controller. Receivers store only the playlist
+ * currently in playback.
  */
 @Serializable
 data class PlaylistLibrary(

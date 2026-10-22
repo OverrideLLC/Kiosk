@@ -4,11 +4,6 @@ Este documento describe el modelo de seguridad real del MVP: qué protege, qué 
 protege y qué riesgos se aceptan a conciencia. No es una guía de despliegue
 hostil; es una herramienta para decidir dónde usarlo.
 
-> **Migración arquitectónica:** la persistencia objetivo guarda datos estructurados
-> en Room y protege tokens/hashes en Windows con DPAPI. Hasta que termine la fase
-> 10 de `codex/architecture-improvements`, siguen vigentes las rutas JSON descritas
-> en este documento.
-
 ## Modelo de confianza
 
 - La red local se considera **parcialmente confiable**. Cualquier equipo conectado
@@ -38,7 +33,7 @@ hostil; es una herramienta para decidir dónde usarlo.
 | Bloqueo de teclado y mouse/touchpad con hooks de bajo nivel mientras el kiosco está bloqueado | `WindowsKioskKeyboardGuard`, `WindowsKioskMouseGuard` |
 | Bloqueo de nuevas vinculaciones al alcanzar 5 fallos | `PairingManager` |
 | Log local con rotación; no registra tokens ni códigos | `FileAppLogger` |
-| Tokens y hashes cifrados en reposo con DPAPI en Windows (objetivo de esta rama) | Adaptador de secretos + Room |
+| Tokens y hashes protegidos en reposo con DPAPI en Windows | Adaptador de secretos + Room |
 | Ninguna llamada a internet ni telemetría | Todo el código |
 
 ## Riesgos aceptados (MVP)
@@ -80,10 +75,11 @@ Controlador (o en un sobre físico), sin valor universal.
 ### 4. Hash de contraseña rápido y sin sal
 
 Las contraseñas de bloqueo y la recuperación se guardan como SHA-256 hex, sin sal
-ni derivación lenta. Si alguien copia `lock.json`, puede probar contraseñas a gran
-velocidad. **Mitigación actual:** la contraseña es un PIN corto de bloqueo local,
-no una credencial de red. **Mejora futura:** PBKDF2/scrypt/Argon2 con sal aleatoria
-y un identificador de algoritmo.
+ni derivación lenta. Room protege esos hashes con DPAPI en Windows, pero si un
+proceso con los permisos del usuario puede descifrar la base también puede probar
+contraseñas a gran velocidad. **Mitigación actual:** la contraseña es un PIN corto
+de bloqueo local, no una credencial de red. **Mejora futura:** PBKDF2/scrypt/Argon2
+con sal aleatoria y un identificador de algoritmo.
 
 ### 5. mDNS es informativo
 
@@ -113,15 +109,16 @@ solo sirve contra ese servicio falso.
 
 ### 7. Datos en disco
 
-La configuración pequeña ya se guarda en `app-config.preferences_pb`, mediante
-DataStore, bajo `%APPDATA%\OverrideKiosk\` y con los permisos del usuario de
-Windows. El `config.json` anterior se conserva en `legacy/config.json` después de
-la migración. `paired.json` y `lock.json` siguen en archivos JSON hasta la fase de
-migración a Room; todavía no se cifran con DPAPI. Cuando Room y DPAPI estén
-integrados, DPAPI protegerá tokens y hashes frente a su copia a otro perfil de
-Windows, pero cualquier proceso del mismo usuario podrá solicitar su descifrado.
-No sustituye la seguridad de la cuenta ni protege contra malware con sus
-permisos.
+La configuración pequeña se guarda en `app-config.preferences_pb`, mediante
+DataStore. Playlists, emparejamientos, metadatos y configuración de kiosco viven en
+`kiosk.db`; tokens y hashes sensibles se protegen con DPAPI antes de guardarse.
+Los JSON heredados se copian en `legacy/` antes de importarlos; respaldos de
+`paired.json` y `lock.json` llevan el sufijo `.dpapi` y contienen el texto protegido.
+DPAPI protege esos datos frente a su copia a otro perfil de Windows, pero cualquier
+proceso del mismo usuario puede solicitar su descifrado. No sustituye la seguridad
+de la cuenta ni protege contra malware con sus permisos. Fuera de Windows, la
+ejecución de desarrollo usa un adaptador de codificación que no cifra secretos y
+no debe usarse para despliegues.
 
 ### 8. Sin TLS y sin certificados
 

@@ -2,9 +2,8 @@
 
 ## Estado
 
-Aceptada para la migración de arquitectura en `codex/architecture-improvements`.
-La implementación se aplica por fases; los archivos JSON anteriores se mantienen
-como fuentes de migración y respaldo hasta validar cada importación.
+Aceptada e implementada para la persistencia local en
+`codex/architecture-improvements`.
 
 ## Contexto
 
@@ -30,9 +29,9 @@ El Receptor debe conservar una copia local reproducible entre reinicios y sin re
   adaptador local de desarrollo fuera de Windows no se incluye en paquetes de
   producción.
 - La migración de `config.json`, `paired.json`, `playlist.json`,
-  `playlists.json` y `lock.json` es repetible. Se validan datos, se guardan copias
-  en `legacy/` y solo se marca la migración completa cuando todo el conjunto queda
-  importado. Un fallo conserva tanto las fuentes como los datos ya válidos.
+  `playlists.json` y `lock.json` es repetible. Se guardan copias en `legacy/` y la
+  migración de Room solo se marca completa después de importar y retirar las
+  fuentes. Un fallo conserva las fuentes y los datos ya importados para reintentar.
 - Los DTO y payloads JSON del protocolo LAN no cambian. La persistencia los mapea
   a modelos de dominio y entidades Room.
 - El arranque normal nunca limpia la playlist ni los medios del Receptor. El
