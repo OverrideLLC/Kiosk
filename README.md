@@ -28,6 +28,20 @@ Las próximas veces basta con abrir la app: la pantalla se anuncia sola y el
 Controlador la vuelve a encontrar aunque cambie de IP. Si la red no permite mDNS,
 usa **Agregar por IP** (`192.168.1.40:8765`).
 
+## Actualizaciones
+
+El Controlador empaquetado puede enviar su propia versión a las Pantallas
+vinculadas, por la LAN y sin internet. La Pantalla muestra el aviso; al aceptar se
+reinicia con la versión nueva y conserva su vinculación y su playlist.
+
+- Misma versión `major` y Pantalla más vieja: actualización opcional.
+- Versión `major` distinta: actualización obligatoria.
+- Una ejecución con `.\gradlew.bat run` no puede enviar ni recibir actualizaciones:
+  hacen falta las versiones empaquetadas.
+
+Los detalles, límites y el procedimiento para publicar una versión están en
+[Actualizaciones](docs/UPDATES.md).
+
 ## Requisitos
 
 - Windows 10 u 11 (incluida la edición Home) para el uso normal.
@@ -86,12 +100,16 @@ paired.json      vinculación: token de la Pantalla o pantallas del Controlador
 playlists.json   biblioteca de playlists del Controlador
 playlist.json    playlist vigente de la Pantalla
 lock.json        contraseña (hash) y secuencia de desbloqueo
+updates\         paquetes de actualización
 media\           imágenes
 logs\app.log     registro con rotación
+logs\update.log  detalle del instalador de actualizaciones
 ```
 
 La Pantalla borra su contenido, su bloqueo y su vinculación al arrancar, para no
-reproducir material viejo. Consulta [Límites conocidos](docs/KNOWN_LIMITATIONS.md).
+reproducir material viejo. La excepción es el primer arranque después de una
+actualización, que conserva todo. Consulta
+[Límites conocidos](docs/KNOWN_LIMITATIONS.md).
 
 ## Documentación
 
@@ -102,13 +120,15 @@ reproducir material viejo. Consulta [Límites conocidos](docs/KNOWN_LIMITATIONS.
 - [Empaquetado para Windows](docs/PACKAGING.md)
 - [Sistema de diseño](docs/DESIGN_SYSTEM.md)
 - [Bloqueo y desbloqueo](docs/KIOSK_UNLOCK.md)
+- [Actualizaciones](docs/UPDATES.md)
 - [Decisiones](docs/decisions/)
 
 ## Estado
 
 MVP funcional: vinculación por código, sincronización incremental, reproducción
-local, bloqueo tipo kiosco, tema claro/oscuro y empaquetado para Windows. Consulta
-los límites conocidos antes de usarlo en producción.
+local, bloqueo tipo kiosco, tema claro/oscuro, empaquetado para Windows y
+actualizaciones automáticas por LAN. Consulta los límites conocidos antes de
+usarlo en producción.
 
 ## Licencia
 

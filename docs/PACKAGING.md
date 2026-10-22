@@ -97,9 +97,9 @@ Con el nombre actual, las tareas de empaquetado generan estos archivos:
 
 | Archivo en `dist\` | Tamaño | Para qué sirve |
 | --- | --- | --- |
-| `OverrideKiosk-1.0.0.exe` | ~72 MB | Instalador único. Instala por usuario, sin administrador, con acceso directo. |
-| `OverrideKiosk-1.0.0.msi` | ~71 MB | Instalador MSI equivalente, útil para despliegue con `msiexec`. |
-| `OverrideKiosk-1.0.0-portable.zip` | ~70 MB | Carpeta portable comprimida: descomprimir y ejecutar `OverrideKiosk.exe`. |
+| `OverrideKiosk-1.1.0.exe` | ~72 MB | Instalador único. Instala por usuario, sin administrador, con acceso directo. |
+| `OverrideKiosk-1.1.0.msi` | ~71 MB | Instalador MSI equivalente, útil para despliegue con `msiexec`. |
+| `OverrideKiosk-1.1.0-portable.zip` | ~70 MB | Carpeta portable comprimida: descomprimir y ejecutar `OverrideKiosk.exe`. |
 
 Los originales quedan en `composeApp\build\compose\binaries\main\`; la carpeta
 `dist\` es solo una copia cómoda para distribuir y está ignorada por Git. Incluye
@@ -109,6 +109,24 @@ El instalador `.exe` y el `.msi` **no están firmados**: Windows SmartScreen ped
 confirmación. La instalación es por usuario, en `%LOCALAPPDATA%\OverrideKiosk`, y
 no requiere administrador. Vuelve a probar instalación y desinstalación después
 de cambiar el nombre del paquete.
+
+## Versión y actualizaciones
+
+La versión se declara en dos lugares y **debe coincidir**:
+
+- `composeApp/src/commonMain/kotlin/app/kiosksync/core/Constants.kt`
+  (`APP_VERSION`), que usa la app y la política de actualizaciones.
+- `composeApp/build.gradle.kts` (`packageVersion`), que usa `jpackage` para el
+  nombre de los artefactos.
+
+Para publicar una versión nueva, sube ambas y vuelve a generar los artefactos. Un
+Controlador empaquetado con la versión nueva puede enviar su carpeta `app/` a las
+Pantallas vinculadas sin internet; el flujo completo, la política de versiones y
+sus límites están en [UPDATES.md](UPDATES.md).
+
+La actualización reemplaza solo `app/`: no cambia el runtime ni el `.exe`. La
+carpeta portable debe estar en una ubicación escribible por el usuario; si está en
+`C:\Program Files` o protegida por una política, la Pantalla no podrá aplicarla.
 
 ## Consumo de memoria
 
@@ -154,5 +172,10 @@ con `signtool`. No es parte del MVP.
 - En Linux, `createDistributable` genera una imagen para Linux, no para Windows.
   Los `.msi`/`.exe` solo se pueden generar en Windows con WiX.
 - `.\gradlew.bat run` sigue siendo la forma rápida de probar; el empaquetado es
-  solo para entregar.
-- Si cambias `packageVersion`, usa `mayor.menor.parche` (por ejemplo `1.0.1`).
+  solo para entregar. Las ejecuciones desde Gradle **no pueden enviar ni recibir
+  actualizaciones** porque no tienen una carpeta `app/` empaquetada.
+- Si cambias `packageVersion`, usa `mayor.menor.parche` (por ejemplo `1.1.1`) y
+  actualiza también `APP_VERSION`.
+- Para probar una actualización: instala la versión anterior en el Controlador y la
+  Pantalla, genera la versión nueva, sustituye solo la instalación del Controlador
+  y comprueba que la Pantalla recibe el aviso, se reinicia y conserva la playlist.

@@ -1,7 +1,7 @@
 package app.kiosksync.core
 
 const val APP_NAME = "Override Kiosk"
-const val APP_VERSION = "1.0.0"
+const val APP_VERSION = "1.1.0"
 
 /** Name produced by jpackage; used to relaunch after an in-place update. */
 const val APP_EXECUTABLE_NAME = "OverrideKiosk.exe"

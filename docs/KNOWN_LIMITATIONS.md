@@ -14,16 +14,41 @@ prometer funciones o de instalar la app en un comercio real.
   en esa primera compilación solo se genera la carpeta portable.
 - `jpackage` **no** produce un único `.exe` autocontenido: la versión portable es
   una carpeta con un `.exe` dentro, comprimible en `.zip`.
-- No hay actualización automática ni instalador silencioso.
+- El instalador no tiene modo silencioso.
 - No hay versión para Android, iOS, macOS ni Linux empaquetada.
+
+## Actualizaciones
+
+- Solo funcionan entre **versiones empaquetadas**. Una ejecución con
+  `.\gradlew.bat run` no tiene un `app\` que enviar ni puede aplicarlo.
+- Solo se reemplaza la carpeta `app\`: no cambian el runtime de Java ni el
+  `OverrideKiosk.exe`. No hay actualización delta; viaja el payload completo.
+- El paquete **no está firmado**. La protección es el token de vinculación, el
+  SHA-256 y la validación del ZIP, no una firma criptográfica.
+- No hay rollback ni copia de seguridad automática de la versión anterior.
+- El reemplazo usa PowerShell con `-ExecutionPolicy Bypass` y `robocopy`. Una
+  política de grupo o un antivirus puede bloquearlo; el detalle queda en
+  `logs\update.log`.
+- La carpeta de instalación debe ser escribible por el usuario. La instalación por
+  usuario y la portable normal cumplen; una portable dentro de `C:\Program Files`
+  puede fallar.
+- Si los `major` son distintos, la actualización es obligatoria y no se puede
+  posponer. Si solo cambia `minor`/`patch`, la Pantalla puede elegir **Ahora no** y
+  no se le vuelve a insistir con esa versión (salvo que se pulse **Actualizar** a
+  mano).
+- La Pantalla debe estar encendida y en línea para recibir el paquete. No hay
+  actualización por USB ni al arrancar.
+- El reinicio posterior a una actualización conserva vinculación, playlist, medios
+  y bloqueo; un arranque normal sigue borrando esos datos por diseño.
 
 ## Pantalla y reproducción
 
 - **La Pantalla se limpia al arrancar.** Por diseño, cada inicio borra contenido,
-  bloqueo y vinculación para no reproducir material viejo. Consecuencia: tras un
-  corte de luz o un reinicio, la pantalla queda en negro esperando que el
-  Controlador la vuelva a vincular y enviar. La reproducción sin red funciona
-  **mientras el proceso sigue vivo**, no después de reiniciar.
+  bloqueo y vinculación para no reproducir material viejo. La única excepción es el
+  primer arranque después de una actualización. Consecuencia: tras un corte de luz
+  o un reinicio, la pantalla queda en negro esperando que el Controlador la vuelva
+  a vincular y enviar. La reproducción sin red funciona **mientras el proceso
+  sigue vivo**, no después de reiniciar.
 - Solo hay **una playlist activa** por Controlador. No hay varias playlists por
   pantalla ni programación por horarios.
 - No hay video, audio, PDF ni animaciones. Solo JPG, PNG y WEBP de hasta 25 MB.
@@ -94,6 +119,10 @@ prometer funciones o de instalar la app en un comercio real.
 - Sin base de datos: archivos JSON y una carpeta de imágenes.
 - Sin copia de seguridad automática. Si se borra `%APPDATA%\OverrideKiosk\`, se pierde
   la vinculación y la playlist local.
+- Los paquetes de actualización ocupan espacio en `updates\`: el Controlador guarda
+  su payload comprimido y la Pantalla el paquete recibido hasta aplicarlo. Se
+  limpian al reemplazarse por otro o al aplicarse, pero un paquete pendiente puede
+  ocupar cientos de MB.
 - Los datos de la versión anterior viven en `%APPDATA%\KioskSync\` y **no se migran**
   automáticamente. Tras actualizar, hay que volver a elegir rol, vincular y enviar
   la playlist. Si se necesita conservar algo, cópialo a mano antes de actualizar.
@@ -114,5 +143,6 @@ prometer funciones o de instalar la app en un comercio real.
 - Programación por horarios.
 - Arranque automático con Windows (se puede agregar con el Programador de tareas).
 - Firma/cifrado de peticiones (diseñado, no implementado).
-- Actualización automática.
+- Firma de paquetes de actualización y de binarios.
+- Rollback automático a la versión anterior.
 - Cuentas de usuario.

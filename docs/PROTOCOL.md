@@ -74,6 +74,7 @@ aparecen en los errores de vinculación.
 | `GET /sync/state` | Sí | Imágenes y versión que la Pantalla ya tiene. |
 | `PUT /media/{mediaId}` | Sí | Sube una imagen. |
 | `PUT /playlist` | Sí | Aplica una playlist completa. |
+| `PUT /update/{version}` | Sí | Sube un paquete de actualización de la app. |
 | `PUT /lock` | Sí | Configura el bloqueo tipo kiosco. |
 
 ### GET /info
@@ -85,12 +86,15 @@ aparecen en los errores de vinculación.
   "deviceName": "Pantalla sala",
   "role": "receiver",
   "paired": false,
-  "appVersion": "1.0.0"
+  "appVersion": "1.1.0",
+  "skippedUpdateVersion": null
 }
 ```
 
 Es la única ruta que un Controlador puede consultar sin token. Sirve para el plan B
-de IP manual y para comprobar que el destino no es otro Controlador.
+de IP manual, para comprobar que el destino no es otro Controlador y para conocer
+su versión. `skippedUpdateVersion` solo aparece si el usuario pospuso una
+actualización opcional.
 
 ### POST /pair
 
@@ -137,12 +141,15 @@ atajo local `Ctrl+Shift+P` en la Pantalla, con confirmación.
 {
   "playlistVersion": 3,
   "currentMediaId": "m2",
-  "currentFileName": "promo-2x1.png"
+  "currentFileName": "promo-2x1.png",
+  "appVersion": "1.1.0",
+  "skippedUpdateVersion": null
 }
 ```
 
 El Controlador lo consulta cada 5 segundos. Tres fallos seguidos marcan la pantalla
-como desconectada; la Pantalla sigue reproduciendo igual.
+como desconectada; la Pantalla sigue reproduciendo igual. `appVersion` es la señal
+que dispara las actualizaciones automáticas (ver `PUT /update/{version}`).
 
 ### POST /playback/sync
 
@@ -259,6 +266,40 @@ cambia la contraseña o la secuencia sin reenviar la playlist. `enabled` debe se
 La contraseña y la recuperación se envían como SHA-256 hex (nunca en claro), con
 su longitud para dibujar los puntos.
 
+### PUT /update/{version}
+
+Sube el paquete de actualización completo. Solo lo inicia el Controlador; la
+Pantalla valida el hash, el ZIP y el manifiesto antes de aceptar.
+
+- `version`: versión semántica del paquete (`1.1.0`); debe coincidir con el
+  manifiesto y con la ruta.
+- Cuerpo: ZIP binario (`application/octet-stream`) de hasta **512 MB**. Contiene
+  `update.json` y una carpeta `app/`.
+- Header obligatorio `X-Content-Sha256` con el SHA-256 en hex del cuerpo.
+- Timeout del cliente: **300 segundos**.
+
+```http
+200 OK
+{"accepted":true,"version":"1.1.0","forced":false}
+```
+
+`forced=false` significa actualización opcional (la Pantalla puede posponerla);
+`forced=true` se usa cuando los `major` son distintos y no se puede posponer.
+
+| Código | Error | Causa |
+| --- | --- | --- |
+| `400` | `invalid_version` | La versión no tiene formato `mayor.menor.parche`. |
+| `400` | `missing_hash` | Falta el header o no tiene 64 caracteres. |
+| `400` | `invalid_body` | Cuerpo vacío o ilegible. |
+| `400` | `hash_mismatch` | El SHA-256 calculado no coincide. |
+| `400` | `update_rejected` | Versión no más nueva, manifiesto inválido, ZIP inseguro o payload incompleto. |
+| `413` | `update_too_large` | Supera 512 MB. |
+
+La Pantalla extrae el paquete en `<datos>\updates\staged-<versión>` y deja el
+contenido pendiente hasta que el usuario acepta. Al aceptar, un ayudante de
+PowerShell reemplaza `app/` y reinicia la app. El detalle del flujo y sus límites
+está en [UPDATES.md](UPDATES.md).
+
 ## Secuencia de sincronización
 
 ```
@@ -285,8 +326,11 @@ siguiente aplicación correcta.
 
 - La versión del protocolo es implícita: los campos nuevos deben ser opcionales en
   la deserialización para no romper clientes viejos.
-- `appVersion` en `/info` permite diagnosticar diferencias, pero el MVP no rechaza
-  versiones distintas.
+- `appVersion` en `/info` y `/status` se usa para aplicar la política de
+  actualizaciones: mismo `major` = compatible; distinto `major` = actualización
+  forzada.
+- El paquete de actualización usa el formato `1` (`update.json` con `version` y
+  `format`) y viaja por `PUT /update/{version}`.
 - Solo hay un Controlador vinculado por Pantalla; no se soportan escrituras
   concurrentes de varios Controladores.
 - La playlist local del Controlador es la única fuente de verdad.

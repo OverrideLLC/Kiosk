@@ -49,10 +49,12 @@ composeApp/src/
 │   │   ├── playlist/    # Playlist, PlaylistItem, editor y biblioteca
 │   │   ├── playback/    # PlaybackStateHolder, CarouselScreen, idle
 │   │   ├── projection/  # proyección del Controlador a sus propias pantallas
+│   │   ├── update/      # aviso de actualización en la Pantalla
 │   │   ├── kiosk/       # bloqueo, secuencia y recuperación
 │   │   └── role/        # selección y persistencia del rol
 │   ├── platform/        # interfaces: DeviceDiscovery, ReceiverServer,
-│   │                    # EmitterClient, LocalStorage
+│   │                    # EmitterClient, LocalStorage, ReceiverUpdateManager,
+│   │                    # UpdatePackageProvider
 │   ├── ui/              # App.kt, navegación y pantallas por rol
 │   └── AppContainer.kt  # inyección manual
 └── desktopMain/kotlin/app/kiosksync/
@@ -88,6 +90,8 @@ dominio:
 - `KtorEmitterClient` (Controlador) o `KtorReceiverServer` (Pantalla).
 - `PairingManager`, `KioskLockManager`, `ReceiverStatusTracker`,
   `ReceiverPlaylistBridge`, `ReceiverPlaybackSyncBridge`, `ProjectionController`.
+- `LocalUpdatePackageProvider` (Controlador) y `FileReceiverUpdateManager`
+  (Pantalla) para las actualizaciones; ver [UPDATES.md](UPDATES.md).
 - `LocalNetwork.detectLocalIpv4Address()` para mostrar la IP de la Pantalla en la
   pantalla de vinculación.
 
@@ -176,6 +180,28 @@ después de la secuencia se pide. Hay 5 intentos y 30 segundos de bloqueo. La
 recuperación usa una frase universal compilada en la app; ver
 [KIOSK_UNLOCK.md](KIOSK_UNLOCK.md) y los riesgos en [SECURITY.md](SECURITY.md).
 
+### 7. Actualización de la aplicación
+
+El Controlador empaquetado puede enviar su propio payload a las Pantallas:
+
+1. `LocalUpdatePackageProvider` comprime la carpeta `app/` del Controlador una sola
+   vez y la cachea en `<datos>\updates\`.
+2. En cada consulta de estado, `AppVersionPolicy` compara `APP_VERSION` con el
+   `appVersion` que la Pantalla reporta. Mismo `major` y Pantalla más vieja =
+   actualización opcional; `major` distinto = forzada.
+3. El Controlador sube el ZIP con `PUT /update/{version}` y `X-Content-Sha256`.
+4. `FileReceiverUpdateManager` valida el hash, el manifiesto, el tamaño y las rutas
+   del ZIP, y extrae el payload en `<datos>\updates\staged-<versión>`.
+5. `ReceiverUpdateOverlay` pide confirmación (salvo que sea forzada). Al aceptar,
+   un script de PowerShell espera el cierre de la app, reemplaza `app/` con
+   `robocopy`, escribe `update-restart.marker` y vuelve a abrir el `.exe`.
+6. En el siguiente arranque, el marcador hace que la Pantalla **no** borre su
+   vinculación ni su contenido. Después se elimina.
+
+La actualización no toca el runtime de Java, el lanzador ni `%APPDATA%` salvo la
+carpeta `updates\`. Los límites y el procedimiento de publicación están en
+[UPDATES.md](UPDATES.md).
+
 ## Persistencia
 
 Sin base de datos. Archivos JSON y una carpeta de imágenes en
@@ -188,8 +214,12 @@ Sin base de datos. Archivos JSON y una carpeta de imágenes en
 | `playlist.json` | Playlist vigente de la Pantalla. |
 | `playlists.json` | Biblioteca de playlists del Controlador. |
 | `lock.json` | Contraseña (hash), secuencia y recuperación. |
+| `updates\` | Paquete propio del Controlador y paquetes recibidos por la Pantalla. |
+| `skipped-update.txt` | Versión opcional que la Pantalla decidió posponer. |
+| `update-restart.marker` | Marca temporal para conservar los datos tras actualizar. |
 | `media\` | Imágenes nombradas por `mediaId` + extensión. |
 | `logs\app.log` | Log con rotación (5 archivos de 1 MB). |
+| `logs\update.log` | Detalle del ayudante de PowerShell que aplica la actualización. |
 
 Las escrituras usan archivo temporal + rename cuando el contenido debe ser
 atómico. Los errores de disco se registran y se muestran en la UI cuando afectan
@@ -221,9 +251,10 @@ a una acción del usuario.
 ## Pruebas
 
 - `commonTest`: lógica pura (`PairingManager`, `SyncPlanner`, serialización,
-  playlist, carrusel, bloqueo).
+  playlist, carrusel, bloqueo, `AppVersionPolicy`).
 - `desktopTest`: render offscreen de las pantallas a PNG
-  (`build/reports/ui/`) para revisar tipografía, espaciado y estados vacíos.
+  (`build/reports/ui/`) para revisar tipografía, espaciado y estados vacíos, y
+  pruebas del empaquetado, staging y aplicación de actualizaciones.
 - Comando: `.\gradlew.bat build`.
 
 ## Decisiones de diseño

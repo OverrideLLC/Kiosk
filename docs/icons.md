@@ -47,10 +47,18 @@ con `OverrideLogo` (`designsystem/OverrideBrand.kt`), que aplica el tinte del te
 El pie de las pantallas de ventana usa `OverrideFooter`; las pantallas de
 reproducción a pantalla completa no lo muestran.
 
-> El SVG actual es una **aproximación vectorial provisional** (marca de tres
-> lóbulos) hasta contar con el archivo oficial de Override. Para reemplazarlo,
-> sustituye el contenido del SVG manteniendo el nombre y el `viewBox`; no hace
-> falta tocar el código.
+El SVG actual es el **logo oficial de Override** (marca de tres lóbulos), con
+`viewBox` cuadrado `-14.75 -33.75 300 300`, relleno blanco y sin metadatos de
+editor. `OverrideLogo` siempre lo dibuja en un cuadrado, así que **no cambies el
+`viewBox` por uno rectangular**: el trazo se deformaría. Si reemplazas el archivo,
+mantén el nombre y deja el dibujo centrado en un `viewBox` cuadrado.
+
+El ícono de la aplicación y del instalador está en
+`composeApp/src/desktopMain/resources/icon.ico` (16, 24, 32, 48, 64, 128 y 256 px).
+Se genera con la misma marca blanca sobre un cuadrado redondeado del azul de marca
+`#3D7AF5`; `OverrideKiosk.exe` y los accesos directos lo toman de ahí. Si cambias
+el logo, vuelve a generar el `.ico` con las mismas resoluciones y conserva el
+nombre del archivo.
 
 ## Reglas
 

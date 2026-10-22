@@ -1,16 +1,19 @@
 # Override Kiosk — Nota de continuidad
 
-Fecha: 2026-10-21  
+Fecha: 2026-10-22  
 Rama: `master`  
 Último commit de código: consulta `git log -1 --oneline`.
 Remoto: `https://github.com/Drinity/OverrideKiosk.git`
 
 ## Estado actual
 
-El repositorio está limpio y sincronizado con `origin/master`. En el momento de
-escribir esta nota no hay cambios de código pendientes de subir: el historial ya
-incluye las fases de playlists con nombre, bloqueo de la Pantalla, pantalla
-completa, rediseño visual, pruebas de integración y empaquetado.
+El repositorio está limpio y sincronizado con `origin/master`. La versión de
+trabajo es **1.1.0** e incluye: playlists con nombre, bloqueo de la Pantalla,
+pantalla completa, rediseño visual, pruebas de integración, empaquetado y
+**actualizaciones automáticas por LAN** desde el Controlador hacia las Pantallas.
+
+Los documentos de actualizaciones, empaquetado, protocolo y límites ya describen
+la función; el logo oficial está normalizado y el `icon.ico` se regeneró.
 
 Esta nota existe para dejar claro qué falta comprobar antes de considerar el
 trabajo cerrado y para poder continuar desde otra computadora.
@@ -38,14 +41,29 @@ trabajo cerrado y para poder continuar desde otra computadora.
    - Verificar que un segundo envío sin cambios no vuelve a subir imágenes.
    - Cortar la red a mitad de una sincronización y comprobar que la Pantalla
      conserva la playlist anterior y sigue reproduciendo sin red.
-4. **Empaquetado**
+4. **Actualización automática**
+   - Instalar o descomprimir la versión anterior (1.0.0) en la Pantalla y la 1.1.0
+     en el Controlador.
+   - Vincular ambas y comprobar que el Controlador detecta la versión vieja,
+     envía el paquete y la Pantalla muestra el aviso.
+   - Aceptar la actualización y confirmar que la Pantalla se reinicia, conserva la
+     vinculación y la playlist y reporta `appVersion` 1.1.0.
+   - Probar **Ahora no** con una actualización opcional y el botón **Actualizar**
+     de la tarjeta.
+   - Si se puede, probar una diferencia de `major` para verificar la actualización
+     obligatoria.
+   - Revisar `logs\update.log` si el reemplazo falla.
+5. **Empaquetado**
    - [x] Build final y carpeta portable generados.
    - [x] Instaladores `.exe` y `.msi` generados; el plugin descarga WiX solo.
    - [ ] Probar la carpeta portable en una PC limpia sin JDK.
    - [x] RAM medida en Windows 11: Controlador ~241 MB, Pantalla ~231 MB
      (working set, sin imágenes cargadas).
-5. **Publicación**
+   - [ ] Regenerar los artefactos con la versión 1.1.0 y probar una actualización
+     desde 1.0.0.
+6. **Publicación**
    - Todavía no hay una versión publicada en GitHub Releases.
+   - Falta elegir la licencia definitiva (MIT o Apache-2.0) y añadir `LICENSE`.
    - El `README.md` explica que, mientras tanto, se debe usar una carpeta
      portable o un instalador generado localmente.
 
@@ -74,6 +92,9 @@ Para probar los dos roles en la misma PC:
 Si el descubrimiento automático no encuentra la Pantalla local, usar
 **Agregar por IP** con `127.0.0.1:8765`.
 
+> Las ejecuciones con `gradlew run` no pueden enviar ni recibir actualizaciones.
+> Para probar esa función hacen falta las versiones empaquetadas.
+
 ## Documentación útil
 
 - `README.md`: qué es, requisitos, compilación y primeros pasos.
@@ -82,14 +103,17 @@ Si el descubrimiento automático no encuentra la Pantalla local, usar
 - `docs/SECURITY.md`: modelo de seguridad y límites aceptados.
 - `docs/KNOWN_LIMITATIONS.md`: limitaciones conocidas.
 - `docs/KIOSK_UNLOCK.md`: funcionamiento del desbloqueo.
-- `docs/PACKAGING.md`: carpeta portable e instalador.
+- `docs/UPDATES.md`: actualizaciones por LAN y cómo publicar una versión.
+- `docs/PACKAGING.md`: carpeta portable, instalador y versionado.
 - `docs/DESIGN_SYSTEM.md`: componentes y tokens visuales.
+- `docs/icons.md`: íconos de Material y logo oficial.
 - `docs/decisions/`: decisiones de arquitectura.
 
 ## Notas importantes
 
 - Los datos reales viven en `%APPDATA%\OverrideKiosk\`: `config.json`,
-  `paired.json`, `playlist.json`, `playlists.json`, `media\` y `logs\`.
+  `paired.json`, `playlist.json`, `playlists.json`, `lock.json`, `media\`,
+  `updates\` y `logs\`.
 - Los directorios de prueba (`C:\tmp\rx`, `C:\tmp\tx` y los temporales usados
   durante el desarrollo) no se suben al repositorio.
 - El token de vinculación y la frase de desbloqueo no deben subirse a Git.

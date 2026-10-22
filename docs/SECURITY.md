@@ -23,6 +23,8 @@ hostil; es una herramienta para decidir dónde usarlo.
 | Headers `X-Emitter-Id` + `X-Auth-Token` en todas las rutas sensibles | `KtorReceiverServer` |
 | Comparación del token en tiempo constante | `PairingManager.isAuthorized` |
 | Verificación SHA-256 antes de guardar una imagen | `PUT /media/{id}` |
+| Actualizaciones autenticadas con el mismo token y SHA-256 del paquete | `PUT /update/{version}` |
+| Validación del ZIP de actualización (rutas, tamaño, manifiesto y payload) | `FileReceiverUpdateManager` |
 | Validación de formato y tamaño (JPG/PNG/WEBP, 25 MB) | Servidor y cliente |
 | La playlist solo se aplica si todas sus imágenes existen y coinciden | `PUT /playlist` |
 | Un segundo Controlador no puede vincular una Pantalla ya vinculada | `PairRun.AlreadyPaired` |
@@ -117,10 +119,26 @@ hombre en el medio en la LAN puede leer o modificar el tráfico. La verificació
 SHA-256 de las imágenes detecta modificaciones en el cuerpo, pero no en las
 respuestas JSON ni en el token.
 
+### 9. Actualizaciones sin firma
+
+El paquete de actualización es un ZIP generado por el Controlador y **no está
+firmado**. La Pantalla comprueba el token del Controlador y el SHA-256 que llega en
+la misma petición, pero un atacante que pueda interceptar y reescribir el tráfico
+—o que haya obtenido el token— puede enviar un paquete y su hash, y la Pantalla lo
+aceptará. El paquete se aplica con un script de PowerShell que se ejecuta con
+`-ExecutionPolicy Bypass` y reemplaza `app/` con `robocopy`.
+
+**Mitigación actual:** red local de confianza, token, validación estructural del
+ZIP, límites de tamaño y confirmación del usuario (salvo actualizaciones
+obligatorias). **Mejora futura:** firmar el paquete con una clave pública embebida
+en la app y verificar la firma antes de extraer, además de firmar los binarios con
+un certificado de código.
+
 ## Qué **no** hace la app
 
 - No cifra el tráfico.
 - No autentica el anuncio mDNS.
+- No firma los paquetes de actualización ni los binarios.
 - No usa contraseñas de usuario ni cuentas.
 - No registra telemetría ni envía datos fuera de la LAN.
 - No impide capturas de pantalla ni grabación del contenido.
@@ -136,6 +154,9 @@ respuestas JSON ni en el token.
 6. Revisa `logs\app.log` si una pantalla se comporta raro; no contiene tokens.
 7. Si necesitas confidencialidad real, espera la capa de firma/cifrado opcional o
    usa una VPN/TLS de red.
+8. Actualiza solo desde el Controlador del comercio y no vincules pantallas a
+   Controladores desconocidos: un Controlador vinculado puede enviar código por la
+   ruta de actualización.
 
 ## Reportar un problema
 
