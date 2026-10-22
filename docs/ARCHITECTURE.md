@@ -1,5 +1,10 @@
 # Arquitectura
 
+> **Estado:** este documento describe la arquitectura objetivo de la rama
+> `codex/architecture-improvements`. Las fases 7–12 migran el código por partes;
+> hasta que terminen, algunas rutas y adaptadores todavía corresponden al diseño
+> anterior basado en archivos JSON.
+
 ## Vista general
 
 Override Kiosk es **un solo ejecutable** con dos roles que se eligen la primera vez:
@@ -20,7 +25,7 @@ mDNS.
 │  JmDNS browser   │ ──── HTTP + token (LAN) ───────────► │  JmDNS publish   │
 └──────────────────┘                                      └──────────────────┘
                                                                    │
-                                                          playlist.json + media/
+                                                          kiosk.db + media/
                                                                    │
                                                           reproducción local
 ```
@@ -35,43 +40,45 @@ Hay **un único módulo Gradle** (`composeApp`) con dos source sets:
 
 | Source set | Contenido |
 | --- | --- |
-| `commonMain` | Modelos y DTOs, lógica pura (`PairingManager`, `SyncPlanner`, reproducción), estado de UI, pantallas Compose, sistema de diseño. |
-| `desktopMain` | Servidor y cliente Ktor, JmDNS, archivos, ventana a pantalla completa, argumentos y arranque. |
+| `commonMain` | Modelos y DTOs, lógica pura, contratos por feature, reducers/state holders, repositorios DataStore/Room, pantallas Compose y `core.ui`. |
+| `desktopMain` | Servidor y cliente Ktor, JmDNS, builders DataStore/Room, DPAPI, archivos, ventana, argumentos y arranque. |
 
 ```
 composeApp/src/
 ├── commonMain/kotlin/app/kiosksync/
 │   ├── core/            # APP_NAME, constantes, Strings.kt, modelos, DTOs
-│   ├── designsystem/    # tema M3, tipografía, iconos, componentes
+│   ├── core/ui/         # tema M3, tipografía, iconos y componentes compartidos
 │   ├── feature/
-│   │   ├── pairing/     # PairingManager + pantallas del Controlador y la Pantalla
-│   │   ├── sync/        # SyncPlanner, EmitterSyncService, petición de playlist
-│   │   ├── playlist/    # Playlist, PlaylistItem, editor y biblioteca
-│   │   ├── playback/    # PlaybackStateHolder, CarouselScreen, idle
+│   │   ├── pairing/     # domain/, presentation/, data/ cuando aplique
+│   │   ├── sync/        # domain/, presentation/, data/ cuando aplique
+│   │   ├── playlist/    # domain/, presentation/, data/ cuando aplique
+│   │   ├── playback/    # domain/, presentation/, data/ cuando aplique
 │   │   ├── projection/  # proyección del Controlador a sus propias pantallas
 │   │   ├── update/      # aviso de actualización en la Pantalla
 │   │   ├── kiosk/       # bloqueo, secuencia y recuperación
 │   │   └── role/        # selección y persistencia del rol
-│   ├── platform/        # interfaces: DeviceDiscovery, ReceiverServer,
-│   │                    # EmitterClient, LocalStorage, ReceiverUpdateManager,
-│   │                    # UpdatePackageProvider
+│   ├── platform/        # puertos de red, protección de secretos y archivos
+│   ├── data/            # database, migración y ensamblado de persistencia
 │   ├── ui/              # App.kt, navegación y pantallas por rol
 │   └── AppContainer.kt  # inyección manual
 └── desktopMain/kotlin/app/kiosksync/
-    ├── platform/        # JmDnsDiscovery, KtorReceiverServer, KtorEmitterClient,
-    │                    # FileLocalStorage, WindowsKioskLock
+    ├── platform/        # JmDNS, Ktor, builders de almacenamiento, media y DPAPI
     └── Main.kt          # argumentos, logger, composición y ventana
 ```
 
-Las dependencias apuntan hacia `commonMain`: la lógica y la UI solo conocen las
-interfaces de `platform/`. Una interfaz existe únicamente cuando hay una
-implementación específica de JVM detrás.
+Las dependencias apuntan hacia contratos de dominio por feature. Los repositorios
+implementan esos contratos y ocultan DataStore, Room y el sistema de archivos. La
+UI no conoce DAOs ni entidades de persistencia. La app mantiene un módulo Gradle,
+un `AppContainer` manual y la navegación existente.
 
 ## Dependencias principales
 
 | Aspecto | Elección |
 | --- | --- |
 | UI | Compose Multiplatform Desktop + Material 3 |
+| Preferencias | DataStore Preferences |
+| Datos estructurados | Room 3 + SQLite bundled; KSP genera el código y los esquemas |
+| Tema | Material Kolor Material 3 con semilla de marca `#3D7AF5` |
 | Red | Ktor Server/Client con motor CIO |
 | Serialización | kotlinx.serialization JSON |
 | Asincronía | Coroutines + `StateFlow` |
@@ -82,10 +89,11 @@ implementación específica de JVM detrás.
 
 ## Composición de la aplicación
 
-`AppContainer` construye una sola vez las implementaciones y los objetos de
-dominio:
+`AppContainer` construye una sola instancia de DataStore y Room y las entrega a
+los repositorios; también construye una sola vez:
 
-- `FileLocalStorage`, `FileAppLogger`.
+- repositorios de preferencias, playlists, medios y credenciales; `FileMediaStore`,
+  protector de secretos y `FileAppLogger`.
 - `JmDnsDiscovery`.
 - `KtorEmitterClient` (Controlador) o `KtorReceiverServer` (Pantalla).
 - `PairingManager`, `KioskLockManager`, `ReceiverStatusTracker`,
@@ -110,8 +118,9 @@ encima.
    IP**, que llama a `GET /info` y comprueba `role == "receiver"`.
 3. La Pantalla sin vincular muestra un código de 6 dígitos (5 minutos, 5 intentos,
    30 segundos de bloqueo). El Controlador envía `POST /pair`.
-4. Si el código es correcto, la Pantalla genera un token de 32 bytes (hex) y lo
-   guarda en `paired.json`; el Controlador lo guarda asociado al `deviceId`.
+4. Si el código es correcto, la Pantalla genera un token de 32 bytes (hex). El
+   token y los hashes de desbloqueo se protegen con DPAPI en Windows antes de
+   persistirse en Room; el Controlador lo asocia al `deviceId`.
 5. A partir de ahí, todas las rutas salvo `/info` y `/pair` exigen
    `X-Emitter-Id` + `X-Auth-Token`.
 
@@ -132,8 +141,9 @@ mDNS la vuelve a ubicar.
 4. `PUT /playlist` con el manifiesto completo. La Pantalla comprueba que **todas**
    las imágenes existan y tengan el hash correcto; si falta alguna responde
    `409` y conserva la playlist anterior.
-5. Si todo está completo, guarda `playlist.json`, borra las imágenes huérfanas y
-   avisa al reproductor. El carrusel cambia de versión sin cortar la imagen actual.
+5. Si todo está completo, actualiza playlist e ítems en una transacción Room,
+   avisa al reproductor y limpia medios huérfanos después del commit. El carrusel
+   cambia de versión sin cortar la imagen actual.
 
 La playlist local del Controlador es la fuente de verdad. Un segundo envío sin
 cambios no sube ninguna imagen.
@@ -150,17 +160,17 @@ tiene una playlist activa, responde `409` y el Controlador la reporta como fallo
 
 ### 4. Reproducción
 
-`PlaybackStateHolder` carga `playlist.json`, resuelve cada `mediaId` a un archivo
-de `media/` y mantiene un bucle:
+`PlaybackStateHolder` observa la playlist local en Room, resuelve cada `mediaId` a
+un archivo de `media/` y mantiene un bucle:
 
 - muestra la imagen con `ContentScale.Fit` sobre negro,
 - espera la duración efectiva (por imagen o la de por defecto),
 - avanza al siguiente índice y vuelve al inicio al terminar,
 - omite con un log las imágenes dañadas o ausentes.
 
-La reproducción **no usa la red**. Si la Pantalla se queda sin conexión sigue con
-su copia local. Al arrancar, la Pantalla se limpia a propósito (ver
-[KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md)) y espera un envío nuevo.
+La reproducción **no usa la red**. Si la Pantalla se queda sin conexión o se
+reinicia, sigue con su playlist y media locales. El borrado solo ocurre por una
+acción explícita de reinicio/cambio de rol.
 
 ### 5. Estado en línea
 
@@ -204,16 +214,15 @@ carpeta `updates\`. Los límites y el procedimiento de publicación están en
 
 ## Persistencia
 
-Sin base de datos. Archivos JSON y una carpeta de imágenes en
-`%APPDATA%\OverrideKiosk\` (o `--data-dir`):
+DataStore, Room y una carpeta de imágenes en `%APPDATA%\OverrideKiosk\` (o
+`--data-dir`):
 
 | Archivo | Contenido |
 | --- | --- |
-| `config.json` | Rol, `deviceId`, nombre, puerto, tema, movimiento reducido. |
-| `paired.json` | Pantalla: `emitterId` + token. Controlador: lista de pantallas. |
-| `playlist.json` | Playlist vigente de la Pantalla. |
-| `playlists.json` | Biblioteca de playlists del Controlador. |
-| `lock.json` | Contraseña (hash), secuencia y recuperación. |
+| `preferences.preferences_pb` | Rol, `deviceId`, nombre, puerto, tema y movimiento reducido. |
+| `kiosk.db` | Playlists, ítems ordenados, catálogo de medios, emparejamientos y configuración de kiosco. |
+| `legacy/` | Copia de JSON previos a la migración; no se carga después de migrar. |
+| `credentialCiphertext` en Room | Secretos cifrados con DPAPI en Windows; nunca valores en claro. |
 | `updates\` | Paquete propio del Controlador y paquetes recibidos por la Pantalla. |
 | `skipped-update.txt` | Versión opcional que la Pantalla decidió posponer. |
 | `update-restart.marker` | Marca temporal para conservar los datos tras actualizar. |
@@ -221,16 +230,20 @@ Sin base de datos. Archivos JSON y una carpeta de imágenes en
 | `logs\app.log` | Log con rotación (5 archivos de 1 MB). |
 | `logs\update.log` | Detalle del ayudante de PowerShell que aplica la actualización. |
 
-Las escrituras usan archivo temporal + rename cuando el contenido debe ser
-atómico. Los errores de disco se registran y se muestran en la UI cuando afectan
-a una acción del usuario.
+DataStore escribe preferencias transaccionalmente. Room conserva sus esquemas
+versionados y migra sin borrar datos. Las imágenes se reciben a archivo temporal,
+se verifican y se renombrarán antes de confirmar la playlist; la transacción de
+Room aplica el manifiesto y la limpieza de archivos se hace después del commit.
+Los errores de almacenamiento se registran y se muestran cuando afectan a una
+acción del usuario.
 
 ## UI y estado
 
-- Una clase `XxxStateHolder` por pantalla, con `StateFlow<XxxState>` y funciones
-  públicas para los eventos. No hay ViewModels de AndroidX.
+- Las features interactivas definen `State`, `Action`, reducer puro y `Effect`;
+  `StateHolder` recibe acciones, expone `StateFlow` y procesa trabajo asíncrono.
+  No hay ViewModels de AndroidX ni framework MVI.
 - Navegación con `sealed interface Screen` y un `when` en `App.kt`.
-- El sistema de diseño está en `designsystem/`: tema claro/oscuro, tipografía
+- El sistema de diseño compartido está en `core/ui/`: tema claro/oscuro, tipografía
   Sora/Inter, iconos Material Symbols y componentes propios. Ver
   [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md).
 - Todos los textos visibles están en `core/Strings.kt`.
@@ -250,11 +263,9 @@ a una acción del usuario.
 
 ## Pruebas
 
-- `commonTest`: lógica pura (`PairingManager`, `SyncPlanner`, serialización,
-  playlist, carrusel, bloqueo, `AppVersionPolicy`).
-- `desktopTest`: render offscreen de las pantallas a PNG
-  (`build/reports/ui/`) para revisar tipografía, espaciado y estados vacíos, y
-  pruebas del empaquetado, staging y aplicación de actualizaciones.
+- `commonTest`: reducers, lógica pura, mapeos de protocolo y reglas de migración.
+- `desktopTest`: DataStore/Room con datos temporales, migración JSON idempotente,
+  DPAPI en Windows, operaciones atómicas de medios y recorridos UI existentes.
 - Comando: `.\gradlew.bat build`.
 
 ## Decisiones de diseño
@@ -264,4 +275,4 @@ Las notas cortas están en [decisions/](decisions/):
 - [Topología en estrella](decisions/ADR-001-star-topology.md)
 - [Vinculación por código](decisions/ADR-002-pairing-code.md)
 - [Caché local en la Pantalla](decisions/ADR-003-local-cache.md)
-- [Sin base de datos](decisions/ADR-004-no-database.md)
+- [Persistencia local por responsabilidad](decisions/ADR-004-local-persistence.md)

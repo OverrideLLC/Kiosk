@@ -1,31 +1,27 @@
 # Sistema de diseño
 
-El paquete `app.kiosksync.designsystem` (en `commonMain`) concentra **todos** los
-tokens y componentes visuales. Ninguna pantalla debe declarar colores, tamaños,
-formas ni animaciones propias.
+La arquitectura objetivo ubica el sistema visual compartido en
+`app.kiosksync.core.ui` (`commonMain`). En esta rama, la migración desde
+`app.kiosksync.designsystem` se hace en la fase 8; las pantallas nuevas deben usar
+los componentes globales y los componentes de una sola feature se quedan junto a
+esa pantalla. Ninguna pantalla debe duplicar tokens, colores, formas o
+animaciones globales.
 
-## Base técnica
+## Base técnica actual y objetivo
 
-- Compose Multiplatform **1.7.3** (solo target desktop JVM).
-- Material 3 **1.3.1** (estable), la versión que resuelve `compose.material3`.
+- La base actual del repositorio usa Compose Multiplatform **1.7.3**.
+- La fase 8 migrará a una combinación estable verificada de Compose Multiplatform
+  y Material Kolor; las versiones candidatas se registran en el plan integral.
+- Material Kolor **6.0.0** es la versión objetivo consultada para generar el
+  esquema Material 3 desde la semilla de marca.
 - Recursos de Compose (`composeResources`) para tipografías e íconos.
 
-### Sobre Material 3 Expressive
+### Componentes compartidos
 
-La versión estable 1.3.1 **no** expone las APIs Expressive:
-
-| API | Estado real |
-| --- | --- |
-| `MaterialExpressiveTheme` | Existe, pero es `internal` |
-| `ButtonGroup` | No existe |
-| `LoadingIndicator` ondulado | No existe |
-| `MotionScheme` | No existe |
-| `MaterialShapes` | No existe |
-
-Por eso el sistema de diseño **emula** el lenguaje Expressive con tokens
-propios (formas de 28 dp, botones píldora, springs cortos) y componentes
-propios (`AppButtonGroup`, `AppLoadingIndicator`, `AppEmptyState`). No se
-forzaron versiones alfa.
+Los controles de la app (`AppButton`, `AppDialog`, `AppTextField`, estados vacíos,
+indicadores y demás) continúan siendo componentes compartidos. La migración
+reubica los existentes a `core.ui`; no agrega copias ni depende de APIs
+experimentales para conseguir consistencia.
 
 ## Tema
 
@@ -37,15 +33,18 @@ KioskTheme(theme = AppTheme.DARK, reduceMotion = false) {
 
 - `AppTheme.DARK` es el valor por defecto (salas con poca luz).
 - `AppTheme.LIGHT` está completo y se puede alternar.
-- La preferencia se guarda en `config.json` (`AppConfig.theme`) y sobrevive al
-  reinicio.
+- La preferencia actualmente se guarda en `config.json` (`AppConfig.theme`). En
+  la fase 9 se migrará a DataStore Preferences y deberá sobrevivir al reinicio.
 - `reduceMotion = true` desactiva springs y fades desde un solo punto
   (`LocalReduceMotion`).
 
 ## Color
 
-Paleta tonal generada a partir del azul semilla **`#3D7AF5`** (tonos en
-CIE L\*a\*b\*, con reducción de croma para no salir del gamut sRGB).
+El tema objetivo generará la paleta tonal desde el azul semilla **`#3D7AF5`** con
+Material Kolor Material 3. La especificación inicial será la predeterminada de
+Material Kolor 6 (`SPEC_2025`). Los valores de la tabla siguiente documentan la
+apariencia actual y sirven como referencia visual; la fase 8 los actualizará si
+el resultado generado difiere, después de revisar contraste y tema claro/oscuro.
 
 ### Roles principales
 

@@ -4,6 +4,11 @@ Este documento describe el modelo de seguridad real del MVP: qué protege, qué 
 protege y qué riesgos se aceptan a conciencia. No es una guía de despliegue
 hostil; es una herramienta para decidir dónde usarlo.
 
+> **Migración arquitectónica:** la persistencia objetivo guarda datos estructurados
+> en Room y protege tokens/hashes en Windows con DPAPI. Hasta que termine la fase
+> 10 de `codex/architecture-improvements`, siguen vigentes las rutas JSON descritas
+> en este documento.
+
 ## Modelo de confianza
 
 - La red local se considera **parcialmente confiable**. Cualquier equipo conectado
@@ -33,6 +38,7 @@ hostil; es una herramienta para decidir dónde usarlo.
 | Bloqueo de teclado y mouse/touchpad con hooks de bajo nivel mientras el kiosco está bloqueado | `WindowsKioskKeyboardGuard`, `WindowsKioskMouseGuard` |
 | Bloqueo de nuevas vinculaciones al alcanzar 5 fallos | `PairingManager` |
 | Log local con rotación; no registra tokens ni códigos | `FileAppLogger` |
+| Tokens y hashes cifrados en reposo con DPAPI en Windows (objetivo de esta rama) | Adaptador de secretos + Room |
 | Ninguna llamada a internet ni telemetría | Todo el código |
 
 ## Riesgos aceptados (MVP)
@@ -107,10 +113,14 @@ solo sirve contra ese servicio falso.
 
 ### 7. Datos en disco
 
-`config.json`, `paired.json` y `lock.json` están en
-`%APPDATA%\OverrideKiosk\` con los permisos del usuario de Windows. Cualquier proceso
-de ese usuario puede leerlos. El token de la Pantalla y el hash de la contraseña
-están ahí; protégelos con los permisos de la cuenta.
+En la implementación actual, `config.json`, `paired.json` y `lock.json` están en
+`%APPDATA%\OverrideKiosk\` con los permisos del usuario de Windows. La arquitectura
+objetivo migra preferencias a DataStore y playlists, medios y emparejamientos a
+Room más archivos; Windows DPAPI cifra tokens e hashes sensibles antes de
+persistirlos. DPAPI protege frente a la copia de datos a otro perfil de Windows,
+pero cualquier proceso que se ejecute con el mismo usuario puede solicitar su
+descifrado. No sustituye la seguridad de la cuenta ni protege contra malware con
+los permisos del usuario.
 
 ### 8. Sin TLS y sin certificados
 

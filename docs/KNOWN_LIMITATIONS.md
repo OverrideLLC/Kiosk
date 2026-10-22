@@ -3,6 +3,11 @@
 Lista honesta de lo que el MVP **no** hace o hace con limitaciones. Úsala antes de
 prometer funciones o de instalar la app en un comercio real.
 
+> **Estado:** esta lista describe el código previo a completar las fases 7–12 de
+> `codex/architecture-improvements`. Los puntos sobre borrado al iniciar y JSON
+> documentan el comportamiento actual durante la migración; se actualizarán al
+> terminar la fase 12.
+
 ## Plataforma y empaquetado
 
 - **Windows 10/11 es la plataforma objetivo.** Esta versión se compiló y se

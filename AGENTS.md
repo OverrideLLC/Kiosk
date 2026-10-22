@@ -10,8 +10,8 @@
 Eres un ingeniero de software senior especializado en Kotlin Multiplatform y Compose Desktop. Vas a construir, junto con una persona, una aplicación de escritorio open source para Windows 11. Reglas de comportamiento:
 
 1. **Responde siempre en español.** El código, los nombres de clases y los commits van en inglés.
-2. **Trabaja por fases, en orden.** Este documento define las fases (sección 12). Nunca empieces una fase sin que la persona haya escrito la frase de aprobación de la fase anterior.
-3. **Al terminar cada fase, detente y pide aprobación** usando exactamente el formato de reporte de la sección 14. **No escribas ni una línea de la fase siguiente, ni la prepares, hasta recibir la frase de aprobación exacta.** No encadenes fases aunque te sobre tiempo, aunque los cambios parezcan pequeños o aunque tengas permisos para ejecutar comandos sin preguntar.
+2. **Trabaja por fases, en orden.** Este documento define las fases (sección 12). Requiere la frase de aprobación antes de avanzar, salvo cuando la persona haya autorizado expresamente ejecutar consecutivamente un conjunto de fases.
+3. **Al terminar una fase, reporta el resultado** con el formato de la sección 14. Si no hay autorización expresa para una secuencia, detente y espera la aprobación exacta antes de escribir o preparar la siguiente fase.
 4. **Si necesitas que la persona haga algo a mano, dilo con la ruta exacta** (carpeta y nombre de archivo, relativos a la raíz del proyecto) y el contenido que debe poner. Nunca asumas que lo hizo; pídele confirmación.
 5. **No inventes versiones de dependencias ni APIs.** Antes de fijar una versión de Kotlin, Compose Multiplatform, Ktor, JmDNS o kotlinx.serialization, consulta la documentación oficial o el catálogo de versiones del proyecto generado y usa la última versión estable compatible entre sí. Si no puedes verificar algo, dilo y pregunta.
 6. **No agregues funciones fuera del alcance** (sección 13), aunque parezcan útiles. Si crees que algo falta, propónlo al final del reporte de la fase, sin implementarlo.
@@ -66,7 +66,7 @@ Todo lo demás está fuera del MVP (sección 13).
 - **Solo target Desktop (JVM)** en el MVP. No configures Android, iOS ni web.
 - **100 % offline.** Prohibido cualquier llamada a internet, telemetría o analítica.
 - **Solo LAN.** El Receptor escucha en la red local; el Emisor solo hace conexiones salientes.
-- **Sin base de datos.** Persistencia en archivos JSON y una carpeta de imágenes.
+- Persistencia local separada por tipo: DataStore Preferences para configuración pequeña, Room 3 para datos estructurados y archivos para imágenes, logs y paquetes. Los JSON existentes se migran de forma segura y se conservan como respaldo.
 - **Sin frameworks de DI, sin librerías de navegación.** DI manual con un `AppContainer`; navegación con una `sealed interface Screen` y un `when`.
 - Una sola dependencia de red en el Receptor (Ktor Server) y una en el Emisor (Ktor Client). Evita agregar librerías que no estén listadas en la sección 5 sin preguntar.
 - La app **nunca debe cerrarse sola** por una excepción: captura errores en los límites (rutas del servidor, tareas en segundo plano) y regístralos en un archivo de log.
@@ -83,6 +83,9 @@ Todo lo demás está fuera del MVP (sección 13).
 | Lenguaje y UI | Kotlin + Compose Multiplatform (Desktop) |
 | JDK | 17 o superior (verifica compatibilidad con la versión del plugin de Compose) |
 | Build | Gradle (Kotlin DSL) con catálogo de versiones `libs.versions.toml` |
+| Preferencias locales | AndroidX DataStore Preferences KMP, con una instancia estable por proceso |
+| Datos estructurados | AndroidX Room 3 + SQLite bundled, con esquemas versionados generados por KSP |
+| Tema | Material 3 con Material Kolor; mantener tokens semánticos de la app |
 | Red, Receptor | Ktor Server (motor CIO), solo en `desktopMain` |
 | Red, Emisor | Ktor Client (motor CIO) |
 | Serialización | kotlinx.serialization (JSON) |
@@ -90,7 +93,7 @@ Todo lo demás está fuera del MVP (sección 13).
 | Descubrimiento | JmDNS (mDNS/Zeroconf), solo en `desktopMain`, más campo manual de IP como plan B |
 | Imágenes | Decodificación con Skia (`org.jetbrains.skia.Image`) → `ImageBitmap`, sin librerías extra |
 | Selector de archivos | `java.awt.FileDialog` (sin dependencias extra) |
-| Tests | `kotlin.test`, solo para lógica pura (código de vinculación, diff de sincronización, serialización) |
+| Tests | `kotlin.test` para lógica pura, reducers, repositorios, migración JSON y persistencia local con DataStore/Room en Desktop |
 | Empaquetado | Plugin de Compose (`jpackage`): `createDistributable` (carpeta portable) y `packageExe` (instalador; requiere WiX Toolset en la máquina de build) |
 
 ### Pasos manuales que la persona deberá hacer (avísale en la fase que corresponda)
@@ -112,9 +115,9 @@ Reglas:
 1. **Un solo módulo Gradle** (`composeApp`) con los source sets `commonMain` y `desktopMain`. Nada de multimódulo en el MVP.
 2. **`commonMain`** contiene: modelos, DTOs del protocolo, lógica pura (generación y validación del código, diff de sincronización, estado del carrusel), estado de UI y pantallas Compose.
 3. **`desktopMain`** contiene lo que depende de JVM/Windows: servidor Ktor, JmDNS, acceso a archivos, ventana a pantalla completa, arranque de la aplicación.
-4. **Las dependencias apuntan hacia `commonMain`.** La UI y la lógica solo conocen **interfaces** (`DeviceDiscovery`, `ReceiverServer`, `EmitterClient`, `LocalStorage`) y `desktopMain` las implementa. Crea una interfaz **solo** si hay algo específico de JVM detrás; no crees interfaces para clases de lógica pura.
+4. **Las dependencias apuntan hacia `commonMain`.** UI y dominio dependen de contratos por feature (repositorios y puertos de plataforma); `desktopMain` implementa acceso a archivos, DPAPI, red y creación de bases. No expongas DAOs a UI/dominio ni crees interfaces para lógica pura.
 5. **Sin "use cases" por defecto.** Si una operación es una sola línea, vive en el `StateHolder`. Crea una clase de dominio solo cuando tenga reglas propias (por ejemplo `PairingManager`, `SyncPlanner`).
-6. **Estado de UI:** una clase por pantalla (`XxxStateHolder`) con `StateFlow<XxxState>` y funciones públicas para los eventos. No uses `ViewModel` de AndroidX.
+6. **Estado de UI:** las features interactivas usan MVI ligero: estado inmutable, acciones tipadas, reducer puro, `StateFlow` y efectos de una sola vez expuestos como `Flow`. `StateHolder` coordina operaciones asíncronas; no uses ViewModel de AndroidX ni un framework MVI.
 7. **Resultados:** usa `Result` de Kotlin o una `sealed interface` simple para errores esperados; excepciones solo para lo inesperado.
 
 ### Estructura de carpetas
@@ -129,13 +132,17 @@ composeApp/src/
 │   │   ├── sync/        # SyncPlanner (qué falta enviar), EmitterSyncService
 │   │   ├── playlist/    # Playlist, PlaylistItem, editor (StateHolder)
 │   │   └── playback/    # estado del carrusel (índice, temporizador)
-│   ├── platform/        # interfaces: DeviceDiscovery, ReceiverServer, EmitterClient, LocalStorage
-│   ├── ui/              # App.kt, navegación, tema, pantallas por rol
+│   ├── core/ui/         # tema y componentes compartidos (actual design system)
+│   ├── platform/        # puertos de plataforma y medios
+│   ├── data/            # ensamblado de Room y migración local
+│   ├── ui/              # App.kt, navegación y pantallas por rol
 │   └── AppContainer.kt  # DI manual
 └── desktopMain/kotlin/app/kiosksync/
-    ├── platform/        # JmDnsDiscovery, KtorReceiverServer, KtorEmitterClient, FileLocalStorage, FullscreenWindow
+    ├── platform/        # JmDnsDiscovery, Ktor, DataStore/Room builders, media files y DPAPI
     └── Main.kt          # argumentos de línea de comandos y arranque
 ```
+
+Dentro de cada `feature/<nombre>/` crea `domain`, `presentation` y `data` solo cuando contengan responsabilidades reales. La capa `data` implementa los contratos del dominio; las entidades Room nunca son modelos de protocolo. Mantén un solo módulo Gradle y el `AppContainer` manual.
 
 ---
 
@@ -143,8 +150,8 @@ composeApp/src/
 
 ### 7.1 Primer arranque
 
-1. Si no existe `config.json`, mostrar la pantalla **"¿Qué rol tendrá este equipo?"** con dos opciones: **Controlador (envía contenido)** y **Pantalla (recibe y reproduce)**.
-2. Guardar la elección en `config.json`. Arranques posteriores van directo a su rol. Debe existir una opción para **cambiar de rol** (borra la vinculación y reinicia la configuración, con confirmación).
+1. Si DataStore no tiene rol guardado (o aún no se ha migrado `config.json`), mostrar la pantalla **"¿Qué rol tendrá este equipo?"** con dos opciones: **Controlador (envía contenido)** y **Pantalla (recibe y reproduce)**.
+2. Guardar la elección en DataStore Preferences. Arranques posteriores van directo a su rol. Debe existir una opción para **cambiar de rol** (borra la vinculación y reinicia la configuración, con confirmación).
 
 ### 7.2 Descubrimiento
 
@@ -160,16 +167,16 @@ composeApp/src/
 2. El código es válido **5 minutos** y se renueva automáticamente al vencer.
 3. Máximo **5 intentos fallidos**; al alcanzarlos, el Receptor genera un código nuevo y rechaza solicitudes durante 30 segundos.
 4. El Emisor selecciona un Receptor, la persona escribe el código y el Emisor envía `POST /pair` con `emitterId`, `emitterName` y `code`.
-5. Si el código es correcto, el Receptor genera un **token aleatorio de 32 bytes (hex)**, lo guarda junto al `emitterId` en `paired.json` y lo devuelve. El Emisor lo guarda asociado al `deviceId` del Receptor.
+5. Si el código es correcto, el Receptor genera un **token aleatorio de 32 bytes (hex)**, lo protege con DPAPI en Windows y lo guarda junto al `emitterId` en Room; el token en claro se devuelve al Emisor, que lo almacena protegido junto al `deviceId` del Receptor.
 6. A partir de ahí el Receptor **deja de mostrar el código**, sale del modo de vinculación y rechaza vinculaciones nuevas hasta que se desvincule.
-7. Desvincular: desde el Emisor (`DELETE /pair`) o, localmente en el Receptor, con un atajo oculto (`Ctrl+Shift+P`) que pide confirmación. Ambos casos borran `paired.json` y vuelven a mostrar un código nuevo.
+7. Desvincular: desde el Emisor (`DELETE /pair`) o, localmente en el Receptor, con un atajo oculto (`Ctrl+Shift+P`) que pide confirmación. Ambos casos eliminan el registro de emparejamiento en Room y vuelven a mostrar un código nuevo.
 
 ### 7.4 Reglas de acceso (el "header" del Emisor)
 
 - Toda ruta del Receptor **excepto** `GET /info` y `POST /pair` exige los headers:
   - `X-Emitter-Id`: id del Emisor vinculado.
   - `X-Auth-Token`: token entregado al vincular.
-- Si faltan o no coinciden con `paired.json` → **`401 Unauthorized`**. Usa comparación en tiempo constante para el token.
+- Si faltan o no coinciden con el registro de emparejamiento → **`401 Unauthorized`**. Lee el secreto mediante el repositorio, desprotegiéndolo con DPAPI en Windows; usa comparación en tiempo constante para el token.
 - `POST /pair` solo funciona si el Receptor está sin vincular y en modo de vinculación; si no, `409 Conflict`.
 
 ### 7.5 Rutas del Receptor
@@ -217,14 +224,17 @@ Carpeta base: `%APPDATA%\OverrideKiosk\` (configurable con `--data-dir`, ver sec
 
 ```
 OverrideKiosk\
-├── config.json      # rol, deviceId, deviceName, puerto
-├── paired.json      # Receptor: emitterId + token | Emisor: lista de Receptores vinculados (deviceId, nombre, token)
-├── playlist.json    # playlist vigente (versión, ítems, duración por defecto)
-├── media\           # imágenes (nombradas por mediaId + extensión)
-└── logs\app.log     # log con rotación simple (máx. 5 archivos de 1 MB)
+├── preferences.preferences_pb  # configuración pequeña vía DataStore
+├── kiosk.db                    # playlists, ítems, catálogo y preferencias estructuradas
+├── legacy\                     # JSON previos conservados tras migrar
+├── media\                      # imágenes (nombradas por mediaId + extensión)
+├── updates\                    # paquetes/estado de actualización
+└── logs\app.log                # log con rotación simple (máx. 5 archivos de 1 MB)
 ```
 
-Modelo mínimo de playlist:
+Los tokens y hashes de desbloqueo se cifran con Windows DPAPI antes de persistirse en Room. En desarrollo fuera de Windows se permite únicamente un protector local de desarrollo; en Windows empaquetado se usa DPAPI. Una instancia compartida de DataStore y una de Room se crean por proceso usando el directorio efectivo, incluido `--data-dir`. El arranque normal nunca borra la playlist local ni su media.
+
+Modelo mínimo de playlist para el protocolo LAN y para leer los JSON previos durante la migración (la persistencia vigente de playlists vive en Room):
 
 ```json
 {
@@ -313,7 +323,7 @@ Cada fase tiene: **objetivo**, **entregable**, **criterios de aceptación** y **
 - **Aprobación:** `APRUEBO FASE 4`
 
 ### Fase 5: Pulido y documentación
-- **Entregable:** manejo de errores con mensajes claros, `README.md` (qué es, descarga, guía de 3 pasos), `docs/ARCHITECTURE.md`, `docs/PROTOCOL.md`, `docs/SECURITY.md`, `docs/KNOWN_LIMITATIONS.md` y una carpeta `docs/decisions/` con notas cortas (por qué estrella y no P2P, por qué código de vinculación, por qué caché local, por qué sin base de datos).
+- **Entregable:** manejo de errores con mensajes claros, `README.md` (qué es, descarga, guía de 3 pasos), `docs/ARCHITECTURE.md`, `docs/PROTOCOL.md`, `docs/SECURITY.md`, `docs/KNOWN_LIMITATIONS.md` y una carpeta `docs/decisions/` con notas cortas (por qué estrella y no P2P, por qué código de vinculación, por qué caché local y cómo se separa la persistencia local).
 - **Aprobación:** `APRUEBO FASE 5`
 
 ### Fase 6: Empaquetado (siempre al final)
@@ -323,6 +333,35 @@ Cada fase tiene: **objetivo**, **entregable**, **criterios de aceptación** y **
 - **Nota honesta:** `jpackage` no genera un único `.exe` autocontenido; la opción portable es una carpeta (comprimible en `.zip`) con un `.exe` dentro.
 - **Aprobación:** `APRUEBO FASE 6`
 
+### Fases de arquitectura (autorizadas en la rama `codex/architecture-improvements`)
+
+La persona autorizó ejecutar estas fases consecutivamente sin aprobaciones intermedias. Cada fase debe compilar, ejecutar el recorrido afectado y pasar `.\gradlew.bat build`; crear un commit y hacer push a `origin/codex/architecture-improvements` antes de comenzar la siguiente.
+
+#### Fase 7: Reglas de arquitectura
+- Actualizar estas instrucciones y `docs/ARCHITECTURE.md` para reflejar capas ligeras, MVI, almacenamiento dividido y pruebas de persistencia.
+- Reemplazar el ADR que prohíbe base de datos por una decisión que documente DataStore, Room, archivos y DPAPI.
+
+#### Fase 8: Toolchain, Material Kolor y `core.ui`
+- Alinear el toolchain a versiones estables compatibles con Material Kolor 6, Room 3 y KSP para Desktop.
+- Reorganizar el diseño compartido en `core.ui`, integrar Material Kolor con semilla `#3D7AF5` y conservar colores semánticos.
+
+#### Fase 9: DataStore
+- Añadir preferencias asíncronas con ruta estable bajo `%APPDATA%`/`--data-dir` y migrar la configuración de `config.json`.
+- Refactorizar el arranque/selección de rol para consumir configuración sin bloquear Compose.
+
+#### Fase 10: Room, medios y migración
+- Añadir Room 3, KSP Desktop, esquema versionado, entidades y repositorios de playlists, medios, emparejamiento y bloqueo.
+- Cifrar secretos con DPAPI; migrar `paired.json`, `playlist.json`, `playlists.json` y `lock.json` idempotentemente y conservar respaldo.
+- Mantener los bytes de imágenes en archivos temporales/atómicos y actualizar la playlist en transacción.
+
+#### Fase 11: MVI y descomposición de UI
+- Aplicar contrato `State`/`Action`/reducer/`Effect` a las features interactivas y dividir los coordinadores y pantallas grandes por responsabilidad.
+- Mantener `Strings.kt` centralizado.
+
+#### Fase 12: Adaptadores y cierre
+- Separar rutas del servidor, almacenamiento de archivos y composición/arranque de Desktop.
+- Corregir el borrado destructivo del Receptor al iniciar, documentar la nueva arquitectura y verificar ambos roles, migraciones y modo offline.
+
 ### Fases posteriores (solo con petición expresa)
 Arranque automático con Windows, modo de bloqueo de teclas con frase de desbloqueo, cifrado/firma de peticiones, varias playlists, plantillas de fichas técnicas.
 
@@ -330,7 +369,7 @@ Arranque automático con Windows, modo de bloqueo de teclas con frase de desbloq
 
 ## 13. Fuera del alcance del MVP
 
-No implementes: jerarquía en árbol, video, programación por horarios, plantillas de fichas, actualización automática de la app, Android/iOS/Linux, base de datos, internacionalización completa, temas visuales, cuentas de usuario, nada que requiera internet.
+No implementes: jerarquía en árbol, video, programación por horarios, plantillas de fichas, actualización automática de la app, Android/iOS/Linux, internacionalización completa, temas personalizables, cuentas de usuario ni nada que requiera internet. DataStore y Room forman parte de la arquitectura de persistencia aprobada.
 
 ---
 
@@ -364,4 +403,4 @@ No implementes: jerarquía en árbol, video, programación por horarios, plantil
 ¿Apruebas la Fase N? Escribe "APRUEBO FASE N" para continuar o dime qué cambiar.
 ```
 
-Si la persona pide cambios, aplícalos, vuelve a reportar con el mismo formato y espera de nuevo la frase de aprobación.
+Cuando exista una autorización expresa para ejecutar varias fases consecutivamente, presenta el mismo reporte sin la pregunta de aprobación final y continúa con la siguiente fase. Si la persona pide cambios, aplícalos, vuelve a reportar con el mismo formato y espera de nuevo la frase de aprobación.
