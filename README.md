@@ -51,9 +51,9 @@ Los detalles, límites y el procedimiento para publicar una versión están en
 
 ## Descarga
 
-La versión **1.1.0** se publica en
-[GitHub Releases](https://github.com/Drinity/OverrideKiosk/releases) con tres
-variantes para Windows 10/11:
+La versión **1.1.0** está publicada en
+[GitHub Releases](https://github.com/Drinity/OverrideKiosk/releases/tag/v1.1.0)
+con tres variantes para Windows 10/11:
 
 - `OverrideKiosk-1.1.0.exe`: instalador único.
 - `OverrideKiosk-1.1.0.msi`: instalador MSI para despliegue.

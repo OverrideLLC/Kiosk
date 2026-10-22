@@ -66,8 +66,10 @@ trabajo cerrado y para poder continuar desde otra computadora.
      desde 1.0.0.
 6. **Publicación**
    - Licencia MIT añadida en `LICENSE` y en el `README.md`.
-   - Workflow de release listo; falta empujar el tag `v1.1.0` y comprobar que
-     GitHub Actions publica el `.exe`, el `.msi`, el `.zip` portable y
+   - [x] Release `v1.1.0` publicada por GitHub Actions el 2026-10-22:
+     https://github.com/Drinity/OverrideKiosk/releases/tag/v1.1.0
+   - [x] Artefactos publicados: `OverrideKiosk-1.1.0.exe`,
+     `OverrideKiosk-1.1.0.msi`, `OverrideKiosk-1.1.0-portable.zip` y
      `SHA256SUMS.txt`.
    - El `README.md` apunta a GitHub Releases para la descarga.
 
