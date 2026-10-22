@@ -3,8 +3,6 @@ package app.kiosksync.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme as M3MaterialTheme
-import androidx.compose.material3.Text as M3Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -19,12 +17,6 @@ import app.kiosksync.AppContainer
 import app.kiosksync.core.AppRole
 import app.kiosksync.core.AppTheme
 import app.kiosksync.core.DEFAULT_PORT
-import app.kiosksync.core.Strings
-import app.kiosksync.core.ui.components.AppButton
-import app.kiosksync.core.ui.components.AppButtonSize
-import app.kiosksync.core.ui.components.AppButtonVariant
-import app.kiosksync.core.ui.components.AppDialog
-import app.kiosksync.core.ui.components.AppIcon
 import app.kiosksync.core.ui.theme.KioskColors
 import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.feature.kiosk.KioskUnlockOverlay
@@ -175,6 +167,7 @@ fun App(
     var showUnpairConfirm by remember { mutableStateOf(false) }
     var showChangeRoleConfirm by remember { mutableStateOf(false) }
     var isResettingRole by remember { mutableStateOf(false) }
+    var roleResetFailed by remember { mutableStateOf(false) }
     var wasLocked by remember { mutableStateOf(lockState.isLocked) }
 
     fun relockReceiverIfNeeded() {
@@ -194,6 +187,7 @@ fun App(
         if (isResettingRole) return
         val changingFromReceiver = currentScreen is Screen.ReceiverHome
         isResettingRole = true
+        roleResetFailed = false
         coroutineScope.launch {
             try {
                 withContext(container.serviceDispatcher) {
@@ -223,6 +217,7 @@ fun App(
                 throw cancelled
             } catch (error: Exception) {
                 container.logger.error("Could not reset local data while changing role", error)
+                roleResetFailed = true
                 showChangeRoleConfirm = true
                 // Keep the current role and its UI active when cleanup fails.
             } finally {
@@ -361,140 +356,54 @@ fun App(
         }
 
         if (showReceiverOptions) {
-            AppDialog(
-                title = Strings.OPTIONS_TITLE,
-                icon = AppIcon.LOCK_OPEN,
-                onDismissRequest = { closeReceiverOptions() },
-                content = {
-                    M3Text(
-                        text = if (currentScreen is Screen.ReceiverHome) {
-                            Strings.RECEIVER_UNLOCKED_MESSAGE
-                        } else {
-                            Strings.OPTIONS_MESSAGE
-                        },
-                        style = M3MaterialTheme.typography.bodyLarge,
-                        color = KioskColors.scheme.onSurfaceVariant,
-                    )
+            ReceiverOptionsDialog(
+                isReceiver = currentScreen is Screen.ReceiverHome,
+                onDismiss = { closeReceiverOptions() },
+                onChangeRole = {
+                    showReceiverOptions = false
+                    showChangeRoleConfirm = true
                 },
-                actions = {
-                    AppButton(
-                        text = Strings.CHANGE_ROLE,
-                        onClick = {
-                            showReceiverOptions = false
-                            showChangeRoleConfirm = true
-                        },
-                        variant = AppButtonVariant.OUTLINED,
-                        size = AppButtonSize.SMALL,
-                        icon = AppIcon.SWAP_HORIZ,
-                    )
-                    AppButton(
-                        text = Strings.EXIT_APP,
-                        onClick = {
-                            showReceiverOptions = false
-                            onExitRequested()
-                        },
-                        variant = AppButtonVariant.TEXT,
-                        size = AppButtonSize.SMALL,
-                        icon = AppIcon.LOGOUT,
-                    )
-                    AppButton(
-                        text = Strings.RELOCK_BUTTON,
-                        onClick = { closeReceiverOptions() },
-                        size = AppButtonSize.SMALL,
-                        icon = AppIcon.LOCK,
-                    )
+                onExit = {
+                    showReceiverOptions = false
+                    onExitRequested()
                 },
+                onRelock = { closeReceiverOptions() },
             )
         }
 
         if (showUnpairConfirm) {
-            AppDialog(
-                title = Strings.UNPAIR_RECEIVER_TITLE,
-                icon = AppIcon.LINK,
-                onDismissRequest = {
+            ReceiverUnpairDialog(
+                onDismiss = {
                     showUnpairConfirm = false
                     relockReceiverIfNeeded()
                 },
-                content = {
-                    M3Text(
-                        text = Strings.UNPAIR_RECEIVER_CONFIRM,
-                        style = M3MaterialTheme.typography.bodyLarge,
-                        color = KioskColors.scheme.onSurfaceVariant,
-                    )
-                },
-                actions = {
-                    AppButton(
-                        text = Strings.CANCEL_BUTTON,
-                        onClick = {
+                onConfirm = {
+                    coroutineScope.launch {
+                        try {
+                            pairingManager.unpair()
                             showUnpairConfirm = false
                             relockReceiverIfNeeded()
-                        },
-                        variant = AppButtonVariant.TEXT,
-                        size = AppButtonSize.SMALL,
-                    )
-                    AppButton(
-                        text = Strings.UNPAIR_BUTTON,
-                        onClick = {
-                            coroutineScope.launch {
-                                try {
-                                    pairingManager.unpair()
-                                    showUnpairConfirm = false
-                                    relockReceiverIfNeeded()
-                                } catch (cancelled: CancellationException) {
-                                    throw cancelled
-                                } catch (error: Exception) {
-                                    container.logger.error("Could not unlink the Receiver", error)
-                                }
-                            }
-                        },
-                        variant = AppButtonVariant.DANGER,
-                        size = AppButtonSize.SMALL,
-                        icon = AppIcon.LINK,
-                    )
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (error: Exception) {
+                            container.logger.error("Could not unlink the Receiver", error)
+                        }
+                    }
                 },
             )
         }
 
         if (showChangeRoleConfirm) {
-            AppDialog(
-                title = Strings.CHANGE_ROLE,
-                icon = AppIcon.SWAP_HORIZ,
-                onDismissRequest = {
+            ChangeRoleDialog(
+                isResetting = isResettingRole,
+                hasError = roleResetFailed,
+                onDismiss = {
                     if (!isResettingRole) {
                         showChangeRoleConfirm = false
                         relockReceiverIfNeeded()
                     }
                 },
-                content = {
-                    M3Text(
-                        text = if (isResettingRole) Strings.ROLE_RESET_ERROR else Strings.CHANGE_ROLE_CONFIRM,
-                        style = M3MaterialTheme.typography.bodyLarge,
-                        color = KioskColors.scheme.onSurfaceVariant,
-                    )
-                },
-                actions = {
-                    AppButton(
-                        text = Strings.CANCEL_BUTTON,
-                        onClick = {
-                            if (!isResettingRole) {
-                                showChangeRoleConfirm = false
-                                relockReceiverIfNeeded()
-                            }
-                        },
-                        variant = AppButtonVariant.TEXT,
-                        size = AppButtonSize.SMALL,
-                        enabled = !isResettingRole,
-                    )
-                    AppButton(
-                        text = if (isResettingRole) Strings.ROLE_RESETTING else Strings.CHANGE_ROLE,
-                        onClick = { resetRole() },
-                        variant = AppButtonVariant.OUTLINED,
-                        size = AppButtonSize.SMALL,
-                        icon = AppIcon.SWAP_HORIZ,
-                        loading = isResettingRole,
-                        enabled = !isResettingRole,
-                    )
-                },
+                onConfirm = { resetRole() },
             )
         }
     }
