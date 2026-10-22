@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,6 +34,8 @@ import app.kiosksync.designsystem.AppIcon
 import app.kiosksync.designsystem.AppLoadingIndicator
 import app.kiosksync.designsystem.KioskDisplayType
 import app.kiosksync.designsystem.KioskScreenColors
+import app.kiosksync.designsystem.KioskShape
+import app.kiosksync.designsystem.OverrideLogo
 import app.kiosksync.designsystem.Sizes
 import app.kiosksync.designsystem.Space
 import kotlinx.coroutines.delay
@@ -47,7 +51,9 @@ fun PairingCodeScreen(
     serviceError: String?,
     onExitRequested: () -> Unit,
     onChangeRoleRequested: () -> Unit,
-    showAdminActions: Boolean = true
+    showAdminActions: Boolean = true,
+    receiverIp: String? = null,
+    receiverPort: Int? = null,
 ) {
     val state by pairingManager.uiState.collectAsState()
 
@@ -135,6 +141,50 @@ fun PairingCodeScreen(
                 }
             }
 
+            if (receiverPort != null) {
+                Spacer(Modifier.height(Space.xl))
+                Surface(
+                    color = KioskScreenColors.surfaceSubtle,
+                    shape = KioskShape.card,
+                ) {
+                    Column(
+                        modifier = Modifier.padding(
+                            horizontal = Space.xl,
+                            vertical = Space.md,
+                        ),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            text = if (receiverIp != null) {
+                                Strings.RECEIVER_IP_HINT
+                            } else {
+                                Strings.RECEIVER_IP_UNAVAILABLE
+                            },
+                            style = KioskDisplayType.screenCaption(),
+                            color = KioskScreenColors.muted,
+                            textAlign = TextAlign.Center,
+                        )
+                        Spacer(Modifier.height(Space.xs))
+                        if (receiverIp != null) {
+                            SelectionContainer {
+                                Text(
+                                    text = Strings.receiverAddress(receiverIp, receiverPort),
+                                    style = KioskDisplayType.screenBody(),
+                                    color = KioskScreenColors.content,
+                                    textAlign = TextAlign.Center,
+                                )
+                            }
+                        } else {
+                            Text(
+                                text = "${Strings.RECEIVER_PORT_LABEL}: $receiverPort",
+                                style = KioskDisplayType.screenBody(),
+                                color = KioskScreenColors.content,
+                            )
+                        }
+                    }
+                }
+            }
+
             if (serviceError != null) {
                 Spacer(Modifier.height(Space.lg))
                 Row(
@@ -197,9 +247,7 @@ private fun BrandMark(modifier: Modifier = Modifier) {
                 .background(KioskScreenColors.surfaceSubtle),
             contentAlignment = Alignment.Center,
         ) {
-            AppIcon(
-                icon = AppIcon.CAST,
-                contentDescription = null,
+            OverrideLogo(
                 size = Sizes.iconCompact,
                 tint = KioskScreenColors.muted,
             )

@@ -262,6 +262,14 @@ private class FakeEmitterClient : EmitterClient {
         token: String,
     ): Result<ReceiverStatusResponse> = Result.success(ReceiverStatusResponse(playlistVersion = 3))
 
+    override suspend fun synchronizePlayback(
+        host: String,
+        port: Int,
+        emitterId: String,
+        token: String,
+        delayMs: Long,
+    ): Result<Boolean> = Result.success(true)
+
     override suspend fun getSyncState(
         host: String,
         port: Int,

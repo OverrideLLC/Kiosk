@@ -85,7 +85,9 @@ fun ReceiverHomeScreen(
             serviceError = runtime.error,
             onExitRequested = onExitRequested,
             onChangeRoleRequested = onChangeRoleRequested,
-            showAdminActions = !lockState.isLocked
+            showAdminActions = !lockState.isLocked,
+            receiverIp = container.localIpAddress,
+            receiverPort = runtime.port.takeIf { runtime.isReady }
         )
 
         // A paired screen stays inert until it receives its blocking password

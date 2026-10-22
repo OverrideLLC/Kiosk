@@ -2,7 +2,7 @@
 
 ## Vista general
 
-KioskSync es **un solo ejecutable** con dos roles que se eligen la primera vez:
+Override Kiosk es **un solo ejecutable** con dos roles que se eligen la primera vez:
 
 - **Controlador (Emitter)**: cliente HTTP. Descubre pantallas, las vincula, edita la
   playlist y envía el contenido. **No abre puertos.**
@@ -14,7 +14,7 @@ Controladores nunca se ven entre sí porque solo la Pantalla publica un servicio
 mDNS.
 
 ```
-┌──────────────────┐        mDNS (_kiosksync._tcp)        ┌──────────────────┐
+┌──────────────────┐       mDNS (_overridekiosk._tcp)     ┌──────────────────┐
 │   Controlador    │ ───────────────────────────────────► │     Pantalla     │
 │  Ktor Client     │                                      │  Ktor Server     │
 │  JmDNS browser   │ ──── HTTP + token (LAN) ───────────► │  JmDNS publish   │
@@ -87,7 +87,9 @@ dominio:
 - `JmDnsDiscovery`.
 - `KtorEmitterClient` (Controlador) o `KtorReceiverServer` (Pantalla).
 - `PairingManager`, `KioskLockManager`, `ReceiverStatusTracker`,
-  `ReceiverPlaylistBridge`, `ProjectionController`.
+  `ReceiverPlaylistBridge`, `ReceiverPlaybackSyncBridge`, `ProjectionController`.
+- `LocalNetwork.detectLocalIpv4Address()` para mostrar la IP de la Pantalla en la
+  pantalla de vinculación.
 
 `Main.kt` lee los argumentos, crea el contenedor y abre la ventana. Si el rol es
 Pantalla y no se pasó `--windowed`, la ventana es fullscreen, sin bordes y siempre
@@ -98,7 +100,7 @@ encima.
 ### 1. Descubrimiento y vinculación
 
 1. La Pantalla arranca el servidor en el primer puerto libre desde `8765` y publica
-   `_kiosksync._tcp.local.` con `deviceId`, `deviceName`, `role=receiver` y
+   `_overridekiosk._tcp.local.` con `deviceId`, `deviceName`, `role=receiver` y
    `paired`.
 2. El Controlador escucha mDNS y muestra las pantallas. El plan B es **Agregar por
    IP**, que llama a `GET /info` y comprueba `role == "receiver"`.
@@ -132,7 +134,17 @@ mDNS la vuelve a ubicar.
 La playlist local del Controlador es la fuente de verdad. Un segundo envío sin
 cambios no sube ninguna imagen.
 
-### 3. Reproducción
+### 3. Sincronización de reproducción
+
+El Controlador envía `POST /playback/sync` con un retardo común de 2 segundos a
+todas las pantallas vinculadas, en paralelo. Cada Pantalla espera ese retardo y
+reinicia su carrusel desde la primera imagen. Al medirse desde la recepción de
+cada petición, no depende de que los relojes de los equipos estén sincronizados.
+Es una sincronización de mejor esfuerzo: la latencia de la LAN y la decodificación
+de la primera imagen pueden dejar una diferencia visible. Si una Pantalla no
+tiene una playlist activa, responde `409` y el Controlador la reporta como fallo.
+
+### 4. Reproducción
 
 `PlaybackStateHolder` carga `playlist.json`, resuelve cada `mediaId` a un archivo
 de `media/` y mantiene un bucle:
@@ -146,13 +158,13 @@ La reproducción **no usa la red**. Si la Pantalla se queda sin conexión sigue 
 su copia local. Al arrancar, la Pantalla se limpia a propósito (ver
 [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md)) y espera un envío nuevo.
 
-### 4. Estado en línea
+### 5. Estado en línea
 
 El Controlador consulta `GET /status` cada 5 segundos a cada pantalla vinculada.
 Tras 3 fallos consecutivos la marca como desconectada y sigue intentando. La
 Pantalla no cambia su comportamiento por estar desconectada.
 
-### 5. Bloqueo tipo kiosco
+### 6. Bloqueo tipo kiosco
 
 La Pantalla arranca bloqueada. En Windows se instalan hooks de bajo nivel para
 teclado (`WH_KEYBOARD_LL`) y mouse/touchpad (`WH_MOUSE_LL`); en Linux o con
@@ -167,7 +179,7 @@ recuperación usa una frase universal compilada en la app; ver
 ## Persistencia
 
 Sin base de datos. Archivos JSON y una carpeta de imágenes en
-`%APPDATA%\KioskSync\` (o `--data-dir`):
+`%APPDATA%\OverrideKiosk\` (o `--data-dir`):
 
 | Archivo | Contenido |
 | --- | --- |

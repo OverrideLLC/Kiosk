@@ -1,6 +1,6 @@
 # Íconos
 
-KioskSync usa **Material Symbols Rounded con `FILL = 1`** (peso 400, tamaño
+Override Kiosk usa **Material Symbols Rounded con `FILL = 1`** (peso 400, tamaño
 óptico 24). No hay emojis ni glifos de texto (`↑ ↓ × ✎ +`) como botones.
 
 ## Dónde viven
@@ -8,7 +8,8 @@ KioskSync usa **Material Symbols Rounded con `FILL = 1`** (peso 400, tamaño
 - Los SVG están en `composeApp/src/commonMain/composeResources/drawable/`
   con el prefijo `ic_` y nombre en minúsculas (`ic_add_photo_alternate.svg`).
 - El enum `AppIcon` (`designsystem/AppIcon.kt`) expone cada uno.
-- El único composable que dibuja íconos es `AppIcon(icon, contentDescription, …)`.
+- El único composable que dibuja íconos de Material es
+  `AppIcon(icon, contentDescription, …)`. El logo de marca usa `OverrideLogo(…)`.
 
 Compose Multiplatform convierte el SVG en un `Painter` en tiempo de recursos
 (Skia `SVGDOM`) y `Icon` le aplica el tinte del tema. Funciona en el target
@@ -37,6 +38,19 @@ desktop del proyecto; no hay targets Android/iOS/web que validar.
    ```
 
 4. Abre el catálogo (`--ui-catalog`) o corre `CatalogRenderTest` para verlo.
+
+## Logo de Override
+
+El logo de marca no es un ícono de Material Symbols. Vive en
+`composeApp/src/commonMain/composeResources/drawable/override_logo.svg` y se dibuja
+con `OverrideLogo` (`designsystem/OverrideBrand.kt`), que aplica el tinte del tema.
+El pie de las pantallas de ventana usa `OverrideFooter`; las pantallas de
+reproducción a pantalla completa no lo muestran.
+
+> El SVG actual es una **aproximación vectorial provisional** (marca de tres
+> lóbulos) hasta contar con el archivo oficial de Override. Para reemplazarlo,
+> sustituye el contenido del SVG manteniendo el nombre y el `viewBox`; no hace
+> falta tocar el código.
 
 ## Reglas
 

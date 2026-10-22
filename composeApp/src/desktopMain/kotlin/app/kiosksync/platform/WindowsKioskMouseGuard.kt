@@ -71,7 +71,7 @@ class WindowsKioskMouseGuard(
         running = true
         runCatching { Runtime.getRuntime().addShutdownHook(shutdownHook) }
         val ready = CountDownLatch(1)
-        thread = thread(name = "KioskSync-mouse-hook", isDaemon = true) {
+        thread = thread(name = "OverrideKiosk-mouse-hook", isDaemon = true) {
             try {
                 installHook(ready)
             } catch (error: Throwable) {

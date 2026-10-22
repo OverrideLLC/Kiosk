@@ -1,4 +1,4 @@
-# KioskSync
+# Override Kiosk
 
 Carrusel de imágenes para el comercio, **sin internet, sin cuentas y sin suscripción**.
 Una computadora con Windows administra el contenido; una o varias pantallas de la
@@ -17,9 +17,12 @@ telemetría.
 1. **Controlador**: abre la app, elige *Controlador*, agrega imágenes a la playlist
    y ajusta la duración de cada una.
 2. **Pantalla**: abre la app en el otro equipo, elige *Pantalla* y anota el código
-   de 6 dígitos que aparece en negro.
+   de 6 dígitos que aparece en negro. La misma pantalla muestra su **IP:puerto**
+   para vincularla sin depender del descubrimiento automático.
 3. **Vincular y enviar**: en el Controlador elige la pantalla, pulsa *Vincular*,
    escribe el código y por último *Enviar a pantallas seleccionadas*.
+4. **Sincronizar (opcional)**: pulsa *Sincronizar* para reiniciar el carrusel en
+   todas las pantallas vinculadas y que empiecen casi al mismo tiempo.
 
 Las próximas veces basta con abrir la app: la pantalla se anuncia sola y el
 Controlador la vuelve a encontrar aunque cambie de IP. Si la red no permite mDNS,
@@ -38,7 +41,7 @@ Todavía no hay una versión publicada en
 [GitHub Releases](https://github.com/Drinity/OverrideKiosk/releases). Mientras
 tanto:
 
-- **Usuarios finales**: pide la carpeta portable `KioskSync` (o el instalador
+- **Usuarios finales**: pide la carpeta portable `OverrideKiosk` (o el instalador
   `.msi`/`.exe`) generada con las instrucciones de
   [Empaquetado para Windows](docs/PACKAGING.md). No hace falta JDK ni internet.
 - **Desarrollo**: clona este repositorio y compílalo con Gradle (siguiente
@@ -75,7 +78,7 @@ automático no aparece en la misma máquina.
 | `--windowed` | Pantalla en ventana, para depurar. |
 | `--ui-catalog` | Catálogo interno de componentes (desarrollo). |
 
-Los datos viven en `%APPDATA%\KioskSync\`:
+Los datos viven en `%APPDATA%\OverrideKiosk\`:
 
 ```
 config.json      rol, id del equipo, nombre, puerto y tema

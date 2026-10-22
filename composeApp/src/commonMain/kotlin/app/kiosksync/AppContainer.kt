@@ -4,6 +4,7 @@ import app.kiosksync.core.AppArgs
 import app.kiosksync.core.AppLogger
 import app.kiosksync.feature.kiosk.KioskLockManager
 import app.kiosksync.feature.pairing.PairingManager
+import app.kiosksync.feature.playback.ReceiverPlaybackSyncBridge
 import app.kiosksync.feature.playback.ReceiverPlaylistBridge
 import app.kiosksync.feature.playback.ReceiverStatusTracker
 import app.kiosksync.feature.projection.ProjectionController
@@ -39,6 +40,8 @@ class AppContainer(
     val emitterClient: EmitterClient,
     val receiverStatusTracker: ReceiverStatusTracker,
     val receiverPlaylistBridge: ReceiverPlaylistBridge,
+    val receiverPlaybackSyncBridge: ReceiverPlaybackSyncBridge,
+    val localIpAddress: String?,
     val kioskLockManager: KioskLockManager,
     val kioskKeyboardGuard: KioskKeyboardGuard,
     val kioskMouseGuard: KioskMouseGuard,

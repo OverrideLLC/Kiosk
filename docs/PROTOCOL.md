@@ -17,8 +17,8 @@
 La Pantalla publica:
 
 ```
-Tipo:     _kiosksync._tcp.local.
-Instancia: KioskSync-<primeros 8 caracteres del deviceId>
+Tipo:     _overridekiosk._tcp.local.
+Instancia: OverrideKiosk-<primeros 8 caracteres del deviceId>
 Puerto:   puerto real
 TXT:      deviceId=<uuid>
           deviceName=<nombre del equipo>
@@ -70,6 +70,7 @@ aparecen en los errores de vinculación.
 | `POST /pair` | Código | Vincula un Controlador y devuelve el token. |
 | `DELETE /pair` | Sí | Desvincula. |
 | `GET /status` | Sí | Estado de reproducción. |
+| `POST /playback/sync` | Sí | Reinicia el carrusel tras un retardo común. |
 | `GET /sync/state` | Sí | Imágenes y versión que la Pantalla ya tiene. |
 | `PUT /media/{mediaId}` | Sí | Sube una imagen. |
 | `PUT /playlist` | Sí | Aplica una playlist completa. |
@@ -142,6 +143,25 @@ atajo local `Ctrl+Shift+P` en la Pantalla, con confirmación.
 
 El Controlador lo consulta cada 5 segundos. Tres fallos seguidos marcan la pantalla
 como desconectada; la Pantalla sigue reproduciendo igual.
+
+### POST /playback/sync
+
+```json
+{"delayMs": 2000}
+```
+
+La Pantalla espera `delayMs` y reinicia su carrusel desde la primera imagen. El
+Controlador envía el mismo retardo a todas las pantallas en paralelo. Al medirse
+desde la recepción de cada petición, no depende de que los relojes de los equipos
+estén sincronizados. Es una sincronización de mejor esfuerzo: la diferencia real
+depende de la latencia de la LAN y del tiempo de decodificación de la primera
+imagen.
+
+| Resultado | Código | Cuerpo |
+| --- | --- | --- |
+| Aceptada | `200` | `{"accepted":true,"delayMs":2000}` |
+| Retardo inválido | `400` | `{"error":"invalid_sync_request"}` |
+| Pantalla sin contenido listo | `409` | `{"error":"playback_not_ready"}` |
 
 ### GET /sync/state
 

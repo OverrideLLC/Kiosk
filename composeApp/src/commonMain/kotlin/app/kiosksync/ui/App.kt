@@ -118,8 +118,12 @@ fun App(
         container.receiverPlaylistBridge.setListener { playlist ->
             playbackStateHolder.updatePlaylist(playlist)
         }
+        container.receiverPlaybackSyncBridge.setListener { delayMs ->
+            playbackStateHolder.scheduleRestart(delayMs)
+        }
         onDispose {
             container.receiverPlaylistBridge.setListener(null)
+            container.receiverPlaybackSyncBridge.setListener(null)
             playbackStateHolder.stop()
         }
     }

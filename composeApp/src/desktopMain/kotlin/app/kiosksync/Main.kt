@@ -19,12 +19,14 @@ import androidx.compose.ui.window.rememberWindowState
 import app.kiosksync.core.APP_NAME
 import app.kiosksync.core.AppArgs
 import app.kiosksync.core.AppRole
+import app.kiosksync.core.DATA_DIR_NAME
 import app.kiosksync.core.Strings
 import app.kiosksync.designsystem.catalog.CatalogScreen
 import app.kiosksync.feature.kiosk.KioskKeyEvent
 import app.kiosksync.feature.kiosk.KioskKeyKind
 import app.kiosksync.feature.kiosk.KioskLockManager
 import app.kiosksync.feature.pairing.PairingManager
+import app.kiosksync.feature.playback.ReceiverPlaybackSyncBridge
 import app.kiosksync.feature.playback.ReceiverPlaylistBridge
 import app.kiosksync.feature.playback.ReceiverStatusTracker
 import app.kiosksync.feature.projection.ProjectionController
@@ -36,6 +38,7 @@ import app.kiosksync.platform.KtorReceiverServer
 import app.kiosksync.platform.Sha256
 import app.kiosksync.platform.createKioskKeyboardGuard
 import app.kiosksync.platform.createKioskMouseGuard
+import app.kiosksync.platform.detectLocalIpv4Address
 import app.kiosksync.ui.App
 import app.kiosksync.ui.ProjectionScreen
 import java.awt.FileDialog
@@ -64,7 +67,7 @@ fun main(args: Array<String>) {
 
     val defaultDataDir = File(
         System.getenv("APPDATA") ?: System.getProperty("user.home"),
-        APP_NAME
+        DATA_DIR_NAME
     )
     val effectiveDataDir = appArgs.dataDir?.let { File(it) } ?: defaultDataDir
     val logsDir = File(effectiveDataDir, "logs").apply { mkdirs() }
@@ -103,6 +106,8 @@ fun main(args: Array<String>) {
     } catch (_: Exception) {
         System.getenv("COMPUTERNAME") ?: "WindowsPC"
     }
+    val localIpAddress = detectLocalIpv4Address()
+    logger.info("Detected local IPv4 address: ${localIpAddress ?: "none"}")
 
     val pairingManager = PairingManager(
         localStorage = localStorage,
@@ -146,12 +151,14 @@ fun main(args: Array<String>) {
 
     val statusTracker = ReceiverStatusTracker()
     val playlistBridge = ReceiverPlaylistBridge()
+    val playbackSyncBridge = ReceiverPlaybackSyncBridge()
     val discovery = JmDnsDiscovery(logger)
     val receiverServer = KtorReceiverServer(
         pairingManager = pairingManager,
         logger = logger,
         storage = localStorage,
         playlistBridge = playlistBridge,
+        playbackSyncBridge = playbackSyncBridge,
         kioskLockManager = kioskLockManager,
         statusProvider = { statusTracker.snapshot() }
     )
@@ -168,7 +175,7 @@ fun main(args: Array<String>) {
     // milliseconds. A dedicated serial worker keeps them off the UI thread and
     // guarantees that a start never races with the previous stop.
     val serviceDispatcher = Executors.newSingleThreadExecutor { runnable ->
-        Thread(runnable, "KioskSync-services").apply { isDaemon = true }
+        Thread(runnable, "OverrideKiosk-services").apply { isDaemon = true }
     }.asCoroutineDispatcher()
 
     val container = AppContainer(
@@ -183,6 +190,8 @@ fun main(args: Array<String>) {
         emitterClient = emitterClient,
         receiverStatusTracker = statusTracker,
         receiverPlaylistBridge = playlistBridge,
+        receiverPlaybackSyncBridge = playbackSyncBridge,
+        localIpAddress = localIpAddress,
         kioskLockManager = kioskLockManager,
         kioskKeyboardGuard = keyboardGuard,
         kioskMouseGuard = mouseGuard,

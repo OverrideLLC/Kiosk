@@ -73,6 +73,8 @@ import app.kiosksync.designsystem.AppTextField
 import app.kiosksync.designsystem.KioskColors
 import app.kiosksync.designsystem.KioskScreenColors
 import app.kiosksync.designsystem.KioskShape
+import app.kiosksync.designsystem.OverrideFooter
+import app.kiosksync.designsystem.OverrideLogo
 import app.kiosksync.designsystem.Sizes
 import app.kiosksync.designsystem.Space
 import app.kiosksync.feature.playlist.PlaylistEditorStateHolder
@@ -114,10 +116,15 @@ fun EmitterScreen(
         selectedCount == 0 -> Strings.SEND_NO_SCREENS
         else -> Strings.selectedScreens(selectedCount)
     }
+    val pairedCount = state.devices.count { it.isPairedToThisEmitter }
     val canSend = !state.isSending &&
+        !state.isSyncing &&
         selectedCount > 0 &&
         editorState.playlist.items.isNotEmpty()
-    val canProject = !state.isSending && editorState.playlist.items.isNotEmpty()
+    val canProject = !state.isSending &&
+        !state.isSyncing &&
+        editorState.playlist.items.isNotEmpty()
+    val canSync = !state.isSending && !state.isSyncing && pairedCount > 0
 
     BoxWithConstraints(
         modifier = Modifier
@@ -213,16 +220,23 @@ fun EmitterScreen(
             SendPanel(
                 hint = sendHint,
                 isSending = state.isSending,
+                isSyncing = state.isSyncing,
                 canSend = canSend,
                 canProject = canProject,
+                canSync = canSync,
                 sendDisabledReason = if (canSend) null else sendHint,
+                syncDisabledReason = if (canSync) null else Strings.PLAYBACK_SYNC_NO_SCREENS,
                 onSend = {
                     stateHolder.sendToSelected(playlistStateHolder.currentPlaylist())
                 },
                 onProject = {
                     stateHolder.requestProjection(playlistStateHolder.currentPlaylist())
                 },
+                onSync = { stateHolder.synchronizePlayback() },
             )
+
+            Spacer(Modifier.height(Space.xs))
+            OverrideFooter()
         }
     }
 
@@ -453,9 +467,7 @@ private fun ControllerHeader(
                 .background(colors.primaryContainer),
             contentAlignment = Alignment.Center,
         ) {
-            AppIcon(
-                icon = AppIcon.CAST,
-                contentDescription = null,
+            OverrideLogo(
                 size = Sizes.iconCompact,
                 tint = colors.onPrimaryContainer,
             )
@@ -1331,11 +1343,15 @@ private fun PlaylistItemRow(
 private fun SendPanel(
     hint: String,
     isSending: Boolean,
+    isSyncing: Boolean,
     canSend: Boolean,
     canProject: Boolean,
+    canSync: Boolean,
     sendDisabledReason: String?,
+    syncDisabledReason: String?,
     onSend: () -> Unit,
     onProject: () -> Unit,
+    onSync: () -> Unit,
 ) {
     val colors = KioskColors.scheme
 
@@ -1370,6 +1386,13 @@ private fun SendPanel(
                     style = MaterialTheme.typography.labelSmall,
                     color = colors.onSurfaceVariant,
                 )
+                Text(
+                    text = Strings.PLAYBACK_SYNC_HINT,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = colors.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
             Spacer(Modifier.width(Space.sm))
             AppButton(
@@ -1380,6 +1403,17 @@ private fun SendPanel(
                 icon = AppIcon.PRESENT_TO_ALL,
                 enabled = canProject,
                 disabledReason = if (canProject) null else Strings.PROJECT_NO_PLAYLIST,
+            )
+            Spacer(Modifier.width(Space.xs))
+            AppButton(
+                text = if (isSyncing) Strings.PLAYBACK_SYNCING else Strings.PLAYBACK_SYNC_BUTTON,
+                onClick = onSync,
+                variant = AppButtonVariant.TONAL,
+                size = AppButtonSize.MEDIUM,
+                icon = AppIcon.SYNC,
+                enabled = canSync,
+                loading = isSyncing,
+                disabledReason = syncDisabledReason,
             )
             Spacer(Modifier.width(Space.xs))
             AppButton(

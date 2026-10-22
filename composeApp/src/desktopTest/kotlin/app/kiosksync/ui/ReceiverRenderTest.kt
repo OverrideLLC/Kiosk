@@ -40,6 +40,8 @@ class ReceiverRenderTest {
                 serviceError = null,
                 onExitRequested = {},
                 onChangeRoleRequested = {},
+                receiverIp = "192.168.1.20",
+                receiverPort = 8765,
             )
         }
         render(output, "receiver-waiting") {

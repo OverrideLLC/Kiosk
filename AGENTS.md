@@ -1,6 +1,6 @@
-# KioskSync: Plan de trabajo para el agente de IA
+# Override Kiosk: Plan de trabajo para el agente de IA
 
-> Nombre de trabajo del proyecto: **KioskSync** (cámbialo cuando quieras; usa una sola constante `APP_NAME` para que el cambio sea trivial).
+> Nombre de trabajo del proyecto: **Override Kiosk** (usa una sola constante `APP_NAME` para que el cambio sea trivial).
 > Pega este documento completo al inicio de la sesión con el agente. Todo lo que sigue está escrito como instrucciones para él.
 
 ---
@@ -148,7 +148,7 @@ composeApp/src/
 
 ### 7.2 Descubrimiento
 
-- El **Receptor** publica un servicio mDNS de tipo `_kiosksync._tcp.local.` con: nombre del equipo, puerto real, `deviceId` (UUID persistente), `role=receiver` y si está vinculado o no (`paired=true|false`).
+- El **Receptor** publica un servicio mDNS de tipo `_overridekiosk._tcp.local.` con: nombre del equipo, puerto real, `deviceId` (UUID persistente), `role=receiver` y si está vinculado o no (`paired=true|false`).
 - El **Emisor** busca ese tipo de servicio y muestra los Receptores encontrados. **Los Emisores no se publican**, por lo que es imposible que dos Emisores se vean entre sí.
 - Plan B: campo para ingresar **IP:puerto** manualmente (para redes donde mDNS falla). El Emisor llama a `GET /info` y valida que `role == "receiver"`.
 - Puerto por defecto del Receptor: **8765**. Si está ocupado, usar el siguiente libre y anunciar el real por mDNS.
@@ -213,10 +213,10 @@ Estado deseado del MVP: **tráfico HTTP en texto plano dentro de la LAN**, prote
 
 ## 9. Datos en disco
 
-Carpeta base: `%APPDATA%\KioskSync\` (configurable con `--data-dir`, ver sección 10).
+Carpeta base: `%APPDATA%\OverrideKiosk\` (configurable con `--data-dir`, ver sección 10).
 
 ```
-KioskSync\
+OverrideKiosk\
 ├── config.json      # rol, deviceId, deviceName, puerto
 ├── paired.json      # Receptor: emitterId + token | Emisor: lista de Receptores vinculados (deviceId, nombre, token)
 ├── playlist.json    # playlist vigente (versión, ítems, duración por defecto)

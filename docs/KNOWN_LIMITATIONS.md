@@ -32,6 +32,12 @@ prometer funciones o de instalar la app en un comercio real.
   Pantalla muestra el estado vacío.
 - El carrusel no recuerda en qué imagen iba tras reiniciar; empieza de nuevo (y,
   de hecho, arranca en blanco por la limpieza anterior).
+- **La sincronización de reproducción es de mejor esfuerzo.** El Controlador envía
+  un retardo común de 2 segundos y cada Pantalla reinicia su carrusel al vencerlo.
+  No se sincronizan los relojes ni se corrige la latencia de la red o el tiempo de
+  decodificación de la primera imagen, así que puede quedar una diferencia visible
+  entre pantallas. La Pantalla debe tener una playlist activa; si está esperando
+  contenido, responde `409` y el Controlador lo cuenta como fallo.
 
 ## Bloqueo kiosco
 
@@ -86,8 +92,13 @@ prometer funciones o de instalar la app en un comercio real.
 ## Datos y operación
 
 - Sin base de datos: archivos JSON y una carpeta de imágenes.
-- Sin copia de seguridad automática. Si se borra `%APPDATA%\KioskSync\`, se pierde
+- Sin copia de seguridad automática. Si se borra `%APPDATA%\OverrideKiosk\`, se pierde
   la vinculación y la playlist local.
+- Los datos de la versión anterior viven en `%APPDATA%\KioskSync\` y **no se migran**
+  automáticamente. Tras actualizar, hay que volver a elegir rol, vincular y enviar
+  la playlist. Si se necesita conservar algo, cópialo a mano antes de actualizar.
+  La versión anterior también usa el servicio mDNS `_kiosksync._tcp`, así que una
+  app vieja y una nueva **no se descubren entre sí**; actualiza ambos equipos.
 - El log rota a 5 archivos de 1 MB. No incluye tokens ni códigos, pero sí nombres
   de equipos e ids.
 - No hay telemetría, ni informes de error remotos, ni nube.

@@ -11,7 +11,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 /**
- * Tonal palettes generated from the KioskSync seed blue `#3D7AF5` using CIE
+ * Tonal palettes generated from the Override Kiosk seed blue `#3D7AF5` using CIE
  * L*a*b* tones (see `docs/DESIGN_SYSTEM.md` for the contrast report).
  *
  * Every role maps to a Material 3 tonal step, so light and dark themes are
@@ -215,7 +215,7 @@ val LightExtraColors = KioskExtraColors(
 
 val LocalKioskExtraColors = staticCompositionLocalOf { DarkExtraColors }
 
-/** Access to the KioskSync-specific colours that Material 3 does not provide. */
+/** Access to the Override Kiosk-specific colours that Material 3 does not provide. */
 object KioskColors {
     val scheme: ColorScheme
         @Composable @ReadOnlyComposable get() = MaterialTheme.colorScheme

@@ -106,7 +106,7 @@ solo sirve contra ese servicio falso.
 ### 7. Datos en disco
 
 `config.json`, `paired.json` y `lock.json` están en
-`%APPDATA%\KioskSync\` con los permisos del usuario de Windows. Cualquier proceso
+`%APPDATA%\OverrideKiosk\` con los permisos del usuario de Windows. Cualquier proceso
 de ese usuario puede leerlos. El token de la Pantalla y el hash de la contraseña
 están ahí; protégelos con los permisos de la cuenta.
 

@@ -1,8 +1,8 @@
-# KioskSync — Nota de continuidad
+# Override Kiosk — Nota de continuidad
 
 Fecha: 2026-10-21  
 Rama: `master`  
-Último commit de código observado: `e5d214b`  
+Último commit de código: consulta `git log -1 --oneline`.
 Remoto: `https://github.com/Drinity/OverrideKiosk.git`
 
 ## Estado actual
@@ -88,7 +88,7 @@ Si el descubrimiento automático no encuentra la Pantalla local, usar
 
 ## Notas importantes
 
-- Los datos reales viven en `%APPDATA%\KioskSync\`: `config.json`,
+- Los datos reales viven en `%APPDATA%\OverrideKiosk\`: `config.json`,
   `paired.json`, `playlist.json`, `playlists.json`, `media\` y `logs\`.
 - Los directorios de prueba (`C:\tmp\rx`, `C:\tmp\tx` y los temporales usados
   durante el desarrollo) no se suben al repositorio.

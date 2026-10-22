@@ -71,11 +71,11 @@ compose.desktop {
             // Msi and Exe are produced by jpackage on Windows. Both require WiX
             // Toolset 3.x installed and on PATH; createDistributable does not.
             targetFormats(TargetFormat.Msi, TargetFormat.Exe)
-            packageName = "KioskSync"
+            packageName = "OverrideKiosk"
             packageVersion = "1.0.0"
-            description = "KioskSync: carrusel de imágenes para la red local"
-            vendor = "KioskSync"
-            copyright = "© 2026 KioskSync"
+            description = "Override Kiosk: carrusel de imágenes para la red local"
+            vendor = "Override"
+            copyright = "© 2026 Override"
 
             // Keep the bundled runtime small. java.desktop, java.base,
             // java.logging and java.prefs are added by the Compose plugin.
@@ -83,7 +83,7 @@ compose.desktop {
 
             windows {
                 iconFile.set(project.file("src/desktopMain/resources/icon.ico"))
-                menuGroup = "KioskSync"
+                menuGroup = "Override Kiosk"
                 shortcut = true
                 dirChooser = true
                 // No administrator rights: required for Windows Home.

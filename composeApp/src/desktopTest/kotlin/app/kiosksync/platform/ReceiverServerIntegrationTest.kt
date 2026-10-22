@@ -6,6 +6,7 @@ import app.kiosksync.core.PlaylistRejectedException
 import app.kiosksync.core.ReceiverStatusResponse
 import app.kiosksync.feature.kiosk.KioskLockManager
 import app.kiosksync.feature.pairing.PairingManager
+import app.kiosksync.feature.playback.ReceiverPlaybackSyncBridge
 import app.kiosksync.feature.playback.ReceiverPlaylistBridge
 import app.kiosksync.feature.playlist.Playlist
 import app.kiosksync.feature.playlist.PlaylistItem
@@ -40,6 +41,12 @@ class ReceiverServerIntegrationTest {
         val bridge = ReceiverPlaylistBridge()
         var appliedPlaylist: Playlist? = null
         bridge.setListener { appliedPlaylist = it }
+        val playbackSyncBridge = ReceiverPlaybackSyncBridge()
+        var playbackSyncDelay: Long? = null
+        playbackSyncBridge.setListener { delayMs ->
+            playbackSyncDelay = delayMs
+            true
+        }
         val lockScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         val lock = KioskLockManager(
             logger = NoOpLogger(),
@@ -52,6 +59,7 @@ class ReceiverServerIntegrationTest {
             logger = NoOpLogger(),
             storage = storage,
             playlistBridge = bridge,
+            playbackSyncBridge = playbackSyncBridge,
             kioskLockManager = lock,
             statusProvider = {
                 ReceiverStatusResponse(
@@ -161,6 +169,13 @@ class ReceiverServerIntegrationTest {
             val status = client.getStatus("127.0.0.1", port, "tx-1", paired.token).getOrThrow()
             assertEquals(1, status.playlistVersion)
 
+            assertTrue(
+                client.synchronizePlayback(
+                    "127.0.0.1", port, "tx-1", paired.token, delayMs = 2_000,
+                ).getOrThrow(),
+            )
+            assertEquals(2_000L, playbackSyncDelay)
+
             // Wrong token -> 401 -> failure, not data.
             assertTrue(
                 client.getStatus("127.0.0.1", port, "tx-1", "b".repeat(64)).isFailure,
@@ -195,6 +210,7 @@ class ReceiverServerIntegrationTest {
             logger = NoOpLogger(),
             storage = storage,
             playlistBridge = ReceiverPlaylistBridge(),
+            playbackSyncBridge = ReceiverPlaybackSyncBridge(),
             kioskLockManager = KioskLockManager(
                 logger = NoOpLogger(),
                 passwordHasher = { it },

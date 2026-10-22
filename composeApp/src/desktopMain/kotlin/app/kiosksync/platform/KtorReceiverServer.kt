@@ -18,12 +18,15 @@ import app.kiosksync.core.MediaState
 import app.kiosksync.core.MediaUploadResponse
 import app.kiosksync.core.PairRequest
 import app.kiosksync.core.PairResponse
+import app.kiosksync.core.PlaybackSyncRequest
+import app.kiosksync.core.PlaybackSyncResponse
 import app.kiosksync.core.PlaylistApplyResponse
 import app.kiosksync.core.ReceiverStatusResponse
 import app.kiosksync.core.SyncStateResponse
 import app.kiosksync.core.isValidUnlockSequence
 import app.kiosksync.feature.pairing.PairResult
 import app.kiosksync.feature.pairing.PairingManager
+import app.kiosksync.feature.playback.ReceiverPlaybackSyncBridge
 import app.kiosksync.feature.playback.ReceiverPlaylistBridge
 import app.kiosksync.feature.playlist.Playlist
 import app.kiosksync.feature.sync.PlaylistUpdateRequest
@@ -54,6 +57,7 @@ class KtorReceiverServer(
     private val logger: AppLogger,
     private val storage: LocalStorage,
     private val playlistBridge: ReceiverPlaylistBridge,
+    private val playbackSyncBridge: ReceiverPlaybackSyncBridge,
     private val kioskLockManager: KioskLockManager,
     private val statusProvider: () -> ReceiverStatusResponse
 ) : ReceiverServer {
@@ -193,6 +197,26 @@ class KtorReceiverServer(
                         )
                     }
                 }
+            }
+
+            post("/playback/sync") {
+                if (!call.requireAuthorization()) return@post
+                val request = runCatching { call.receive<PlaybackSyncRequest>() }.getOrNull()
+                if (request == null || request.delayMs !in 0L..60_000L) {
+                    call.respond(HttpStatusCode.BadRequest, ErrorResponse("invalid_sync_request"))
+                    return@post
+                }
+                if (!playbackSyncBridge.scheduleRestart(request.delayMs)) {
+                    call.respond(HttpStatusCode.Conflict, ErrorResponse("playback_not_ready"))
+                    return@post
+                }
+                logger.info("Playback synchronisation accepted with delay ${request.delayMs} ms")
+                call.respond(
+                    PlaybackSyncResponse(
+                        accepted = true,
+                        delayMs = request.delayMs
+                    )
+                )
             }
 
             get("/sync/state") {

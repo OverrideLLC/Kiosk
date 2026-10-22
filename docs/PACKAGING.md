@@ -24,17 +24,17 @@ Hay dos entregables: **carpeta portable** (no requiere WiX) e **instalador**
 Salida:
 
 ```
-composeApp\build\compose\binaries\main\app\KioskSync\
-├── KioskSync.exe
+composeApp\build\compose\binaries\main\app\OverrideKiosk\
+├── OverrideKiosk.exe
 ├── app\
 └── runtime\
 ```
 
 Para entregarla:
 
-1. Comprime la carpeta `KioskSync` en un `.zip`.
+1. Comprime la carpeta `OverrideKiosk` en un `.zip`.
 2. Cópiala a la PC destino (Windows 10/11, incluida Home).
-3. Descomprime y ejecuta `KioskSync.exe`.
+3. Descomprime y ejecuta `OverrideKiosk.exe`.
 
 No hace falta JDK ni permisos de administrador. El `.exe` es el lanzador; la app
 vive en `app\` y `runtime\`. **No muevas el `.exe` fuera de la carpeta.**
@@ -81,7 +81,7 @@ archivo con otro `.ico` multi-resolución y vuelve a empaquetar.
 ## Probar en una PC limpia
 
 1. Copia la carpeta portable (o instala el `.msi`/`.exe`) en una PC **sin JDK**.
-2. Abre `KioskSync.exe`. Debe aparecer la pantalla de selección de rol.
+2. Abre `OverrideKiosk.exe`. Debe aparecer la pantalla de selección de rol.
 3. Elige **Pantalla**. Windows mostrará el aviso del Firewall: permite el acceso
    en **redes privadas** (no públicas).
 4. En otra PC, abre la app, elige **Controlador** y busca la pantalla. Si no
@@ -91,23 +91,24 @@ archivo con otro `.ico` multi-resolución y vuelve a empaquetar.
    nuevo (la Pantalla se limpia al iniciar; ver
    [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md)).
 
-## Artefactos generados en Windows 11
+## Artefactos de empaquetado
 
-Estos son los archivos que se generaron y probaron en esta máquina (2026-10-21):
+Con el nombre actual, las tareas de empaquetado generan estos archivos:
 
 | Archivo en `dist\` | Tamaño | Para qué sirve |
 | --- | --- | --- |
-| `KioskSync-1.0.0.exe` | ~72 MB | Instalador único. Instala por usuario, sin administrador, con acceso directo. |
-| `KioskSync-1.0.0.msi` | ~71 MB | Instalador MSI equivalente, útil para despliegue con `msiexec`. |
-| `KioskSync-1.0.0-portable.zip` | ~70 MB | Carpeta portable comprimida: descomprimir y ejecutar `KioskSync.exe`. |
+| `OverrideKiosk-1.0.0.exe` | ~72 MB | Instalador único. Instala por usuario, sin administrador, con acceso directo. |
+| `OverrideKiosk-1.0.0.msi` | ~71 MB | Instalador MSI equivalente, útil para despliegue con `msiexec`. |
+| `OverrideKiosk-1.0.0-portable.zip` | ~70 MB | Carpeta portable comprimida: descomprimir y ejecutar `OverrideKiosk.exe`. |
 
 Los originales quedan en `composeApp\build\compose\binaries\main\`; la carpeta
 `dist\` es solo una copia cómoda para distribuir y está ignorada por Git. Incluye
 `SHA256SUMS.txt` con los hashes de los tres archivos.
 
 El instalador `.exe` y el `.msi` **no están firmados**: Windows SmartScreen pedirá
-confirmación. La instalación se probó en `%LOCALAPPDATA%\KioskSync` y se
-desinstaló después de verificar que la app abría y escuchaba en el puerto 8765.
+confirmación. La instalación es por usuario, en `%LOCALAPPDATA%\OverrideKiosk`, y
+no requiere administrador. Vuelve a probar instalación y desinstalación después
+de cambiar el nombre del paquete.
 
 ## Consumo de memoria
 
@@ -143,9 +144,9 @@ con `signtool`. No es parte del MVP.
 
 ## Desinstalar
 
-- Instalador: **Configuración → Aplicaciones → KioskSync → Desinstalar**.
+- Instalador: **Configuración → Aplicaciones → Override Kiosk → Desinstalar**.
 - Portable: borra la carpeta.
-- Los datos de `%APPDATA%\KioskSync\` **no se borran** automáticamente. Bórralos a
+- Los datos de `%APPDATA%\OverrideKiosk\` **no se borran** automáticamente. Bórralos a
   mano si quieres dejar el equipo limpio (incluye la vinculación y las imágenes).
 
 ## Notas para desarrollo

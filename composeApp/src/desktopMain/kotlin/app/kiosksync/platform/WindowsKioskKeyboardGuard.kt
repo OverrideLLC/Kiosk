@@ -53,7 +53,7 @@ class WindowsKioskKeyboardGuard(
         if (thread != null) return
         running = true
         val ready = CountDownLatch(1)
-        thread = thread(name = "KioskSync-keyboard-hook", isDaemon = true) {
+        thread = thread(name = "OverrideKiosk-keyboard-hook", isDaemon = true) {
             try {
                 installHook(ready)
             } catch (error: Throwable) {

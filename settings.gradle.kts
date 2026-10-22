@@ -1,4 +1,4 @@
-rootProject.name = "KioskSync"
+rootProject.name = "OverrideKiosk"
 include(":composeApp")
 
 pluginManagement {

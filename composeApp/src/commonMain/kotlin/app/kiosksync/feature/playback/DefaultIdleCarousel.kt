@@ -16,9 +16,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import app.kiosksync.core.APP_NAME
-import app.kiosksync.designsystem.AppIcon
 import app.kiosksync.designsystem.KioskDisplayType
 import app.kiosksync.designsystem.KioskScreenColors
+import app.kiosksync.designsystem.OverrideLogo
 import app.kiosksync.designsystem.Sizes
 import app.kiosksync.designsystem.Space
 
@@ -47,9 +47,7 @@ fun DefaultIdleCarousel(modifier: Modifier = Modifier) {
                     .border(Sizes.selectionBorder, KioskScreenColors.subtle, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                AppIcon(
-                    icon = AppIcon.CAST,
-                    contentDescription = null,
+                OverrideLogo(
                     size = Sizes.iconHero,
                     tint = KioskScreenColors.muted,
                 )

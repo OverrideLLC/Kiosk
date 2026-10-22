@@ -39,6 +39,8 @@ import app.kiosksync.designsystem.AppIcon
 import app.kiosksync.designsystem.AppSelectableCard
 import app.kiosksync.designsystem.KioskColors
 import app.kiosksync.designsystem.KioskShape
+import app.kiosksync.designsystem.OverrideFooter
+import app.kiosksync.designsystem.OverrideLogo
 import app.kiosksync.designsystem.Sizes
 import app.kiosksync.designsystem.Space
 
@@ -61,14 +63,15 @@ fun RoleSelectionScreen(
     val colors = KioskColors.scheme
     val selectedRole = uiState.selectedRole
 
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .background(colors.surface),
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .weight(1f)
+                .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = Space.xl, vertical = Space.xxl),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -165,8 +168,11 @@ fun RoleSelectionScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = colors.onSurfaceVariant,
                 )
+
             }
         }
+
+        OverrideFooter(Modifier.padding(bottom = Space.md))
     }
 }
 
@@ -185,9 +191,7 @@ private fun BrandHeader(onExitRequested: () -> Unit) {
                 .background(colors.primaryContainer),
             contentAlignment = Alignment.Center,
         ) {
-            AppIcon(
-                icon = AppIcon.CAST,
-                contentDescription = null,
+            OverrideLogo(
                 size = Sizes.iconCompact,
                 tint = colors.onPrimaryContainer,
             )

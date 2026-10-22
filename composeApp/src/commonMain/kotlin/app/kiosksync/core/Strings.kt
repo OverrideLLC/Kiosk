@@ -14,6 +14,7 @@ object Strings {
     const val ROLE_SELECT_FIRST = "Elige un rol para continuar."
     const val ROLE_CHANGE_HINT = "Puedes cambiarlo después desde Ajustes en el Controlador."
     const val APP_TAGLINE = "Contenido para tus pantallas, sin internet."
+    const val DEVELOPED_WITH_LOVE = "Desarrollado con <3 por Override"
     const val CHANGE_ROLE = "Cambiar de rol"
     const val CHANGE_ROLE_CONFIRM = "¿Seguro que deseas cambiar de rol? Se borrará la vinculación actual."
 
@@ -35,8 +36,15 @@ object Strings {
     const val RECEIVER_LOCKED_TITLE = "Demasiados intentos fallidos"
     const val RECEIVER_LOCKED_MESSAGE = "Espera unos segundos antes de intentarlo de nuevo."
     const val RECEIVER_WAITING_FOR_EMITTER = "Esperando al Controlador"
+    const val RECEIVER_IP_HINT =
+        "Para vincular por IP, usa «Agregar por IP» en el Controlador."
+    const val RECEIVER_IP_UNAVAILABLE =
+        "No se pudo detectar la IP de esta Pantalla. Usa la IP de este equipo en la red local."
+    const val RECEIVER_PORT_LABEL = "Puerto"
 
     fun receiverCodeRenewsIn(countdown: String): String = "$RECEIVER_CODE_RENEWS_IN $countdown"
+
+    fun receiverAddress(ip: String, port: Int): String = "$ip:$port"
 
     fun receiverLockedMessage(seconds: Long): String =
         "$RECEIVER_LOCKED_MESSAGE ($seconds $SECONDS_SUFFIX)"
@@ -84,7 +92,7 @@ object Strings {
     const val MANUAL_IP_FIELD = "IP:puerto"
     const val MANUAL_IP_HINT = "Ejemplo: 192.168.1.20:8765"
     const val MANUAL_IP_INVALID = "Formato no válido. Usa IP:puerto, por ejemplo 192.168.1.20:8765."
-    const val MANUAL_IP_NOT_RECEIVER = "Ese equipo no es una Pantalla de KioskSync. Usa la IP de la Pantalla, no la del Controlador."
+    const val MANUAL_IP_NOT_RECEIVER = "Ese equipo no es una Pantalla de Override Kiosk. Usa la IP de la Pantalla, no la del Controlador."
     const val MANUAL_IP_UNREACHABLE = "No se pudo conectar con esa dirección. Revisa la IP, el puerto y la red."
     const val ADD_BUTTON = "Agregar"
     const val CANCEL_BUTTON = "Cancelar"
@@ -273,6 +281,20 @@ object Strings {
         else -> "Envío terminado: $success pantalla(s) correcta(s) y $failure con error."
     }
 
+    // Playback synchronisation (controller)
+    const val PLAYBACK_SYNC_BUTTON = "Sincronizar"
+    const val PLAYBACK_SYNCING = "Sincronizando…"
+    const val PLAYBACK_SYNC_HINT =
+        "Reinicia el carrusel en todas las pantallas vinculadas para que empiecen a la vez."
+    const val PLAYBACK_SYNC_NO_SCREENS = "Vincula al menos una pantalla para sincronizar la reproducción."
+
+    fun playbackSyncCompleted(success: Int, failure: Int): String = when {
+        success == 0 -> "No se pudo sincronizar ninguna pantalla."
+        failure == 0 && success == 1 -> "Sincronización enviada a 1 pantalla."
+        failure == 0 -> "Sincronización enviada a $success pantallas."
+        else -> "Sincronización enviada a $success pantalla(s); $failure no respondió."
+    }
+
     fun syncUploading(uploaded: Int, total: Int): String = "Subiendo $uploaded de $total…"
 
     fun playlistImportSummary(added: Int, rejected: Int): String = when {
@@ -291,7 +313,7 @@ object Strings {
         "Demasiados intentos fallidos. Espera $seconds s."
 
     // Skeleton indicator for Phase 0
-    const val SKELETON_READY = "KioskSync - Fase 0 inicializada correctamente"
+    const val SKELETON_READY = "Override Kiosk - Fase 0 inicializada correctamente"
 
     // Design system components
     const val STEPPER_DECREASE = "Reducir"
@@ -299,7 +321,7 @@ object Strings {
 
     // Internal design-system catalog (development window)
     const val DESIGN_TITLE = "Sistema de diseño"
-    const val DESIGN_SUBTITLE = "Tokens y componentes de KioskSync"
+    const val DESIGN_SUBTITLE = "Tokens y componentes de Override Kiosk"
     const val DESIGN_THEME_DARK = "Oscuro"
     const val DESIGN_THEME_LIGHT = "Claro"
     const val DESIGN_REDUCE_MOTION = "Reducir movimiento"

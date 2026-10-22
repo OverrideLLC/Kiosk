@@ -110,7 +110,7 @@ class JmDnsDiscovery(
             )
             val info = ServiceInfo.create(
                 MDNS_SERVICE_TYPE,
-                "KioskSync-${deviceId.take(8)}",
+                "OverrideKiosk-${deviceId.take(8)}",
                 port,
                 0,
                 0,

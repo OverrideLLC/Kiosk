@@ -10,6 +10,7 @@ import app.kiosksync.core.MAX_RECOVERY_PHRASE_LENGTH
 import app.kiosksync.core.MAX_UNLOCK_SEQUENCE_LENGTH
 import app.kiosksync.core.PairError
 import app.kiosksync.core.PairRejectedException
+import app.kiosksync.core.PLAYBACK_SYNC_DELAY_MS
 import app.kiosksync.core.PlaylistRejectedException
 import app.kiosksync.core.STATUS_FAILURE_THRESHOLD
 import app.kiosksync.core.STATUS_POLL_INTERVAL_MS
@@ -29,6 +30,8 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -108,6 +111,7 @@ data class EmitterUiState(
     val statusIsError: Boolean = false,
     val syncByDevice: Map<String, DeviceSyncUi> = emptyMap(),
     val isSending: Boolean = false,
+    val isSyncing: Boolean = false,
     val passwordDialog: KioskPasswordDialogUi? = null,
     val securityDialog: SecurityDialogUi? = null,
     val hasKioskPassword: Boolean = false,
@@ -437,7 +441,7 @@ class EmitterStateHolder(
 
     fun sendToSelected(playlist: Playlist) {
         val state = _uiState.value
-        if (state.isSending) return
+        if (state.isSending || state.isSyncing) return
         if (playlist.items.isEmpty()) {
             _uiState.update {
                 it.copy(statusMessage = Strings.SEND_EMPTY_PLAYLIST, statusIsError = true)
@@ -462,8 +466,70 @@ class EmitterStateHolder(
         performSend(playlist, lock)
     }
 
+    /**
+     * Best-effort playback synchronisation: every paired screen receives the
+     * same relative delay and restarts its carousel when that delay expires.
+     * Relative delays avoid depending on the clocks of the different PCs.
+     */
+    fun synchronizePlayback() {
+        val state = _uiState.value
+        if (state.isSending || state.isSyncing) return
+
+        val paired = state.devices.filter { it.isPairedToThisEmitter }
+        if (paired.isEmpty()) {
+            _uiState.update {
+                it.copy(statusMessage = Strings.PLAYBACK_SYNC_NO_SCREENS, statusIsError = true)
+            }
+            return
+        }
+
+        val targets = paired.mapNotNull { device ->
+            val stored = storedDevices.firstOrNull { it.deviceId == device.deviceId }
+                ?: return@mapNotNull null
+            val target = targetFor(stored) ?: return@mapNotNull null
+            stored to target
+        }
+        val unresolved = paired.size - targets.size
+
+        _uiState.update {
+            it.copy(
+                isSyncing = true,
+                statusMessage = null,
+                statusIsError = false
+            )
+        }
+
+        scope.launch {
+            val results = targets.map { (stored, target) ->
+                async(backgroundDispatcher) {
+                    client.synchronizePlayback(
+                        host = target.first,
+                        port = target.second,
+                        emitterId = emitterId,
+                        token = stored.token,
+                        delayMs = PLAYBACK_SYNC_DELAY_MS
+                    ).onFailure { error ->
+                        logger.warn(
+                            "Could not synchronise playback on '${stored.deviceName}': ${error.message}"
+                        )
+                    }.isSuccess
+                }
+            }.awaitAll()
+
+            val success = results.count { it }
+            val failure = results.size - success + unresolved
+            _uiState.update {
+                it.copy(
+                    isSyncing = false,
+                    statusMessage = Strings.playbackSyncCompleted(success, failure),
+                    statusIsError = failure > 0
+                )
+            }
+        }
+    }
+
     fun requestProjection(playlist: Playlist) {
-        if (_uiState.value.isSending || projectionController.isProjecting) return
+        if (_uiState.value.isSending || _uiState.value.isSyncing || projectionController.isProjecting) return
         if (playlist.items.isEmpty()) {
             _uiState.update {
                 it.copy(statusMessage = Strings.PROJECT_NO_PLAYLIST, statusIsError = true)

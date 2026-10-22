@@ -58,6 +58,17 @@ data class PlaylistApplyResponse(
 )
 
 @Serializable
+data class PlaybackSyncRequest(
+    val delayMs: Long
+)
+
+@Serializable
+data class PlaybackSyncResponse(
+    val accepted: Boolean,
+    val delayMs: Long = 0
+)
+
+@Serializable
 data class ReceiverPairedInfo(
     val emitterId: String,
     val emitterName: String,

@@ -10,10 +10,13 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -25,6 +28,11 @@ data class PlaybackUiState(
     val currentItem: PlaylistItem? = null,
     val currentBitmap: ImageBitmap? = null,
     val hasItems: Boolean = false
+)
+
+private data class PlaybackRestartRequest(
+    val id: Long,
+    val delayMs: Long
 )
 
 class PlaybackStateHolder(
@@ -39,18 +47,64 @@ class PlaybackStateHolder(
     val uiState: StateFlow<PlaybackUiState> = _uiState.asStateFlow()
 
     private var playbackJob: Job? = null
+    private var syncJob: Job? = null
+    private var nextRestartId = 0L
     private val activePlaylist = MutableStateFlow<Playlist?>(null)
+    private val playbackStarted = MutableStateFlow(false)
+
+    /**
+     * Latest requested restart. The id makes every request distinct even when
+     * the delay is the same, so a second synchronisation resets the countdown.
+     * `collectLatest` cancels the previous countdown when a newer one arrives.
+     */
+    private val restartRequests = MutableStateFlow<PlaybackRestartRequest?>(null)
 
     fun start() {
+        playbackStarted.value = true
+        restartRequests.value = null
+
         playbackJob?.cancel()
         playbackJob = scope.launch {
-            runPlaybackLoop()
+            runPlaybackLoop(startIndex = 0)
+        }
+
+        syncJob?.cancel()
+        syncJob = scope.launch {
+            restartRequests
+                .filterNotNull()
+                .collectLatest { request ->
+                    delay(request.delayMs)
+                    if (!playbackStarted.value) return@collectLatest
+                    playbackJob?.cancelAndJoin()
+                    playbackJob = scope.launch {
+                        runPlaybackLoop(startIndex = 0)
+                    }
+                }
         }
     }
 
     fun stop() {
+        playbackStarted.value = false
+        restartRequests.value = null
+        syncJob?.cancel()
+        syncJob = null
         playbackJob?.cancel()
         playbackJob = null
+    }
+
+    /**
+     * Schedules a restart of the carousel from its first image after [delayMs].
+     * Returns false when this receiver has no content to restart yet.
+     */
+    fun scheduleRestart(delayMs: Long): Boolean {
+        if (!playbackStarted.value) return false
+        val playlist = activePlaylist.value ?: return false
+        if (playlist.items.isEmpty()) return false
+        val safeDelay = delayMs.coerceAtLeast(0L)
+        nextRestartId += 1
+        restartRequests.value = PlaybackRestartRequest(nextRestartId, safeDelay)
+        logger.info("Playback restart scheduled in $safeDelay ms")
+        return true
     }
 
     fun reloadPlaylist() {
@@ -71,11 +125,11 @@ class PlaybackStateHolder(
         logger.info("Playlist updated dynamically to version ${newPlaylist.version}")
     }
 
-    private suspend fun runPlaybackLoop() {
+    private suspend fun runPlaybackLoop(startIndex: Int = 0) {
         if (loadFromStorage) {
             activePlaylist.value = withContext(backgroundDispatcher) { localStorage.loadPlaylist() }
         }
-        var index = 0
+        var index = startIndex.coerceAtLeast(0)
 
         while (scope.isActive) {
             val playlist = activePlaylist.value

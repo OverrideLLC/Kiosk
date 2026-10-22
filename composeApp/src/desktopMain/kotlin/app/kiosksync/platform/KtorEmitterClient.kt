@@ -13,6 +13,7 @@ import app.kiosksync.core.PairError
 import app.kiosksync.core.PairRejectedException
 import app.kiosksync.core.PairRequest
 import app.kiosksync.core.PairResponse
+import app.kiosksync.core.PlaybackSyncRequest
 import app.kiosksync.core.PlaylistApplyResponse
 import app.kiosksync.core.PlaylistRejectedException
 import app.kiosksync.core.ReceiverStatusResponse
@@ -135,6 +136,25 @@ class KtorEmitterClient(
             throw IOException("GET /status returned HTTP ${response.status}")
         }
         response.body<ReceiverStatusResponse>()
+    }
+
+    override suspend fun synchronizePlayback(
+        host: String,
+        port: Int,
+        emitterId: String,
+        token: String,
+        delayMs: Long
+    ): Result<Boolean> = runCatching {
+        val response = client.post("${baseUrl(host, port)}/playback/sync") {
+            header(HEADER_EMITTER_ID, emitterId)
+            header(HEADER_AUTH_TOKEN, token)
+            contentType(ContentType.Application.Json)
+            setBody(PlaybackSyncRequest(delayMs = delayMs))
+        }
+        if (response.status != HttpStatusCode.OK) {
+            throw IOException("POST /playback/sync returned HTTP ${response.status}")
+        }
+        true
     }
 
     override suspend fun getSyncState(

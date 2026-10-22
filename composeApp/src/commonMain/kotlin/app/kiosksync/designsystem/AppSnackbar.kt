@@ -8,7 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 /**
- * Snackbar host with the KioskSync look. Used for undoable deletes and for
+ * Snackbar host with the Override Kiosk look. Used for undoable deletes and for
  * send results, always with a cause when something failed.
  */
 @Composable
