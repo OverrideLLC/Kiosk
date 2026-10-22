@@ -224,7 +224,7 @@ Carpeta base: `%APPDATA%\OverrideKiosk\` (configurable con `--data-dir`, ver sec
 
 ```
 OverrideKiosk\
-├── preferences.preferences_pb  # configuración pequeña vía DataStore
+├── app-config.preferences_pb   # configuración pequeña vía DataStore
 ├── kiosk.db                    # playlists, ítems, catálogo y preferencias estructuradas
 ├── legacy\                     # JSON previos conservados tras migrar
 ├── media\                      # imágenes (nombradas por mediaId + extensión)

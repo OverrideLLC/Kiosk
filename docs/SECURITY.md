@@ -113,14 +113,15 @@ solo sirve contra ese servicio falso.
 
 ### 7. Datos en disco
 
-En la implementación actual, `config.json`, `paired.json` y `lock.json` están en
-`%APPDATA%\OverrideKiosk\` con los permisos del usuario de Windows. La arquitectura
-objetivo migra preferencias a DataStore y playlists, medios y emparejamientos a
-Room más archivos; Windows DPAPI cifra tokens y hashes sensibles antes de
-persistirlos. DPAPI protege frente a la copia de datos a otro perfil de Windows,
-pero cualquier proceso que se ejecute con el mismo usuario puede solicitar su
-descifrado. No sustituye la seguridad de la cuenta ni protege contra malware con
-los permisos del usuario.
+La configuración pequeña ya se guarda en `app-config.preferences_pb`, mediante
+DataStore, bajo `%APPDATA%\OverrideKiosk\` y con los permisos del usuario de
+Windows. El `config.json` anterior se conserva en `legacy/config.json` después de
+la migración. `paired.json` y `lock.json` siguen en archivos JSON hasta la fase de
+migración a Room; todavía no se cifran con DPAPI. Cuando Room y DPAPI estén
+integrados, DPAPI protegerá tokens y hashes frente a su copia a otro perfil de
+Windows, pero cualquier proceso del mismo usuario podrá solicitar su descifrado.
+No sustituye la seguridad de la cuenta ni protege contra malware con sus
+permisos.
 
 ### 8. Sin TLS y sin certificados
 

@@ -8,7 +8,6 @@ import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.ReceiverPairedInfo
 import app.kiosksync.feature.playlist.Playlist
 import app.kiosksync.feature.playlist.PlaylistLibrary
-import app.kiosksync.feature.role.AppConfig
 import app.kiosksync.platform.LocalStorage
 import app.kiosksync.platform.MediaImportResult
 import app.kiosksync.platform.ReceiverUpdateManager
@@ -25,10 +24,8 @@ class FakeLocalStorage(
     val availableBitmaps: MutableMap<String, ImageBitmap> = mutableMapOf(),
     private val hashProvider: (ByteArray) -> String = { "hash" }
 ) : LocalStorage {
-    var savedConfig: AppConfig? = null
     var receiverPairedInfo: ReceiverPairedInfo? = null
     var emitterPairedDevices: List<EmitterPairedDevice> = emptyList()
-    var clearConfigCalled = false
     var clearPairingCalled = false
     var clearReceiverDataCalled = false
     var loadMediaBitmapCount = 0
@@ -37,19 +34,6 @@ class FakeLocalStorage(
     var clearKioskLockCalled = false
     val storedMedia: MutableMap<String, StoredMedia> = mutableMapOf()
     val mediaBytes: MutableMap<String, ByteArray> = mutableMapOf()
-
-    override fun loadConfig(): AppConfig? = savedConfig
-
-    override fun saveConfig(config: AppConfig) {
-        savedConfig = config
-    }
-
-    override fun clearConfig() {
-        clearConfigCalled = true
-        savedConfig = null
-        clearPairing()
-        clearKioskLock()
-    }
 
     override fun clearPairing() {
         clearPairingCalled = true

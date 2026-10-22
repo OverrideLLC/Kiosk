@@ -27,6 +27,7 @@ kotlin {
             dependencies {
                 implementation(compose.desktop.currentOs)
                 implementation(libs.kotlinx.coroutines.swing)
+                implementation(libs.datastore.preferences.core)
 
                 // Ktor Server (Receiver)
                 implementation(libs.ktor.server.core)

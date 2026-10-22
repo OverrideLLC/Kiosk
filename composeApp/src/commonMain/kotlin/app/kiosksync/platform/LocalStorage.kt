@@ -7,7 +7,6 @@ import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.ReceiverPairedInfo
 import app.kiosksync.feature.playlist.Playlist
 import app.kiosksync.feature.playlist.PlaylistLibrary
-import app.kiosksync.feature.role.AppConfig
 
 data class StoredMedia(
     val mediaId: String,
@@ -28,19 +27,13 @@ enum class MediaImportError {
 }
 
 interface LocalStorage {
-    fun loadConfig(): AppConfig?
-    fun saveConfig(config: AppConfig)
-    fun clearConfig()
     fun clearPairing()
 
     /**
      * Wipes everything that belongs to the Screen role (the active playlist, the
      * stored images, the blocking password and the pairing) so that a screen
      * always starts blank instead of replaying content from a previous session.
-     *
-     * It deliberately keeps `config.json`, so the device remembers that it is a
-     * screen. It is never called for the Controller role, which keeps all of its
-     * data (playlist library, paired screens, password).
+     * It is never called for the Controller role, which keeps all of its data.
      */
     fun clearReceiverData()
 

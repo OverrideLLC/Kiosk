@@ -36,7 +36,6 @@ class ScreenRenderTest {
     fun rendersRoleSelection() {
         val output = File("build/reports/ui").apply { mkdirs() }
         val holder = RoleStateHolder(
-            localStorage = FakeLocalStorage(),
             logger = NoOpLogger(),
             initialRole = AppRole.RECEIVER,
         )

@@ -8,6 +8,8 @@ import app.kiosksync.feature.playback.ReceiverPlaybackSyncBridge
 import app.kiosksync.feature.playback.ReceiverPlaylistBridge
 import app.kiosksync.feature.playback.ReceiverStatusTracker
 import app.kiosksync.feature.projection.ProjectionController
+import app.kiosksync.feature.role.AppConfig
+import app.kiosksync.feature.role.AppConfigStore
 import app.kiosksync.platform.DeviceDiscovery
 import app.kiosksync.platform.EmitterClient
 import app.kiosksync.platform.KioskKeyboardGuard
@@ -35,6 +37,8 @@ class AppContainer(
     val dataDirPath: String,
     val logger: AppLogger,
     val localStorage: LocalStorage,
+    val configStore: AppConfigStore,
+    val initialConfig: AppConfig?,
     val deviceName: String,
     val pairingManager: PairingManager,
     val discovery: DeviceDiscovery,

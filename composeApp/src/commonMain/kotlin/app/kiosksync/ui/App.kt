@@ -34,6 +34,8 @@ import app.kiosksync.feature.role.AppConfig
 import app.kiosksync.feature.role.RoleSelectionScreen
 import app.kiosksync.feature.role.RoleStateHolder
 import app.kiosksync.feature.update.ReceiverUpdateOverlay
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 
 @Composable
 fun App(
@@ -43,30 +45,10 @@ fun App(
     registerUnpairHandler: ((() -> Unit)?) -> Unit = {}
 ) {
     val coroutineScope = rememberCoroutineScope()
-    val existingConfig = remember { container.localStorage.loadConfig() }
+    val existingConfig = container.initialConfig
     val initialDeviceId = remember { existingConfig?.deviceId ?: container.newDeviceId() }
     val effectivePort = container.args.port ?: existingConfig?.port ?: DEFAULT_PORT
     val pairingManager: PairingManager = container.pairingManager
-
-    // Appearance is shared by every role and persisted in config.json.
-    var appTheme by remember { mutableStateOf(existingConfig?.theme ?: AppTheme.DARK) }
-    var reduceMotion by remember { mutableStateOf(existingConfig?.reduceMotion ?: false) }
-
-    fun persistConfig(transform: (AppConfig) -> AppConfig) {
-        container.localStorage.loadConfig()?.let { current ->
-            container.localStorage.saveConfig(transform(current))
-        }
-    }
-
-    fun updateTheme(theme: AppTheme) {
-        appTheme = theme
-        persistConfig { it.copy(theme = theme) }
-    }
-
-    fun updateReduceMotion(enabled: Boolean) {
-        reduceMotion = enabled
-        persistConfig { it.copy(reduceMotion = enabled) }
-    }
 
     // Determine initial screen based on CLI args and saved config
     val initialScreen = remember {
@@ -80,7 +62,6 @@ fun App(
                 theme = existingConfig?.theme ?: AppTheme.DARK,
                 reduceMotion = existingConfig?.reduceMotion ?: false
             )
-            container.localStorage.saveConfig(config)
             when (forcedRole) {
                 AppRole.EMITTER -> Screen.EmitterHome(config)
                 AppRole.RECEIVER -> Screen.ReceiverHome(config)
@@ -96,10 +77,58 @@ fun App(
     }
 
     var currentScreen by remember { mutableStateOf<Screen>(initialScreen) }
+    val initialScreenConfig = when (val screen = initialScreen) {
+        is Screen.EmitterHome -> screen.config
+        is Screen.ReceiverHome -> screen.config
+        Screen.RoleSelection -> existingConfig
+    }
+    var currentConfig by remember { mutableStateOf(initialScreenConfig) }
+    var appTheme by remember { mutableStateOf(existingConfig?.theme ?: AppTheme.DARK) }
+    var reduceMotion by remember { mutableStateOf(existingConfig?.reduceMotion ?: false) }
+
+    fun persistConfig(config: AppConfig) {
+        currentConfig = config
+        coroutineScope.launch {
+            try {
+                container.configStore.save(config)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                container.logger.error("Could not save application preferences", error)
+            }
+        }
+    }
+
+    fun updateConfig(transform: (AppConfig) -> AppConfig) {
+        currentConfig?.let { persistConfig(transform(it)) }
+    }
+
+    fun updateTheme(theme: AppTheme) {
+        appTheme = theme
+        updateConfig { it.copy(theme = theme) }
+    }
+
+    fun updateReduceMotion(enabled: Boolean) {
+        reduceMotion = enabled
+        updateConfig { it.copy(reduceMotion = enabled) }
+    }
+
+    LaunchedEffect(container.args.role) {
+        if (container.args.role != null) {
+            currentConfig?.let { config ->
+                try {
+                    container.configStore.save(config)
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    container.logger.error("Could not persist the role forced by command line", error)
+                }
+            }
+        }
+    }
 
     val roleStateHolder = remember {
         RoleStateHolder(
-            localStorage = container.localStorage,
             logger = container.logger,
             initialRole = container.args.role ?: existingConfig?.role
         )
@@ -159,6 +188,18 @@ fun App(
 
     fun resetRole() {
         roleStateHolder.confirmChangeRole()
+        currentConfig = null
+        coroutineScope.launch {
+            try {
+                container.configStore.clear()
+                container.localStorage.clearPairing()
+                container.localStorage.clearKioskLock()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                container.logger.error("Could not clear role preferences", error)
+            }
+        }
         container.kioskLockManager.release()
         container.projectionController.stop()
         // Pairing is initialized only when the Receiver role is confirmed again,
@@ -238,6 +279,7 @@ fun App(
                         RoleSelectionScreen(
                             stateHolder = roleStateHolder,
                             onRoleConfirmed = { confirmedConfig ->
+                                persistConfig(confirmedConfig)
                                 if (confirmedConfig.role == AppRole.RECEIVER) {
                                     // Entering the Screen role always starts blank.
                                     container.localStorage.clearReceiverData()

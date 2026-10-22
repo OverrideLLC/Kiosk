@@ -1,6 +1,5 @@
 package app.kiosksync.feature.role
 
-import app.kiosksync.FakeLocalStorage
 import app.kiosksync.NoOpLogger
 import app.kiosksync.core.AppRole
 import app.kiosksync.core.AppTheme
@@ -65,9 +64,8 @@ class RoleConfigTest {
 
     @Test
     fun testRoleStateHolderFlow() {
-        val fakeStorage = FakeLocalStorage()
         val logger = NoOpLogger()
-        val stateHolder = RoleStateHolder(fakeStorage, logger)
+        val stateHolder = RoleStateHolder(logger)
 
         // Initial state
         assertNull(stateHolder.uiState.value.selectedRole)
@@ -81,7 +79,6 @@ class RoleConfigTest {
         val config = stateHolder.confirmRole("dev-1", "Screen1", 8765)
         assertNotNull(config)
         assertEquals(AppRole.RECEIVER, config.role)
-        assertEquals(config, fakeStorage.savedConfig)
 
         // Request Change Role
         stateHolder.requestChangeRole()
@@ -93,8 +90,6 @@ class RoleConfigTest {
 
         // Confirm change role
         stateHolder.confirmChangeRole()
-        assertTrue(fakeStorage.clearConfigCalled)
-        assertNull(fakeStorage.savedConfig)
         assertNull(stateHolder.uiState.value.selectedRole)
     }
 }

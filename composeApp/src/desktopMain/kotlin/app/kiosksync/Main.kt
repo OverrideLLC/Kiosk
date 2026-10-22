@@ -30,6 +30,7 @@ import app.kiosksync.feature.playback.ReceiverPlaybackSyncBridge
 import app.kiosksync.feature.playback.ReceiverPlaylistBridge
 import app.kiosksync.feature.playback.ReceiverStatusTracker
 import app.kiosksync.feature.projection.ProjectionController
+import app.kiosksync.platform.DataStoreAppConfigStore
 import app.kiosksync.platform.FileAppLogger
 import app.kiosksync.platform.FileLocalStorage
 import app.kiosksync.platform.FileReceiverUpdateManager
@@ -58,6 +59,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
 fun main(args: Array<String>) {
@@ -93,7 +95,13 @@ fun main(args: Array<String>) {
     logger.info("Logs directory: ${logsDir.absolutePath}")
 
     val localStorage = FileLocalStorage(effectiveDataDir, logger)
-    val existingConfig = localStorage.loadConfig()
+    val configStore = DataStoreAppConfigStore(effectiveDataDir, logger)
+    val existingConfig = try {
+        runBlocking { configStore.initialize() }
+    } catch (error: Exception) {
+        logger.error("Could not load application preferences; showing role selection", error)
+        null
+    }
     val activeRole = appArgs.role ?: existingConfig?.role
 
     if (activeRole == AppRole.RECEIVER) {
@@ -204,6 +212,8 @@ fun main(args: Array<String>) {
         dataDirPath = effectiveDataDir.absolutePath,
         logger = logger,
         localStorage = localStorage,
+        configStore = configStore,
+        initialConfig = existingConfig,
         deviceName = deviceName,
         pairingManager = pairingManager,
         discovery = discovery,

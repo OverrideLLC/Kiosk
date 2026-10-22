@@ -108,7 +108,8 @@ prometer funciones o de instalar la app en un comercio real.
 
 ## UI y accesibilidad
 
-- El tema claro/oscuro y el movimiento reducido se guardan en `config.json`.
+- El tema claro/oscuro y el movimiento reducido se guardan en DataStore; la
+  configuración `config.json` anterior se conserva bajo `legacy/`.
 - La Pantalla (pairing y reproducción) es siempre negra por diseño; el tema
   afecta al Controlador y a los diálogos.
 - El catálogo de componentes (`--ui-catalog`) es una herramienta de desarrollo, no
@@ -121,7 +122,9 @@ prometer funciones o de instalar la app en un comercio real.
 
 ## Datos y operación
 
-- Sin base de datos: archivos JSON y una carpeta de imágenes.
+- Las playlists, listas de pantallas vinculadas y la configuración del kiosco aún
+  usan archivos JSON hasta completar la fase 10 de migración a Room. Las imágenes
+  siguen en archivos por diseño.
 - Sin copia de seguridad automática. Si se borra `%APPDATA%\OverrideKiosk\`, se pierde
   la vinculación y la playlist local.
 - Los paquetes de actualización ocupan espacio en `updates\`: el Controlador guarda

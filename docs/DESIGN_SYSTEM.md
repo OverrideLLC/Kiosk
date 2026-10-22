@@ -27,8 +27,8 @@ KioskTheme(theme = AppTheme.DARK, reduceMotion = false) {
 
 - `AppTheme.DARK` es el valor por defecto (salas con poca luz).
 - `AppTheme.LIGHT` está completo y se puede alternar.
-- La preferencia actualmente se guarda en `config.json` (`AppConfig.theme`). En
-  la fase 9 se migrará a DataStore Preferences y deberá sobrevivir al reinicio.
+- La preferencia se guarda en DataStore Preferences junto al rol y sobrevive al
+  reinicio. `config.json` se conserva en `legacy/` como respaldo tras migrarlo.
 - `reduceMotion = true` desactiva springs y fades desde un solo punto
   (`LocalReduceMotion`).
 
