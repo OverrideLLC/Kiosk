@@ -25,6 +25,7 @@ import app.kiosksync.resources.ic_drag_indicator
 import app.kiosksync.resources.ic_edit
 import app.kiosksync.resources.ic_error
 import app.kiosksync.resources.ic_expand_more
+import app.kiosksync.resources.ic_favorite
 import app.kiosksync.resources.ic_folder_open
 import app.kiosksync.resources.ic_help
 import app.kiosksync.resources.ic_hourglass_empty
@@ -82,6 +83,7 @@ enum class AppIcon(val resource: DrawableResource) {
     EDIT(Res.drawable.ic_edit),
     ERROR(Res.drawable.ic_error),
     EXPAND_MORE(Res.drawable.ic_expand_more),
+    FAVORITE(Res.drawable.ic_favorite),
     FOLDER_OPEN(Res.drawable.ic_folder_open),
     HELP(Res.drawable.ic_help),
     HOURGLASS_EMPTY(Res.drawable.ic_hourglass_empty),

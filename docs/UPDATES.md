@@ -85,7 +85,8 @@ estado. No hay un botón de "buscar actualizaciones" separado.
    - `composeApp/build.gradle.kts` (`packageVersion`).
 2. Ejecuta `.\gradlew.bat build`.
 3. Genera la carpeta portable o el instalador con las instrucciones de
-   [PACKAGING.md](PACKAGING.md).
+   [PACKAGING.md](PACKAGING.md), o empuja el tag `v<versión>` para que el workflow
+   de GitHub Actions publique la release en Windows.
 4. Instala o descomprime **el Controlador** con la versión nueva.
 5. Abre el Controlador con las Pantallas encendidas. La actualización se envía
    sola; si alguna Pantalla estaba apagada, se actualizará cuando vuelva a

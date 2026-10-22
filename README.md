@@ -51,18 +51,19 @@ Los detalles, límites y el procedimiento para publicar una versión están en
 
 ## Descarga
 
-Todavía no hay una versión publicada en
-[GitHub Releases](https://github.com/Drinity/OverrideKiosk/releases). Mientras
-tanto:
+La versión **1.1.0** se publica en
+[GitHub Releases](https://github.com/Drinity/OverrideKiosk/releases) con tres
+variantes para Windows 10/11:
 
-- **Usuarios finales**: pide la carpeta portable `OverrideKiosk` (o el instalador
-  `.msi`/`.exe`) generada con las instrucciones de
-  [Empaquetado para Windows](docs/PACKAGING.md). No hace falta JDK ni internet.
-- **Desarrollo**: clona este repositorio y compílalo con Gradle (siguiente
-  sección).
+- `OverrideKiosk-1.1.0.exe`: instalador único.
+- `OverrideKiosk-1.1.0.msi`: instalador MSI para despliegue.
+- `OverrideKiosk-1.1.0-portable.zip`: carpeta portable; descomprime y ejecuta
+  `OverrideKiosk.exe`.
 
-La carpeta portable es la opción más simple y no requiere permisos de
-administrador. El instalador solo agrega accesos directos y desinstalación.
+No hace falta JDK ni internet para usar ninguna de las tres. La carpeta portable
+es la opción más simple y no requiere permisos de administrador; el instalador
+solo agrega accesos directos y desinstalación. Si compilas desde el código, sigue
+la sección siguiente.
 
 ## Compilar y ejecutar
 
@@ -132,6 +133,5 @@ usarlo en producción.
 
 ## Licencia
 
-El proyecto se distribuye como software libre. La licencia definitiva (MIT o
-Apache-2.0) se confirmará antes de publicar la primera versión; hasta entonces no
-hay un archivo `LICENSE` en el repositorio.
+Override Kiosk se distribuye bajo la licencia **MIT**. Consulta el archivo
+[LICENSE](LICENSE) para el texto completo y el aviso de copyright.

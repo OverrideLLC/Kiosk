@@ -13,7 +13,10 @@ pantalla completa, rediseño visual, pruebas de integración, empaquetado y
 **actualizaciones automáticas por LAN** desde el Controlador hacia las Pantallas.
 
 Los documentos de actualizaciones, empaquetado, protocolo y límites ya describen
-la función; el logo oficial está normalizado y el `icon.ico` se regeneró.
+la función; el logo oficial está normalizado, el `icon.ico` se regeneró y el pie
+enlaza a `https://override.com.mx`. La licencia es **MIT** (`LICENSE`) y el
+workflow `.github/workflows/release.yml` genera los artefactos de Windows y la
+release al empujar un tag `v1.1.0`.
 
 Esta nota existe para dejar claro qué falta comprobar antes de considerar el
 trabajo cerrado y para poder continuar desde otra computadora.
@@ -62,10 +65,11 @@ trabajo cerrado y para poder continuar desde otra computadora.
    - [ ] Regenerar los artefactos con la versión 1.1.0 y probar una actualización
      desde 1.0.0.
 6. **Publicación**
-   - Todavía no hay una versión publicada en GitHub Releases.
-   - Falta elegir la licencia definitiva (MIT o Apache-2.0) y añadir `LICENSE`.
-   - El `README.md` explica que, mientras tanto, se debe usar una carpeta
-     portable o un instalador generado localmente.
+   - Licencia MIT añadida en `LICENSE` y en el `README.md`.
+   - Workflow de release listo; falta empujar el tag `v1.1.0` y comprobar que
+     GitHub Actions publica el `.exe`, el `.msi`, el `.zip` portable y
+     `SHA256SUMS.txt`.
+   - El `README.md` apunta a GitHub Releases para la descarga.
 
 ## Cómo continuar en otra computadora
 

@@ -1,6 +1,7 @@
 package app.kiosksync.core
 
 const val APP_NAME = "Override Kiosk"
+const val OVERRIDE_WEBSITE = "https://override.com.mx"
 const val APP_VERSION = "1.1.0"
 
 /** Name produced by jpackage; used to relaunch after an in-place update. */

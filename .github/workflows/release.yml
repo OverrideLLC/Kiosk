@@ -1,0 +1,85 @@
+name: Release Windows
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-windows
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read application version
+        id: version
+        shell: pwsh
+        run: |
+          $constants = "composeApp\src\commonMain\kotlin\app\kiosksync\core\Constants.kt"
+          $match = Select-String -Path $constants -Pattern 'APP_VERSION\s*=\s*"([^"]+)"'
+          if (-not $match) { throw "APP_VERSION not found in $constants" }
+          $version = $match.Matches[0].Groups[1].Value
+          if ($env:GITHUB_REF_TYPE -eq "tag" -and $env:GITHUB_REF_NAME -ne "v$version") {
+            throw "Tag $env:GITHUB_REF_NAME does not match APP_VERSION $version"
+          }
+          "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Host "Building Override Kiosk $version"
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build, test and package
+        shell: pwsh
+        run: .\gradlew.bat --no-daemon --console=plain build createDistributable packageMsi packageExe
+
+      - name: Collect release artifacts
+        shell: pwsh
+        run: |
+          $version = "${{ steps.version.outputs.version }}"
+          $binaries = "composeApp\build\compose\binaries\main"
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+
+          Copy-Item -Path "$binaries\exe\OverrideKiosk-$version.exe" -Destination "dist\OverrideKiosk-$version.exe"
+          Copy-Item -Path "$binaries\msi\OverrideKiosk-$version.msi" -Destination "dist\OverrideKiosk-$version.msi"
+          Compress-Archive -Path "$binaries\app\OverrideKiosk" -DestinationPath "dist\OverrideKiosk-$version-portable.zip" -Force
+
+          Get-ChildItem -Path dist -File | ForEach-Object {
+            $hash = (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash.ToLower()
+            "$hash  $($_.Name)"
+          } | Set-Content -Path "dist\SHA256SUMS.txt" -Encoding utf8
+
+          Get-ChildItem -Path dist | Format-Table Name, Length
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Override Kiosk ${{ steps.version.outputs.version }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: dist/*
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: OverrideKiosk-${{ steps.version.outputs.version }}-windows
+          path: dist/*
+          if-no-files-found: error

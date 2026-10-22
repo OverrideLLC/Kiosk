@@ -76,12 +76,12 @@ Apache License 2.0. La copia completa está en
 
 ## Catálogo actual
 
-50 íconos: `add`, `add_link`, `add_photo_alternate`, `arrow_downward`,
+51 íconos: `add`, `add_link`, `add_photo_alternate`, `arrow_downward`,
 `arrow_upward`, `cast`, `check`, `check_circle`, `close`, `cloud_off`,
-`delete`, `drag_indicator`, `edit`, `error`, `expand_more`, `folder_open`,
-`help`, `hourglass_empty`, `image`, `image_not_supported`, `info`, `link`,
-`lock`, `lock_open`, `logout`, `more_vert`, `pause`, `photo_library`,
-`play_arrow`, `playlist_add`, `playlist_play`, `present_to_all`, `refresh`,
-`remove`, `select_all`, `send`, `settings`, `stop_circle`, `swap_horiz`,
-`sync`, `sync_problem`, `timer`, `tv`, `undo`, `upload`, `visibility`,
-`visibility_off`, `warning`, `wifi`, `wifi_off`.
+`delete`, `drag_indicator`, `edit`, `error`, `expand_more`, `favorite`,
+`folder_open`, `help`, `hourglass_empty`, `image`, `image_not_supported`,
+`info`, `link`, `lock`, `lock_open`, `logout`, `more_vert`, `pause`,
+`photo_library`, `play_arrow`, `playlist_add`, `playlist_play`,
+`present_to_all`, `refresh`, `remove`, `select_all`, `send`, `settings`,
+`stop_circle`, `swap_horiz`, `sync`, `sync_problem`, `timer`, `tv`, `undo`,
+`upload`, `visibility`, `visibility_off`, `warning`, `wifi`, `wifi_off`.

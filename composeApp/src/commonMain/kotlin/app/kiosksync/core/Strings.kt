@@ -14,7 +14,9 @@ object Strings {
     const val ROLE_SELECT_FIRST = "Elige un rol para continuar."
     const val ROLE_CHANGE_HINT = "Puedes cambiarlo después desde Ajustes en el Controlador."
     const val APP_TAGLINE = "Contenido para tus pantallas, sin internet."
-    const val DEVELOPED_WITH_LOVE = "Desarrollado con <3 por Override"
+    const val DEVELOPED_WITH = "Desarrollado con"
+    const val DEVELOPED_BY = "por"
+    const val OVERRIDE_NAME = "Override"
     const val CHANGE_ROLE = "Cambiar de rol"
     const val CHANGE_ROLE_CONFIRM = "¿Seguro que deseas cambiar de rol? Se borrará la vinculación actual."
 

@@ -128,6 +128,27 @@ La actualización reemplaza solo `app/`: no cambia el runtime ni el `.exe`. La
 carpeta portable debe estar en una ubicación escribible por el usuario; si está en
 `C:\Program Files` o protegida por una política, la Pantalla no podrá aplicarla.
 
+## Release automática en GitHub
+
+El workflow `.github/workflows/release.yml` compila en `windows-latest` y publica
+la release cuando se empuja un tag con la versión:
+
+```powershell
+git tag v1.1.0
+git push origin v1.1.0
+```
+
+El workflow:
+
+1. Lee `APP_VERSION` y falla si el tag no coincide con `v<versión>`.
+2. Ejecuta `build`, `createDistributable`, `packageMsi` y `packageExe`.
+3. Publica en GitHub Releases el `.exe`, el `.msi`, la carpeta portable en `.zip`
+   y `SHA256SUMS.txt`.
+
+También se puede lanzar a mano desde **Actions → Release Windows → Run
+workflow**. La primera ejecución tarda más porque descarga Gradle, dependencias y
+WiX. Los artefactos también quedan adjuntos al run del workflow.
+
 ## Consumo de memoria
 
 Medición con la carpeta portable en Windows 11 (JDK 21, ventana normal, sin
