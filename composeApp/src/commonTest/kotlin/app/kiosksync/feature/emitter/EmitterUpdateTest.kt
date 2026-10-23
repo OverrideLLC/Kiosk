@@ -19,9 +19,9 @@ import app.kiosksync.core.UpdateUploadResponse
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.projection.presentation.ProjectionController
-import app.kiosksync.platform.DeviceDiscovery
+import app.kiosksync.feature.pairing.domain.DeviceDiscovery
 import app.kiosksync.feature.emitter.domain.EmitterClient
-import app.kiosksync.platform.UpdatePackage
+import app.kiosksync.feature.update.domain.UpdatePackage
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

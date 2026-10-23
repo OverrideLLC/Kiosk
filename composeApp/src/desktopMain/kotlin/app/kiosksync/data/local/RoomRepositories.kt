@@ -9,11 +9,13 @@ import app.kiosksync.feature.pairing.domain.PairingRepository
 import app.kiosksync.feature.pairing.data.RoomPairingRepository
 import app.kiosksync.feature.playlist.data.RoomPlaylistRepository
 import app.kiosksync.feature.playlist.domain.PlaylistRepository
-import app.kiosksync.platform.FileMediaStore
-import app.kiosksync.platform.MediaRepository
-import app.kiosksync.platform.ReceiverDataResetter
+import app.kiosksync.feature.media.data.FileMediaStore
+import app.kiosksync.feature.media.data.RoomMediaRepository
+import app.kiosksync.feature.media.domain.MediaRepository
+import app.kiosksync.feature.receiver.data.RoomReceiverDataResetter
+import app.kiosksync.feature.receiver.domain.ReceiverDataResetter
 import app.kiosksync.data.local.room.KioskDatabase
-import app.kiosksync.platform.secret.SecretProtector
+import app.kiosksync.data.security.SecretProtector
 import java.io.File
 
 /**

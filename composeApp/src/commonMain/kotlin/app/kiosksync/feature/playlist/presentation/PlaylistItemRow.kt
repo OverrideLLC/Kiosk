@@ -59,7 +59,7 @@ import app.kiosksync.feature.playlist.presentation.PlaylistEditorAction
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorStateHolder
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorUiState
 import app.kiosksync.feature.playlist.domain.PlaylistItem
-import app.kiosksync.platform.MediaRepository
+import app.kiosksync.feature.media.domain.MediaRepository
 
 @Composable
 internal fun PlaylistItemRow(

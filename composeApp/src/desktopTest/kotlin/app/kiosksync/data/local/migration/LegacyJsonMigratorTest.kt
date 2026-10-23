@@ -6,10 +6,10 @@ import app.kiosksync.data.local.RoomRepositories
 import app.kiosksync.data.local.room.KioskDao
 import app.kiosksync.data.local.room.PairedDeviceEntity
 import app.kiosksync.data.local.room.buildKioskDatabase
-import app.kiosksync.platform.FileMediaStore
-import app.kiosksync.platform.Sha256
-import app.kiosksync.platform.secret.DevelopmentSecretProtector
-import app.kiosksync.platform.secret.SecretProtector
+import app.kiosksync.feature.media.data.FileMediaStore
+import app.kiosksync.data.security.Sha256
+import app.kiosksync.data.security.DevelopmentSecretProtector
+import app.kiosksync.data.security.SecretProtector
 import java.io.File
 import java.util.Base64
 import kotlin.test.AfterTest

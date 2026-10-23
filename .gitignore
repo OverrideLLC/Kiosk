@@ -22,10 +22,10 @@ dist/
 
 # App local runtime data & logs
 *.log
-logs/
-media/
-legacy/
-updates/
+/logs/
+/media/
+/legacy/
+/updates/
 *.preferences_pb
 *.db
 *.db-shm

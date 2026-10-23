@@ -28,9 +28,9 @@ import app.kiosksync.feature.kiosk.domain.KioskLockConfigurationUseCases
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.projection.domain.ProjectionService
 import app.kiosksync.feature.sync.domain.EmitterSyncRepository
-import app.kiosksync.platform.DeviceDiscovery
+import app.kiosksync.feature.pairing.domain.DeviceDiscovery
 import app.kiosksync.feature.emitter.domain.EmitterClient
-import app.kiosksync.platform.UpdatePackageProvider
+import app.kiosksync.feature.update.domain.UpdatePackageProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope

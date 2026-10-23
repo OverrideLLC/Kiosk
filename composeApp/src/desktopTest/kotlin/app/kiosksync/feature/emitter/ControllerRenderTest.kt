@@ -26,7 +26,7 @@ import app.kiosksync.feature.playlist.presentation.PlaylistEditorStateHolder
 import app.kiosksync.feature.playlist.domain.PlaylistItem
 import app.kiosksync.feature.playlist.domain.PlaylistLibrary
 import app.kiosksync.feature.projection.presentation.ProjectionController
-import app.kiosksync.platform.DeviceDiscovery
+import app.kiosksync.feature.pairing.domain.DeviceDiscovery
 import app.kiosksync.feature.emitter.domain.EmitterClient
 import java.io.File
 import kotlin.test.Test

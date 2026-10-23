@@ -6,7 +6,7 @@ import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.domain.PlaylistItem
 import app.kiosksync.feature.playlist.domain.PlaylistRepository
 import app.kiosksync.feature.playback.domain.ReceiverStatusTracker
-import app.kiosksync.platform.MediaRepository
+import app.kiosksync.feature.media.domain.MediaRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope

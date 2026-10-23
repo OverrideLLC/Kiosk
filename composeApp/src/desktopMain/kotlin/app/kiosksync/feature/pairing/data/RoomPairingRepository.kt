@@ -4,7 +4,7 @@ import app.kiosksync.core.ReceiverPairedInfo
 import app.kiosksync.feature.pairing.domain.PairingRepository
 import app.kiosksync.data.local.room.KioskDao
 import app.kiosksync.data.local.room.PairedDeviceEntity
-import app.kiosksync.platform.secret.SecretProtector
+import app.kiosksync.data.security.SecretProtector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

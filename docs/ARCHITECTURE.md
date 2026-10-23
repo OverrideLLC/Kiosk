@@ -55,37 +55,38 @@ composeApp/src/
 │   ├── feature/
 │   │   ├── role/{domain,presentation}/
 │   │   ├── pairing/{domain,presentation}/
-│   │   ├── emitter/{domain,data,presentation/{actions,components,screen,state,viewmodel}}/
+│   │   ├── emitter/{domain,presentation/{actions,components,screen,state,viewmodel}}/
+│   │   ├── media/domain/
 │   │   ├── playlist/{domain,presentation}/
 │   │   ├── sync/{domain,data}/
 │   │   ├── playback/{domain,presentation}/
 │   │   ├── kiosk/{domain,presentation}/
+│   │   ├── receiver/domain/
 │   │   ├── projection/presentation/
 │   │   ├── guide/{domain,presentation}/
-│   │   └── update/presentation/
+│   │   └── update/{domain,presentation}/
 │   ├── data/local/room/ # esquema Room compartido: entidades, DAO y base de datos
-│   ├── platform/        # contratos de repositorios y servicios de plataforma
 │   ├── ui/              # App.kt, navegación y pantallas por rol
 │   └── AppContainer.kt  # inyección manual
 └── desktopMain/kotlin/app/kiosksync/
-    ├── feature/*/data/  # adaptadores Room por feature y DataStore de role
-    ├── data/local/      # composición Room y adaptadores compartidos de medios/reset
+    ├── feature/*/data/  # Room, DataStore, red y adaptadores propios de cada feature
+    ├── data/local/      # composición Room, migración y adaptadores compartidos
+    ├── data/security/   # hash y protección compartida de secretos
     ├── data/local/migration/ # importación transaccional de JSON heredado a Room
     ├── data/local/room/ # builder SQLite Desktop
-    ├── platform/        # JmDNS, Ktor, acceso a medios y DPAPI
-    ├── platform/server/ # rutas HTTP agrupadas por responsabilidad
+    ├── platform/        # logger y servicios compartidos del host
     ├── Desktop*.kt      # fábrica del contenedor y ciclo de ventanas
     └── Main.kt          # argumentos, logger y punto de entrada
 ```
 
-Las dependencias apuntan hacia contratos de dominio por feature. Los repositorios
-implementan esos contratos y ocultan DataStore, Room y el sistema de archivos. El
-esquema Room compartido vive en `commonMain/data/local/room` por compatibilidad KMP;
-los adaptadores de Room que pertenecen a una feature viven en
-`desktopMain/feature/<nombre>/data`, y los adaptadores compartidos de medios y
-limpieza en `desktopMain/data/local`. Sus DAOs y entidades son detalles de
-persistencia: presentación, dominio y rutas no los consumen. La app mantiene un
-módulo Gradle, un `AppContainer` manual y la navegación existente.
+Las dependencias apuntan hacia contratos y modelos del dominio por feature. Las
+implementaciones de repositorio, Room, DataStore, red y operaciones de datos viven
+en `data` junto a la feature que las posee. El esquema Room compartido vive en
+`commonMain/data/local/room` por compatibilidad KMP; `desktopMain/data/local`
+conserva la composición de Room, las migraciones heredadas y el ensamblado de
+adaptadores compartidos. Sus DAOs y entidades son detalles de persistencia:
+presentación y dominio no los consumen. La app mantiene un módulo Gradle, un
+`AppContainer` manual y la navegación existente.
 
 ## Dependencias principales
 
@@ -303,7 +304,7 @@ cuando afectan a una acción del usuario.
 
 ## Errores y logs
 
-- Las rutas se separan en `platform/server/` por acceso público, vinculación,
+- Las rutas se separan en `feature/receiver/data/server/` por acceso público, vinculación,
   contenido/sincronización, estado y actualización. Los payloads malformados se
   responden como error de cliente y la cancelación de una petición se conserva.
   Los errores de operación se registran en el límite que los conoce.

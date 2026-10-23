@@ -4,7 +4,7 @@ import app.kiosksync.core.EmitterPairedDevice
 import app.kiosksync.feature.emitter.domain.EmitterScreensRepository
 import app.kiosksync.data.local.room.KioskDao
 import app.kiosksync.data.local.room.PairedDeviceEntity
-import app.kiosksync.platform.secret.SecretProtector
+import app.kiosksync.data.security.SecretProtector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext

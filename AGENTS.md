@@ -115,7 +115,7 @@ Reglas:
 1. **Un solo módulo Gradle** (`composeApp`) con los source sets `commonMain` y `desktopMain`. Nada de multimódulo en el MVP.
 2. **`commonMain`** contiene: modelos, DTOs del protocolo, lógica pura (generación y validación del código, diff de sincronización, estado del carrusel), estado de UI y pantallas Compose.
 3. **`desktopMain`** contiene lo que depende de JVM/Windows: servidor Ktor, JmDNS, acceso a archivos, ventana a pantalla completa, arranque de la aplicación.
-4. **Las dependencias apuntan hacia `commonMain`.** UI y dominio dependen de contratos por feature (repositorios y puertos de plataforma); `desktopMain` implementa acceso a archivos, DPAPI, red y creación de bases. No expongas DAOs a UI/dominio ni crees interfaces para lógica pura.
+4. **Las dependencias apuntan hacia el dominio por feature.** Presentación depende de contratos y modelos del dominio; `desktopMain` implementa Room, DataStore, archivos, DPAPI y red dentro de `data`. No expongas DAOs a presentación/dominio ni crees interfaces para lógica pura.
 5. **Sin "use cases" por defecto.** Si una operación es una sola línea, vive en el `StateHolder`. Crea una clase de dominio solo cuando tenga reglas propias (por ejemplo `PairingManager`, `SyncPlanner`).
 6. **Estado de UI:** usa MVI ligero (estado inmutable, acciones tipadas, reducer puro, `StateFlow` y efectos de una sola vez como `Flow`) en flujos con transiciones de UI claras, como rol, Controlador y editor de playlist. Pairing, reproducción y bloqueo kiosco pueden conservar managers/state holders especializados cuando coordinan temporizadores, recursos o eventos externos; no añadas un reducer mecánico. No uses ViewModel de AndroidX ni un framework MVI.
 7. **Resultados:** usa `Result` de Kotlin o una `sealed interface` simple para errores esperados; excepciones solo para lo inesperado.
@@ -127,33 +127,34 @@ composeApp/src/
 ├── commonMain/kotlin/app/kiosksync/
 │   ├── core/            # APP_NAME, constantes, Strings.kt, modelos compartidos, DTOs del protocolo
 │   ├── core/ui/         # tema, tokens y componentes realmente compartidos
-│   ├── data/local/room/ # entidades, DAO y esquema Room compartido
 │   ├── feature/
 │   │   ├── role/{domain,presentation}/
 │   │   ├── pairing/{domain,presentation}/
-│   │   ├── emitter/{domain,data,presentation/{actions,components,screen,state,viewmodel}}/
+│   │   ├── emitter/{domain,presentation/{actions,components,screen,state,viewmodel}}/
+│   │   ├── media/domain/
 │   │   ├── playlist/{domain,presentation}/
 │   │   ├── sync/{domain,data}/
 │   │   ├── playback/{domain,presentation}/
 │   │   ├── kiosk/{domain,presentation}/
+│   │   ├── receiver/domain/
 │   │   ├── projection/presentation/
 │   │   ├── guide/{domain,presentation}/
-│   │   └── update/presentation/
-│   ├── platform/        # contratos de repositorios y servicios de plataforma
+│   │   └── update/{domain,presentation}/
+│   ├── data/local/room/ # entidades, DAO y esquema Room compartido
 │   ├── ui/              # App.kt, navegación y pantallas por rol
 │   └── AppContainer.kt  # DI manual
 └── desktopMain/kotlin/app/kiosksync/
-    ├── feature/*/data/  # adaptadores Room por feature y DataStore de role
-    ├── data/local/      # composición Room y adaptadores de medios/reset compartidos
+    ├── feature/*/data/  # Room, DataStore, red y adaptadores propios de cada feature
+    ├── data/local/      # composición Room, migración y adaptadores compartidos
+    ├── data/security/   # hash y protección compartida de secretos
     ├── data/local/migration/ # importación transaccional de JSON heredado a Room
     ├── data/local/room/ # builder SQLite Desktop
-    ├── platform/        # JmDnsDiscovery, Ktor, acceso a medios y DPAPI
-    ├── platform/server/ # rutas HTTP agrupadas por responsabilidad
+    ├── platform/        # logger y servicios compartidos del host
     ├── Desktop*.kt      # fábrica del contenedor y ciclo de ventanas
     └── Main.kt          # argumentos de línea de comandos y punto de entrada
 ```
 
-Dentro de cada `feature/<nombre>/` crea capas solo cuando contengan responsabilidades reales. En `feature/emitter`, el MVI y la UI viven bajo `presentation/{viewmodel,screen,state,actions,components}`. La pantalla recibe estado y emite acciones; el ViewModel consume contratos y casos de uso del dominio, nunca DAOs ni implementaciones. Las implementaciones de Room, DataStore y red viven en `data` y dependen de contratos del dominio. Las entidades Room nunca son modelos de protocolo. Comparte un componente `core.ui` cuando tenga consumidores reales en más de una feature; los componentes exclusivos permanecen en su feature. Mantén un solo módulo Gradle y el `AppContainer` manual. DataStore Preferences almacena preferencias pequeñas; Room 3 datos estructurados; archivos, imágenes, logs y paquetes.
+Dentro de cada `feature/<nombre>/` crea capas solo cuando contengan responsabilidades reales. En `feature/emitter`, el MVI y la UI viven bajo `presentation/{viewmodel,screen,state,actions,components}`. La pantalla recibe estado y emite acciones; el ViewModel consume contratos y casos de uso del dominio, nunca DAOs ni implementaciones. Los contratos y modelos pertenecen al `domain`; Room, DataStore, red, operaciones de datos y repositorios concretos pertenecen a `data`, junto a la feature que los usa. Solo la composición de servicios compartidos, el esquema Room y las migraciones permanecen en `data/local`; las entidades Room nunca son modelos de protocolo. Comparte un componente `core.ui` cuando tenga consumidores reales en más de una feature; los componentes exclusivos permanecen en su feature. Mantén un solo módulo Gradle y el `AppContainer` manual. DataStore Preferences almacena preferencias pequeñas; Room 3 datos estructurados; archivos, imágenes, logs y paquetes.
 
 ---
 

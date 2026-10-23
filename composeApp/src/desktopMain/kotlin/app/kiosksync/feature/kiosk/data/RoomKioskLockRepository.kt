@@ -4,7 +4,7 @@ import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.feature.kiosk.domain.KioskLockRepository
 import app.kiosksync.data.local.room.KioskDao
 import app.kiosksync.data.local.room.KioskLockEntity
-import app.kiosksync.platform.secret.SecretProtector
+import app.kiosksync.data.security.SecretProtector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map

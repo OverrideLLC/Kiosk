@@ -14,8 +14,8 @@ import app.kiosksync.data.local.room.PlaylistEntity
 import app.kiosksync.data.local.room.PlaylistItemEntity
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.domain.PlaylistLibrary
-import app.kiosksync.platform.FileMediaStore
-import app.kiosksync.platform.secret.SecretProtector
+import app.kiosksync.feature.media.data.FileMediaStore
+import app.kiosksync.data.security.SecretProtector
 import java.io.File
 import java.io.IOException
 import kotlinx.serialization.builtins.ListSerializer

@@ -11,7 +11,7 @@ import app.kiosksync.feature.sync.domain.LocalMediaMissingException
 import app.kiosksync.feature.sync.domain.SyncProgress
 import app.kiosksync.feature.sync.domain.SyncSummary
 import app.kiosksync.feature.sync.domain.SyncPlanner
-import app.kiosksync.platform.MediaRepository
+import app.kiosksync.feature.media.domain.MediaRepository
 import kotlinx.coroutines.CancellationException
 
 /**

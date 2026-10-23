@@ -30,7 +30,7 @@ import app.kiosksync.core.ui.theme.KioskColors
 import app.kiosksync.core.ui.theme.KioskShape
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
-import app.kiosksync.platform.ReceiverUpdateUi
+import app.kiosksync.feature.update.domain.ReceiverUpdateUi
 
 /**
  * Update prompt shown inside the receiver's fullscreen window. Keeping it in

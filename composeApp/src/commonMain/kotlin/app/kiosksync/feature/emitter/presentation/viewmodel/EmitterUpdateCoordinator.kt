@@ -11,7 +11,7 @@ import app.kiosksync.core.EmitterPairedDevice
 import app.kiosksync.core.Strings
 import app.kiosksync.core.UpdateUrgency
 import app.kiosksync.feature.emitter.domain.EmitterClient
-import app.kiosksync.platform.UpdatePackageProvider
+import app.kiosksync.feature.update.domain.UpdatePackageProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope

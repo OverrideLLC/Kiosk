@@ -9,9 +9,9 @@ import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.domain.PlaylistItem
 import app.kiosksync.feature.playlist.domain.PlaylistLibrary
 import app.kiosksync.feature.playlist.domain.PlaylistRepository
-import app.kiosksync.platform.MediaRepository
-import app.kiosksync.platform.MediaImportError
-import app.kiosksync.platform.MediaImportResult
+import app.kiosksync.feature.media.domain.MediaRepository
+import app.kiosksync.feature.media.domain.MediaImportError
+import app.kiosksync.feature.media.domain.MediaImportResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
