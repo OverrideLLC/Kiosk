@@ -33,4 +33,6 @@ jobs:
 
       - name: Smoke test Windows desktop roles and local playback
         shell: pwsh
-        run: .\.github\scripts\windows-runtime-smoke.ps1
+        run: |
+          Remove-Item Env:RUNNER_TEMP -ErrorAction SilentlyContinue
+          .\.github\scripts\windows-runtime-smoke.ps1

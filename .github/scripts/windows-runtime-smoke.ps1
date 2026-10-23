@@ -1,7 +1,15 @@
 $ErrorActionPreference = "Stop"
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
-$smokeRoot = Join-Path $env:RUNNER_TEMP "override-kiosk-windows-smoke"
+$smokeTempBase = $env:RUNNER_TEMP
+if ([string]::IsNullOrWhiteSpace($smokeTempBase)) {
+    $smokeTempBase = $env:TEMP
+}
+if ([string]::IsNullOrWhiteSpace($smokeTempBase)) {
+    $smokeTempBase = [System.IO.Path]::GetTempPath()
+}
+$smokeRoot = Join-Path $smokeTempBase ("override-kiosk-windows-smoke-" + [guid]::NewGuid().ToString("N"))
+$null = New-Item -ItemType Directory -Force -Path $smokeRoot
 $receiverData = Join-Path $smokeRoot "receiver"
 $windowedReceiverData = Join-Path $smokeRoot "receiver-windowed"
 $emitterData = Join-Path $smokeRoot "emitter"
