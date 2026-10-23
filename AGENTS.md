@@ -345,7 +345,7 @@ Cada fase tiene: **objetivo**, **entregable**, **criterios de aceptación** y **
 
 ### Fases de arquitectura (autorizadas en la rama `codex/architecture-improvements`)
 
-La persona autorizó ejecutar las fases de arquitectura consecutivamente. Las fases 7–17 están completadas; se conservaron los commits por fase en `codex/architecture-improvements`. El plan unificado define los detalles de las fases 13–18. En la fase 18, la build, los tests y los smoke checks de Linux ya pasaron; Windows sigue pendiente. No declares completa la validación de Windows hasta ejecutar `.\gradlew.bat build` y los recorridos manuales en Windows 11.
+La persona autorizó ejecutar las fases de arquitectura consecutivamente. Las fases 7–17 están completadas; se conservaron los commits por fase en `codex/architecture-improvements`. El plan unificado define los detalles de las fases 13–18. En la fase 18, Linux y el runner hospedado de Windows (`windows-2025-vs2026`) pasaron build, tests y smoke checks; sigue pendiente la validación manual en Windows 11 real, incluida la experiencia de escritorio. No declares completa la validación de Windows hasta ejecutar `.\gradlew.bat build` y los recorridos manuales en Windows 11.
 
 - **Fases 7–12, completadas:** arquitectura por capas ligeras, DataStore + Room 3 + archivos, `core.ui`/Material Kolor, MVI selectivo, migración y adaptación Desktop.
 - **Fases 13–14, completadas:** arranque según rol y esquema Room dentro de `data/local/room`.

@@ -5,8 +5,8 @@ prometer funciones o de instalar la app en un comercio real.
 
 > **Estado:** las fases de arquitectura 7–17 están aplicadas en
 > `codex/architecture-improvements`. En la fase 18, Linux pasó la build y el
-> smoke check de `/info` y mDNS. El workflow hospedado de Windows pasó `clean
-> build` y smoke checks de ambos roles en la imagen `windows-2025-vs2026` el
+> smoke check de `/info` y mDNS. El workflow hospedado de Windows pasó una build
+> limpia y smoke checks de ambos roles en la imagen `windows-2025-vs2026` el
 > 2026-10-23. Sigue pendiente el recorrido manual en un equipo Windows 11 real.
 
 ## Plataforma y empaquetado
@@ -14,7 +14,9 @@ prometer funciones o de instalar la app en un comercio real.
 - **Windows 10/11 es la plataforma objetivo.** Linux pasó la build y el smoke check:
   ambos roles arrancaron, el Receptor respondió `/info` y el Controlador lo
   descubrió por mDNS. En el runner hospedado `windows-2025-vs2026` pasaron
-  `clean build` y el smoke test de los roles; este verificó DPAPI, migración local,
+  `clean build` y el smoke test de los roles
+  ([ejecución de CI](https://github.com/OverrideLLC/Kiosk/actions/runs/39990088932));
+  este verificó DPAPI, migración local,
   reproducción autenticada, instalación de hooks de teclado/mouse, registro mDNS,
   descubrimiento desde el Controlador y arranque fullscreen/normal. Ese runner no
   sustituye la prueba visible en un equipo Windows 11 real: aún hay que validar
