@@ -67,13 +67,13 @@ Los detalles, límites y el procedimiento para publicar una versión están en
 
 ## Descarga
 
-La versión **1.1.1** está publicada en
-[GitHub Releases](https://github.com/OverrideLLC/Kiosk/releases/tag/v1.1.1)
+La versión **1.1.2** está publicada en
+[GitHub Releases](https://github.com/OverrideLLC/Kiosk/releases/tag/v1.1.2)
 con tres variantes para Windows 10/11:
 
-- `OverrideKiosk-1.1.1.exe`: instalador único.
-- `OverrideKiosk-1.1.1.msi`: instalador MSI para despliegue.
-- `OverrideKiosk-1.1.1-portable.zip`: carpeta portable; descomprime y ejecuta
+- `OverrideKiosk-1.1.2.exe`: instalador único.
+- `OverrideKiosk-1.1.2.msi`: instalador MSI para despliegue.
+- `OverrideKiosk-1.1.2-portable.zip`: carpeta portable; descomprime y ejecuta
   `OverrideKiosk.exe`.
 
 No hace falta JDK ni internet para usar ninguna de las tres. La carpeta portable
@@ -92,7 +92,7 @@ En PowerShell, desde la raíz del repositorio:
 Para probar los dos roles en la misma PC, con dos procesos:
 
 ```powershell
-.\gradlew.bat run --args="--role=receiver --data-dir=C:\tmp\rx --windowed"
+.\gradlew.bat run --args="--role=receiver --data-dir=C:\tmp\rx"
 .\gradlew.bat run --args="--role=emitter --data-dir=C:\tmp\tx"
 ```
 
@@ -106,7 +106,6 @@ automático no aparece en la misma máquina.
 | `--data-dir=<ruta>` | Carpeta de datos alternativa. |
 | `--role=emitter\|receiver` | Fuerza el rol y omite la selección. |
 | `--port=<n>` | Puerto inicial de la Pantalla (por defecto 8765). |
-| `--windowed` | Pantalla en ventana, para depurar. |
 | `--ui-catalog` | Catálogo interno de componentes (desarrollo). |
 
 Los datos viven en `%APPDATA%\OverrideKiosk\`:

@@ -97,9 +97,9 @@ Con el nombre actual, las tareas de empaquetado generan estos archivos:
 
 | Archivo en `dist\` | Tamaño | Para qué sirve |
 | --- | --- | --- |
-| `OverrideKiosk-1.1.1.exe` | ~72 MB | Instalador único. Instala por usuario, sin administrador, con acceso directo. |
-| `OverrideKiosk-1.1.1.msi` | ~71 MB | Instalador MSI equivalente, útil para despliegue con `msiexec`. |
-| `OverrideKiosk-1.1.1-portable.zip` | ~70 MB | Carpeta portable comprimida: descomprimir y ejecutar `OverrideKiosk.exe`. |
+| `OverrideKiosk-1.1.2.exe` | ~72 MB | Instalador único. Instala por usuario, sin administrador, con acceso directo. |
+| `OverrideKiosk-1.1.2.msi` | ~71 MB | Instalador MSI equivalente, útil para despliegue con `msiexec`. |
+| `OverrideKiosk-1.1.2-portable.zip` | ~70 MB | Carpeta portable comprimida: descomprimir y ejecutar `OverrideKiosk.exe`. |
 
 Los originales quedan en `composeApp\build\compose\binaries\main\`; la carpeta
 `dist\` es solo una copia cómoda para distribuir y está ignorada por Git. Incluye
@@ -134,8 +134,8 @@ El workflow `.github/workflows/release.yml` compila en `windows-latest` y public
 la release cuando se empuja un tag con la versión:
 
 ```powershell
-git tag v1.1.1
-git push origin v1.1.1
+git tag v1.1.2
+git push origin v1.1.2
 ```
 
 El workflow:
@@ -195,7 +195,7 @@ con `signtool`. No es parte del MVP.
 - `.\gradlew.bat run` sigue siendo la forma rápida de probar; el empaquetado es
   solo para entregar. Las ejecuciones desde Gradle **no pueden enviar ni recibir
   actualizaciones** porque no tienen una carpeta `app/` empaquetada.
-- Si cambias `packageVersion`, usa `mayor.menor.parche` (por ejemplo `1.1.1`) y
+- Si cambias `packageVersion`, usa `mayor.menor.parche` (por ejemplo `1.1.2`) y
   actualiza también `APP_VERSION`.
 - Para probar una actualización: instala la versión anterior en el Controlador y la
   Pantalla, genera la versión nueva, sustituye solo la instalación del Controlador

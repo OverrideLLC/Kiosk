@@ -377,36 +377,41 @@ class EmitterStateHolder(
         scope.launch {
             _uiState.update { it.copy(unpairDevice = null) }
             val target = targetFor(storedDevice)
-            if (target == null) {
-                _uiState.update { it.copy(statusMessage = Strings.UNPAIR_ERROR, statusIsError = true) }
-                return@launch
+
+            // Remove it locally first. Unlinking must work even when the screen
+            // is powered off or unreachable, which is the common case when a
+            // screen is being retired.
+            storage.removeEmitterPairedDevice(device.deviceId)
+            storedDevices = storage.loadEmitterPairedDevices()
+            onlineStatus.remove(device.deviceId)
+            failedChecks.remove(device.deviceId)
+            selectedIds = selectedIds - device.deviceId
+            clearUpdateState(device.deviceId)
+            logger.info("Screen '${device.deviceName}' removed from this controller")
+            _uiState.update {
+                it.copy(
+                    statusMessage = Strings.UNPAIR_SUCCESS,
+                    statusIsError = false,
+                    syncByDevice = it.syncByDevice - device.deviceId
+                )
             }
-            val result = withContext(backgroundDispatcher) {
-                client.unpair(target.first, target.second, emitterId, storedDevice.token)
-            }
-            result.fold(
-                onSuccess = {
-                    storage.removeEmitterPairedDevice(device.deviceId)
-                    storedDevices = storage.loadEmitterPairedDevices()
-                    onlineStatus.remove(device.deviceId)
-                    failedChecks.remove(device.deviceId)
-                    selectedIds = selectedIds - device.deviceId
-                    clearUpdateState(device.deviceId)
-                    logger.info("Screen '${device.deviceName}' unpaired")
-                    _uiState.update {
-                        it.copy(
-                            statusMessage = Strings.UNPAIR_SUCCESS,
-                            statusIsError = false,
-                            syncByDevice = it.syncByDevice - device.deviceId
-                        )
-                    }
-                    rebuild()
-                },
-                onFailure = { error ->
-                    logger.warn("Could not unpair '${device.deviceName}': ${error.message}")
-                    _uiState.update { it.copy(statusMessage = Strings.UNPAIR_ERROR, statusIsError = true) }
+            rebuild()
+
+            // Best effort: if the screen is online, tell it to forget the token
+            // too. A failure here does not undo the local removal.
+            if (target != null) {
+                val result = withContext(backgroundDispatcher) {
+                    client.unpair(target.first, target.second, emitterId, storedDevice.token)
                 }
-            )
+                result.onSuccess {
+                    logger.info("Screen '${device.deviceName}' also unpaired remotely")
+                }.onFailure { error ->
+                    logger.warn(
+                        "Screen '${device.deviceName}' removed locally; " +
+                            "remote unpair failed: ${error.message}"
+                    )
+                }
+            }
         }
     }
 

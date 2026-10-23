@@ -138,7 +138,7 @@ fun main(args: Array<String>) {
     }
     val isWindows = System.getProperty("os.name").orEmpty()
         .startsWith("Windows", ignoreCase = true)
-    val kioskLockAvailable = isWindows && !appArgs.windowed
+    val kioskLockAvailable = isWindows
     val kioskLockManager = KioskLockManager(
         logger = logger,
         passwordHasher = passwordHasher,
@@ -235,11 +235,12 @@ fun main(args: Array<String>) {
     application {
         // The role picker starts in a normal window. When the Screen role is
         // chosen, App.kt reports it and this state turns the window into the
-        // fullscreen, borderless kiosk used for playback.
+        // fullscreen, borderless kiosk used for pairing and playback. The old
+        // --windowed flag is intentionally ignored for the Screen role.
         var receiverModeActive by remember {
             mutableStateOf(activeRole == AppRole.RECEIVER)
         }
-        val receiverKioskWindow = receiverModeActive && !appArgs.windowed
+        val receiverKioskWindow = receiverModeActive
         val windowState = rememberWindowState(
             placement = if (receiverKioskWindow) WindowPlacement.Fullscreen else WindowPlacement.Floating,
             width = 900.dp,
@@ -312,8 +313,8 @@ fun main(args: Array<String>) {
         var escHandler: (() -> Unit)? = null
         var unpairHandler: (() -> Unit)? = null
 
-        // When the native hook is not available (Linux or --windowed debug),
-        // Compose feeds the unlock detector so the lock stays usable.
+        // When the native hook is not available (non-Windows), Compose feeds the
+        // unlock detector so the lock stays usable.
         val feedLockFromCompose: (KeyEvent) -> Unit = { event ->
             if (!kioskLockAvailable && event.type == KeyEventType.KeyDown) {
                 composeKeyToKioskEvent(event)?.let { kioskLockManager.onKey(it) }

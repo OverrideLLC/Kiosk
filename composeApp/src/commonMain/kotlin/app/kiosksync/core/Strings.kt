@@ -39,9 +39,9 @@ object Strings {
     const val RECEIVER_LOCKED_MESSAGE = "Espera unos segundos antes de intentarlo de nuevo."
     const val RECEIVER_WAITING_FOR_EMITTER = "Esperando al Controlador"
     const val RECEIVER_IP_HINT =
-        "Para vincular por IP, usa «Agregar por IP» en el Controlador."
+        "IP de Wi-Fi de esta Pantalla. Para vincular por IP, usa «Agregar por IP» en el Controlador."
     const val RECEIVER_IP_UNAVAILABLE =
-        "No se pudo detectar la IP de esta Pantalla. Usa la IP de este equipo en la red local."
+        "No se pudo detectar la IP de esta Pantalla. Revisa que el Wi-Fi tenga una dirección válida."
     const val RECEIVER_PORT_LABEL = "Puerto"
 
     fun receiverCodeRenewsIn(countdown: String): String = "$RECEIVER_CODE_RENEWS_IN $countdown"
@@ -70,7 +70,7 @@ object Strings {
     const val DISCOVERY_EMPTY = "Todavía no hay pantallas. Enciende una Pantalla en la misma red o agrégala por IP."
     const val PAIRED_OTHER_CONTROLLER = "Vinculada a otro Controlador"
     const val PAIR_BUTTON = "Vincular"
-    const val UNPAIR_BUTTON = "Desvincular"
+    const val UNPAIR_BUTTON = "Eliminar"
     const val PAIR_DIALOG_TITLE = "Vincular pantalla"
     const val PAIR_DIALOG_INSTRUCTION = "Escribe el código de 6 dígitos que aparece en la pantalla."
     const val PAIR_CODE_FIELD = "Código"
@@ -85,10 +85,11 @@ object Strings {
     const val PAIR_ERROR_ALREADY_PAIRED = "Esa pantalla ya está vinculada a otro Controlador."
     const val PAIR_ERROR_NETWORK = "No se pudo conectar con la pantalla. Revisa que esté encendida y en la misma red."
     const val PAIR_SUCCESS = "Pantalla vinculada correctamente."
-    const val UNPAIR_SUCCESS = "Pantalla desvinculada correctamente."
-    const val UNPAIR_ERROR = "No se pudo desvincular la pantalla. Inténtalo cuando esté en línea."
-    const val UNPAIR_DIALOG_TITLE = "Desvincular pantalla"
-    const val UNPAIR_DIALOG_CONFIRM = "¿Seguro que deseas desvincular esta pantalla?"
+    const val UNPAIR_SUCCESS = "Pantalla eliminada de este Controlador."
+    const val UNPAIR_ERROR = "No se pudo eliminar la pantalla."
+    const val UNPAIR_DIALOG_TITLE = "Eliminar pantalla"
+    const val UNPAIR_DIALOG_CONFIRM =
+        "¿Seguro que deseas eliminar esta pantalla del Controlador? No es necesario que esté en línea."
     const val MANUAL_IP_DIALOG_TITLE = "Agregar pantalla por IP"
     const val MANUAL_IP_DIALOG_INSTRUCTION = "Escribe la dirección IP y el puerto de la Pantalla."
     const val MANUAL_IP_FIELD = "IP:puerto"
