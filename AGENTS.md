@@ -352,7 +352,7 @@ La persona autorizó ejecutar las fases de arquitectura consecutivamente. Las fa
 - **Fase 15, completada:** paquetes feature-first y adaptadores de persistencia junto a sus features.
 - **Fase 16, completada:** tokens UI verificados y render test de ambos temas con contraste 4.5:1.
 - **Fase 17, completada:** `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/DESIGN_SYSTEM.md`, `docs/KNOWN_LIMITATIONS.md` y ADR-004 coinciden con los paquetes y la persistencia vigentes.
-- **Fase 18:** Linux verificado con build limpia, 97 tests y smoke check Receptor/Controlador por mDNS; falta ejecutar la build y los recorridos manuales en Windows 11.
+- **Fase 18:** Linux verificado con build limpia y smoke check Receptor/Controlador por mDNS. El workflow hospedado `Architecture Windows validation` pasó `clean build` y smoke checks en la imagen `windows-2025-vs2026`, incluyendo ambos modos de ventana, DPAPI y migración, reproducción autenticada, hooks nativos y descubrimiento mDNS desde el Controlador. Falta el recorrido manual en un equipo Windows 11 real, especialmente validar el bloqueo efectivo de atajos/gestos y la experiencia de escritorio.
 
 ### Fases posteriores (solo con petición expresa)
 Arranque automático con Windows, modo de bloqueo de teclas con frase de desbloqueo, cifrado/firma de peticiones, varias playlists, plantillas de fichas técnicas.

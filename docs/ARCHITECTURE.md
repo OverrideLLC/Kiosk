@@ -3,9 +3,11 @@
 > **Estado:** arquitectura aplicada en la rama `codex/architecture-improvements`.
 > Las fases 7–17 consolidan MVI ligero, paquetes por feature, `core.ui`,
 > Material Kolor, DataStore para preferencias, Room para datos estructurados y
-> archivos para medios y paquetes. En la fase 18, Linux pasó la build limpia
-> (97 tests), `/info` y descubrimiento mDNS entre Controlador y Pantalla.
-> La validación final de Windows 11 sigue pendiente.
+> archivos para medios y paquetes. En la fase 18, Linux pasó la build y el
+> smoke check de `/info` y descubrimiento mDNS. El workflow de Windows pasó
+> `clean build` y smoke checks en el runner hospedado `windows-2025-vs2026`,
+> incluidos DPAPI, migración, reproducción local, hooks nativos y ambos modos
+> de ventana. Falta validar la experiencia visible en un equipo Windows 11 real.
 
 ## Vista general
 

@@ -94,10 +94,11 @@ solo sirve contra ese servicio falso.
 - `Ctrl+Alt+Del` no se puede interceptar; el usuario siempre puede llegar a la
   pantalla de seguridad de Windows.
 - Los hooks de teclado y mouse son de bajo nivel y **solo existen en Windows**.
-  Esta versión se verificó en Windows 11 (los hooks se instalan), pero el bloqueo
-  efectivo de atajos y gestos del sistema requiere una prueba manual en el equipo
-  destino. En Linux o con `--windowed` se usa un manejo de teclas de Compose, que
-  no bloquea atajos del sistema ni el mouse.
+  El smoke test pasó en el runner hospedado `windows-2025-vs2026` y confirmó que
+  los hooks se instalan; el bloqueo efectivo de atajos y gestos del sistema aún
+  requiere una prueba manual en un equipo Windows 11 real. En Linux o con
+  `--windowed` se usa un manejo de teclas de Compose, que no bloquea atajos del
+  sistema ni el mouse.
 - El hook de mouse descarta movimiento, clics, rueda y los toques del touchpad que
   Windows entrega como eventos de mouse. Los gestos de precisión de tres o cuatro
   dedos que maneja el shell pueden escapar; desactívalos en la configuración del

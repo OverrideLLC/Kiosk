@@ -4,18 +4,23 @@ Lista honesta de lo que el MVP **no** hace o hace con limitaciones. Úsala antes
 prometer funciones o de instalar la app en un comercio real.
 
 > **Estado:** las fases de arquitectura 7–17 están aplicadas en
-> `codex/architecture-improvements`. En la verificación de fase 18 (2026-10-22),
-> Linux pasó la build limpia (97 tests), `/info` del Receptor y descubrimiento
-> mDNS desde el Controlador. La build y los recorridos de Windows 11 aún requieren
-> validación en esa plataforma.
+> `codex/architecture-improvements`. En la fase 18, Linux pasó la build y el
+> smoke check de `/info` y mDNS. El workflow hospedado de Windows pasó `clean
+> build` y smoke checks de ambos roles en la imagen `windows-2025-vs2026` el
+> 2026-10-23. Sigue pendiente el recorrido manual en un equipo Windows 11 real.
 
 ## Plataforma y empaquetado
 
-- **Windows 10/11 es la plataforma objetivo.** Esta revisión se compiló y ejecutó
-  en Linux con JDK 21: los dos roles arrancaron, el Receptor respondió `/info` y
-  el Controlador lo descubrió por mDNS. La suite reportó 97 tests sin fallos. No se
-  ejecutó la rama en Windows 11; los hooks nativos de teclado y mouse, DPAPI, la
-  migración y el empaquetado requieren validación en Windows antes de distribuirla.
+- **Windows 10/11 es la plataforma objetivo.** Linux pasó la build y el smoke check:
+  ambos roles arrancaron, el Receptor respondió `/info` y el Controlador lo
+  descubrió por mDNS. En el runner hospedado `windows-2025-vs2026` pasaron
+  `clean build` y el smoke test de los roles; este verificó DPAPI, migración local,
+  reproducción autenticada, instalación de hooks de teclado/mouse, registro mDNS,
+  descubrimiento desde el Controlador y arranque fullscreen/normal. Ese runner no
+  sustituye la prueba visible en un equipo Windows 11 real: aún hay que validar
+  allí el bloqueo efectivo de atajos/gestos, interacción de ventanas y uso en la
+  máquina destino. El empaquetado también necesita su propia validación antes de
+  distribuirla.
 - Para generar el instalador `.exe`/`.msi` el plugin de Compose descarga WiX 3.11
   automáticamente la primera vez; no hace falta instalarlo a mano. Sin conexión
   en esa primera compilación solo se genera la carpeta portable.
