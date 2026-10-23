@@ -68,7 +68,7 @@ trabajo cerrado y para poder continuar desde otra computadora.
    - [ ] Probar la carpeta portable en una PC limpia sin JDK.
    - [x] RAM medida en Windows 11: Controlador ~241 MB, Pantalla ~231 MB
      (working set, sin imágenes cargadas).
-   - [ ] Artefactos de la versión 1.1.3 generados por GitHub Actions.
+   - [x] Artefactos de la versión 1.1.3 generados por GitHub Actions.
    - [ ] Probar una actualización desde 1.1.2.
 6. **Publicación**
    - Licencia MIT añadida en `LICENSE` y en el `README.md`.
@@ -78,7 +78,11 @@ trabajo cerrado y para poder continuar desde otra computadora.
      https://github.com/OverrideLLC/Kiosk/releases/tag/v1.1.1
    - [x] Release anterior `v1.1.0` (2026-10-22):
      https://github.com/OverrideLLC/Kiosk/releases/tag/v1.1.0
-   - [ ] Release `v1.1.3` pendiente de etiquetar y publicar.
+   - [x] Release `v1.1.3` publicada:
+     https://github.com/OverrideLLC/Kiosk/releases/tag/v1.1.3
+   - [x] Artefactos publicados: `OverrideKiosk-1.1.3.exe`,
+     `OverrideKiosk-1.1.3.msi`, `OverrideKiosk-1.1.3-portable.zip` y
+     `SHA256SUMS.txt`.
    - El `README.md` apunta a GitHub Releases para la descarga.
 
 ## Cómo continuar en otra computadora

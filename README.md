@@ -71,8 +71,8 @@ Los detalles, límites y el procedimiento para publicar una versión están en
 
 ## Descarga
 
-La versión **1.1.3** se publica en
-[GitHub Releases](https://github.com/OverrideLLC/Kiosk/releases)
+La versión **1.1.3** está publicada en
+[GitHub Releases](https://github.com/OverrideLLC/Kiosk/releases/tag/v1.1.3)
 con tres variantes para Windows 10/11:
 
 - `OverrideKiosk-1.1.3.exe`: instalador único.
