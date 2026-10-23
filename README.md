@@ -58,6 +58,16 @@ reinicia con la versión nueva y conserva su vinculación y su playlist.
 - Versión `major` distinta: actualización obligatoria.
 - Una ejecución con `.\gradlew.bat run` no puede enviar ni recibir actualizaciones:
   hacen falta las versiones empaquetadas.
+- En la **1.1.4** el aviso de actualización se puede aceptar con mouse o pantalla
+  táctil aunque la Pantalla esté bloqueada. El teclado sigue bloqueado; si no hay
+  mouse, desbloquea la Pantalla con la secuencia de administración.
+
+Si la Pantalla está en **1.1.2**, esa versión tiene un fallo: el aviso se ve, pero
+el bloqueo kiosco descarta los clics. Para actualizarla una sola vez, desbloquéala
+con `Shift + Shift + Ctrl + Ctrl + Alt + Shift` (y su contraseña, si tiene) y pulsa
+**Actualizar ahora**; o instala la versión nueva manualmente sobre la instalación
+existente. A partir de la 1.1.4 las siguientes actualizaciones ya se pueden aceptar
+sin desbloquear.
 
 Los detalles, límites y el procedimiento para publicar una versión están en
 [Actualizaciones](docs/UPDATES.md).
@@ -71,13 +81,13 @@ Los detalles, límites y el procedimiento para publicar una versión están en
 
 ## Descarga
 
-La versión **1.1.3** está publicada en
-[GitHub Releases](https://github.com/OverrideLLC/Kiosk/releases/tag/v1.1.3)
+La versión **1.1.4** está publicada en
+[GitHub Releases](https://github.com/OverrideLLC/Kiosk/releases/tag/v1.1.4)
 con tres variantes para Windows 10/11:
 
-- `OverrideKiosk-1.1.3.exe`: instalador único.
-- `OverrideKiosk-1.1.3.msi`: instalador MSI para despliegue.
-- `OverrideKiosk-1.1.3-portable.zip`: carpeta portable; descomprime y ejecuta
+- `OverrideKiosk-1.1.4.exe`: instalador único.
+- `OverrideKiosk-1.1.4.msi`: instalador MSI para despliegue.
+- `OverrideKiosk-1.1.4-portable.zip`: carpeta portable; descomprime y ejecuta
   `OverrideKiosk.exe`.
 
 No hace falta JDK ni internet para usar ninguna de las tres. La carpeta portable

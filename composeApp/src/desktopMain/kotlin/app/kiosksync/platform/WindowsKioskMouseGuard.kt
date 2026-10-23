@@ -38,6 +38,17 @@ class WindowsKioskMouseGuard(
     @Volatile
     private var running = false
 
+    /**
+     * Whether the hook should swallow mouse events. It is normally true while
+     * the kiosk is locked, but the update prompt temporarily calls
+     * [setLocked] with false so the user can click "Actualizar ahora" without
+     * unlocking the Screen. Keeping this separate from [isLocked] is
+     * important: the kiosk remains logically locked while the update decision
+     * is shown.
+     */
+    @Volatile
+    private var swallowEvents = false
+
     @Volatile
     private var threadId: Int = 0
 
@@ -86,6 +97,7 @@ class WindowsKioskMouseGuard(
     }
 
     override fun setLocked(locked: Boolean) {
+        swallowEvents = locked
         if (locked) {
             if (anchorSet && clipActive) return
             if (!anchorSet) {
@@ -106,11 +118,13 @@ class WindowsKioskMouseGuard(
             anchorSet = false
             clipActive = false
             clipCursor(null)
+            logger.info("Kiosk pointer released")
         }
     }
 
     override fun stop() {
         running = false
+        swallowEvents = false
         anchorSet = false
         clipActive = false
         clipCursor(null)
@@ -153,10 +167,11 @@ class WindowsKioskMouseGuard(
                     firstEventLogged = true
                     logger.info(
                         "Windows mouse hook received its first event " +
-                            "(message=${wParam.toInt()}, locked=${isLocked()})"
+                            "(message=${wParam.toInt()}, locked=${isLocked()}, " +
+                            "swallow=$swallowEvents)"
                     )
                 }
-                if (isLocked()) {
+                if (swallowEvents) {
                     // Swallow the event before Windows delivers it to any window.
                     // Some touchpad drivers and synthetic events can still move the
                     // pointer before the hook runs; confine the cursor to a single

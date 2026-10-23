@@ -125,9 +125,9 @@ Con el nombre actual, las tareas de empaquetado generan estos archivos:
 
 | Archivo en `dist\` | Tamaño | Para qué sirve |
 | --- | --- | --- |
-| `OverrideKiosk-1.1.3.exe` | ~72 MB | Instalador único. Instala por usuario, sin administrador, con acceso directo. |
-| `OverrideKiosk-1.1.3.msi` | ~71 MB | Instalador MSI equivalente, útil para despliegue con `msiexec`. |
-| `OverrideKiosk-1.1.3-portable.zip` | ~70 MB | Carpeta portable comprimida: descomprimir y ejecutar `OverrideKiosk.exe`. |
+| `OverrideKiosk-1.1.4.exe` | ~72 MB | Instalador único. Instala por usuario, sin administrador, con acceso directo. |
+| `OverrideKiosk-1.1.4.msi` | ~71 MB | Instalador MSI equivalente, útil para despliegue con `msiexec`. |
+| `OverrideKiosk-1.1.4-portable.zip` | ~70 MB | Carpeta portable comprimida: descomprimir y ejecutar `OverrideKiosk.exe`. |
 
 Los originales quedan en `composeApp\build\compose\binaries\main\`; la carpeta
 `dist\` es solo una copia cómoda para distribuir y está ignorada por Git. Incluye
@@ -162,8 +162,8 @@ El workflow `.github/workflows/release.yml` compila en `windows-latest` y public
 la release cuando se empuja un tag con la versión:
 
 ```powershell
-git tag v1.1.3
-git push origin v1.1.3
+git tag v1.1.4
+git push origin v1.1.4
 ```
 
 El workflow:

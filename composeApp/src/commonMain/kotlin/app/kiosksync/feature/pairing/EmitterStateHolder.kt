@@ -17,6 +17,7 @@ import app.kiosksync.core.PlaylistRejectedException
 import app.kiosksync.core.STATUS_FAILURE_THRESHOLD
 import app.kiosksync.core.STATUS_POLL_INTERVAL_MS
 import app.kiosksync.core.Strings
+import app.kiosksync.core.UpdateRejectedException
 import app.kiosksync.core.UpdateUrgency
 import app.kiosksync.core.isValidKioskPassword
 import app.kiosksync.core.isValidRecoveryPhrase
@@ -1067,6 +1068,21 @@ class EmitterStateHolder(
         else -> Strings.SEND_ERROR_NETWORK
     }
 
+    /**
+     * The Screen returns a human-readable reason when it cannot stage the
+     * update (for example, it is not running from a packaged install). Raw
+     * protocol codes use underscores, so they stay hidden behind the generic
+     * message.
+     */
+    private fun updateErrorMessage(error: Throwable): String {
+        val reason = (error as? UpdateRejectedException)?.reason?.trim()
+        return if (!reason.isNullOrBlank() && reason.none { it == '_' }) {
+            reason
+        } else {
+            Strings.UPDATE_SEND_FAILED
+        }
+    }
+
     private suspend fun pollStatuses() {
         while (scope.isActive) {
             for (device in storedDevices) {
@@ -1347,7 +1363,7 @@ class EmitterStateHolder(
                                     status = DeviceUpdateStatus.FAILED,
                                     version = plan.targetVersion,
                                     forced = plan.urgency == UpdateUrgency.FORCED,
-                                    message = Strings.UPDATE_SEND_FAILED
+                                    message = updateErrorMessage(error)
                                 )
                             )
                             logger.warn(
@@ -1371,7 +1387,7 @@ class EmitterStateHolder(
                         status = DeviceUpdateStatus.FAILED,
                         version = plan.targetVersion,
                         forced = plan.urgency == UpdateUrgency.FORCED,
-                        message = Strings.UPDATE_SEND_FAILED
+                        message = updateErrorMessage(error)
                     )
                 )
                 logger.warn(

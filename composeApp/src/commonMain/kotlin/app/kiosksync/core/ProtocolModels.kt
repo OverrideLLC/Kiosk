@@ -133,3 +133,12 @@ class PairRejectedException(
 class PlaylistRejectedException(
     val missingMediaIds: List<String>
 ) : Exception("Receiver rejected the playlist because media is missing")
+
+/**
+ * The Screen rejected an update package. [reason] is the message returned by
+ * the Screen (for example, "Esta Pantalla no se está ejecutando desde una
+ * instalación actualizable") and can be shown directly to the user.
+ */
+class UpdateRejectedException(
+    val reason: String?
+) : Exception(reason ?: "update_rejected")

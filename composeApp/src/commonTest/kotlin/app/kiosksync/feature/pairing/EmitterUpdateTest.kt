@@ -12,7 +12,9 @@ import app.kiosksync.core.MediaUploadResponse
 import app.kiosksync.core.PairResponse
 import app.kiosksync.core.PlaylistApplyResponse
 import app.kiosksync.core.ReceiverStatusResponse
+import app.kiosksync.core.Strings
 import app.kiosksync.core.SyncStateResponse
+import app.kiosksync.core.UpdateRejectedException
 import app.kiosksync.core.UpdateUploadResponse
 import app.kiosksync.feature.kiosk.KioskLockManager
 import app.kiosksync.feature.playlist.Playlist
@@ -100,6 +102,74 @@ class EmitterUpdateTest {
             scope.cancel()
         }
     }
+
+    @Test
+    fun showsTheScreenReasonWhenItCannotStageTheUpdate() = runBlocking {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val storage = FakeLocalStorage().apply {
+            emitterPairedDevices = listOf(
+                EmitterPairedDevice(
+                    deviceId = "rx-1",
+                    deviceName = "Pantalla",
+                    token = "token",
+                    host = "127.0.0.1",
+                    port = 8765
+                )
+            )
+        }
+        val discovery = FixedDiscovery(
+            listOf(
+                DiscoveredDevice(
+                    deviceId = "rx-1",
+                    deviceName = "Pantalla",
+                    host = "127.0.0.1",
+                    port = 8765,
+                    paired = true,
+                    appVersion = "1.1.2"
+                )
+            )
+        )
+        val client = RecordingEmitterClient(
+            screenVersion = "1.1.2",
+            updateFailure = UpdateRejectedException(Strings.UPDATE_NOT_SUPPORTED)
+        )
+        val holder = EmitterStateHolder(
+            discovery = discovery,
+            client = client,
+            storage = storage,
+            logger = NoOpLogger(),
+            emitterId = "tx-1",
+            emitterName = "Caja",
+            scope = scope,
+            serviceScope = scope,
+            kioskLockManager = KioskLockManager(
+                logger = NoOpLogger(),
+                passwordHasher = { it },
+                scope = scope,
+                platformLockAvailable = false
+            ),
+            projectionController = ProjectionController(),
+            passwordHasher = { it },
+            backgroundDispatcher = Dispatchers.Unconfined,
+            updatePackageProvider = FakeUpdatePackageProvider(
+                UpdatePackage(
+                    version = APP_VERSION,
+                    sha256 = "a".repeat(64),
+                    bytes = byteArrayOf(1, 2, 3)
+                )
+            )
+        )
+        try {
+            holder.start()
+
+            val update = holder.uiState.value.updateByDevice["rx-1"]
+            assertEquals(DeviceUpdateStatus.FAILED, update?.status)
+            assertEquals(Strings.UPDATE_NOT_SUPPORTED, update?.message)
+        } finally {
+            holder.stop()
+            scope.cancel()
+        }
+    }
 }
 
 private class FixedDiscovery(devices: List<DiscoveredDevice>) : DeviceDiscovery {
@@ -118,7 +188,8 @@ private class FixedDiscovery(devices: List<DiscoveredDevice>) : DeviceDiscovery 
 }
 
 private class RecordingEmitterClient(
-    private val screenVersion: String
+    private val screenVersion: String,
+    private val updateFailure: Throwable? = null
 ) : EmitterClient {
     val uploadedVersions = mutableListOf<String>()
 
@@ -187,6 +258,7 @@ private class RecordingEmitterClient(
         bytes: ByteArray
     ): Result<UpdateUploadResponse> {
         uploadedVersions += version
+        updateFailure?.let { return Result.failure(it) }
         return Result.success(
             UpdateUploadResponse(
                 accepted = true,
