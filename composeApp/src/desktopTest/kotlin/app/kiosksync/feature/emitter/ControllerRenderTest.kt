@@ -4,8 +4,9 @@ import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.unit.Density
 import app.kiosksync.FakeRepositories
 import app.kiosksync.NoOpLogger
-import app.kiosksync.feature.emitter.presentation.EmitterScreen
-import app.kiosksync.feature.emitter.presentation.EmitterStateHolder
+import app.kiosksync.feature.emitter.actions.EmitterAction
+import app.kiosksync.feature.emitter.screen.EmitterScreen
+import app.kiosksync.feature.emitter.viewmodel.EmitterViewModel
 import app.kiosksync.feature.guide.domain.GuideManager
 import app.kiosksync.core.AppTheme
 import app.kiosksync.core.DeviceInfo
@@ -90,7 +91,7 @@ class ControllerRenderTest {
                     DiscoveredDevice("rx-bodega", "Bodega", "192.168.1.42", 8765, false),
                 )
             )
-            val holder = EmitterStateHolder(
+            val holder = EmitterViewModel(
                 discovery = discovery,
                 client = FakeEmitterClient(),
                 screensRepository = storage,
@@ -112,8 +113,8 @@ class ControllerRenderTest {
                 backgroundDispatcher = Dispatchers.Unconfined,
             )
             holder.start()
-            holder.toggleSelection("rx-sala")
-            holder.toggleSelection("rx-mostrador")
+            holder.onAction(EmitterAction.ToggleSelection("rx-sala"))
+            holder.onAction(EmitterAction.ToggleSelection("rx-mostrador"))
 
             val editor = PlaylistEditorStateHolder(
                 playlistRepository = storage,
@@ -126,7 +127,8 @@ class ControllerRenderTest {
 
             render(output, "controller-dark", AppTheme.DARK, 1280, 800) {
                 EmitterScreen(
-                    stateHolder = holder,
+                    state = holder.state.value,
+                    onAction = holder::onAction,
                     playlistStateHolder = editor,
                     mediaRepository = storage,
                     guideManager = guideManager,
@@ -138,7 +140,8 @@ class ControllerRenderTest {
 
             render(output, "controller-light", AppTheme.LIGHT, 1280, 800) {
                 EmitterScreen(
-                    stateHolder = holder,
+                    state = holder.state.value,
+                    onAction = holder::onAction,
                     playlistStateHolder = editor,
                     mediaRepository = storage,
                     guideManager = guideManager,
@@ -150,7 +153,8 @@ class ControllerRenderTest {
 
             render(output, "controller-compact", AppTheme.DARK, 900, 650) {
                 EmitterScreen(
-                    stateHolder = holder,
+                    state = holder.state.value,
+                    onAction = holder::onAction,
                     playlistStateHolder = editor,
                     mediaRepository = storage,
                     guideManager = guideManager,
@@ -162,7 +166,8 @@ class ControllerRenderTest {
 
             render(output, "controller-fullhd", AppTheme.DARK, 1920, 1080) {
                 EmitterScreen(
-                    stateHolder = holder,
+                    state = holder.state.value,
+                    onAction = holder::onAction,
                     playlistStateHolder = editor,
                     mediaRepository = storage,
                     guideManager = guideManager,
@@ -172,10 +177,11 @@ class ControllerRenderTest {
                 )
             }
 
-            holder.openSecurityDialog()
+            holder.onAction(EmitterAction.OpenSecurityDialog)
             render(output, "controller-security", AppTheme.DARK, 1280, 800) {
                 EmitterScreen(
-                    stateHolder = holder,
+                    state = holder.state.value,
+                    onAction = holder::onAction,
                     playlistStateHolder = editor,
                     mediaRepository = storage,
                     guideManager = guideManager,
@@ -184,13 +190,14 @@ class ControllerRenderTest {
                     theme = AppTheme.DARK,
                 )
             }
-            holder.dismissSecurityDialog()
+            holder.onAction(EmitterAction.DismissSecurityDialog)
 
-            val unpaired = holder.uiState.value.devices.first { !it.isPairedToThisEmitter }
-            holder.openPairDialog(unpaired)
+            val unpaired = holder.state.value.devices.first { !it.isPairedToThisEmitter }
+            holder.onAction(EmitterAction.OpenPairDialog(unpaired))
             render(output, "controller-pair", AppTheme.DARK, 1280, 800) {
                 EmitterScreen(
-                    stateHolder = holder,
+                    state = holder.state.value,
+                    onAction = holder::onAction,
                     playlistStateHolder = editor,
                     mediaRepository = storage,
                     guideManager = guideManager,

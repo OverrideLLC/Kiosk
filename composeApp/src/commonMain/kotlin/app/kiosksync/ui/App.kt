@@ -22,6 +22,7 @@ import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.feature.guide.domain.GuideManager
 import app.kiosksync.feature.guide.domain.GuideStep
 import app.kiosksync.feature.guide.presentation.GuideOverlay
+import app.kiosksync.feature.emitter.screen.EmitterRoute
 import app.kiosksync.feature.kiosk.presentation.KioskUnlockOverlay
 import app.kiosksync.feature.pairing.domain.PairingManager
 import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
@@ -345,7 +346,7 @@ fun App(
                     }
 
                     is Screen.EmitterHome -> {
-                        EmitterHomeScreen(
+                        EmitterRoute(
                             config = screen.config,
                             container = container,
                             guideManager = guideManager,

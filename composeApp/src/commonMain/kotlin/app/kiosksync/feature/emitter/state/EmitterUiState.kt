@@ -1,4 +1,4 @@
-package app.kiosksync.feature.emitter.presentation
+package app.kiosksync.feature.emitter.state
 
 import app.kiosksync.core.DEFAULT_UNLOCK_SEQUENCE
 import app.kiosksync.feature.playlist.domain.Playlist

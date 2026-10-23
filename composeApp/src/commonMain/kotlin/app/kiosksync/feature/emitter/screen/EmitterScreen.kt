@@ -1,4 +1,9 @@
-package app.kiosksync.feature.emitter.presentation
+package app.kiosksync.feature.emitter.screen
+
+import app.kiosksync.feature.emitter.actions.EmitterAction
+import app.kiosksync.feature.emitter.components.*
+import app.kiosksync.feature.emitter.state.EmitterUiState
+import app.kiosksync.feature.emitter.state.SyncUiStatus
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -48,7 +53,8 @@ import kotlinx.coroutines.CancellationException
 
 @Composable
 fun EmitterScreen(
-    stateHolder: EmitterStateHolder,
+    state: EmitterUiState,
+    onAction: (EmitterAction) -> Unit,
     playlistStateHolder: PlaylistEditorStateHolder,
     mediaRepository: MediaRepository,
     guideManager: GuideManager,
@@ -60,7 +66,6 @@ fun EmitterScreen(
     onReduceMotionChange: (Boolean) -> Unit = {},
     pickImageFiles: suspend () -> List<String> = { emptyList() },
 ) {
-    val state by stateHolder.uiState.collectAsState()
     val editorState by playlistStateHolder.uiState.collectAsState()
     val guideState by guideManager.uiState.collectAsState()
     var showChangeRoleConfirm by remember { mutableStateOf(false) }
@@ -145,25 +150,18 @@ fun EmitterScreen(
         ) {
             state.devices
                 .firstOrNull { it.isPairedToThisEmitter && !it.isSelected }
-                ?.let { stateHolder.toggleSelection(it.deviceId) }
+                ?.let { onAction(EmitterAction.ToggleSelection(it.deviceId)) }
         }
     }
 
-    LaunchedEffect(guideManager, stateHolder, playlistStateHolder) {
+    LaunchedEffect(guideManager, onAction, playlistStateHolder) {
         guideManager.actions.collect { action ->
             when (action) {
                 GuideAction.ADD_IMAGES -> playlistStateHolder.addImages()
-                GuideAction.REFRESH_DEVICES -> stateHolder.refreshDevices()
-                GuideAction.SEND -> {
-                    val current = stateHolder.uiState.value
-                    val playlist = playlistStateHolder.currentPlaylist()
-                    val hasSelection = current.devices.any {
-                        it.isSelected && it.isPairedToThisEmitter
-                    }
-                    if (!current.isSending && !current.isSyncing && playlist.items.isNotEmpty() && hasSelection) {
-                        stateHolder.sendToSelected(playlist)
-                    }
-                }
+                GuideAction.REFRESH_DEVICES -> onAction(EmitterAction.RefreshDevices)
+                GuideAction.SEND -> onAction(
+                    EmitterAction.SendToSelected(playlistStateHolder.currentPlaylist())
+                )
             }
         }
     }
@@ -182,7 +180,7 @@ fun EmitterScreen(
         ) {
             ControllerHeader(
                 hasPassword = state.hasKioskPassword,
-                onOpenSecurity = { stateHolder.dispatch(EmitterAction.OpenSecurityDialog) },
+                onOpenSecurity = { onAction(EmitterAction.OpenSecurityDialog) },
                 onOpenSettings = { showSettings = true },
                 onChangeRole = { showChangeRoleConfirm = true },
                 onExit = onExitRequested,
@@ -193,7 +191,7 @@ fun EmitterScreen(
                 StatusBanner(
                     message = message,
                     isError = state.statusIsError,
-                    onDismiss = { stateHolder.dispatch(EmitterAction.DismissStatusMessage) },
+                    onDismiss = { onAction(EmitterAction.DismissStatusMessage) },
                 )
             }
 
@@ -206,7 +204,7 @@ fun EmitterScreen(
                         .weight(1f),
                 ) {
                     ScreensPanel(
-                        stateHolder = stateHolder,
+                        onAction = onAction,
                         state = state,
                         fillHeight = true,
                         modifier = Modifier.weight(0.42f).fillMaxHeight(),
@@ -239,7 +237,7 @@ fun EmitterScreen(
                     Spacer(Modifier.height(Space.sm))
                     if (compactTab == 0) {
                         ScreensPanel(
-                            stateHolder = stateHolder,
+                            onAction = onAction,
                             state = state,
                             fillHeight = true,
                             modifier = Modifier.fillMaxSize(),
@@ -269,12 +267,12 @@ fun EmitterScreen(
                 sendDisabledReason = if (canSend) null else sendHint,
                 syncDisabledReason = if (canSync) null else Strings.PLAYBACK_SYNC_NO_SCREENS,
                 onSend = {
-                    stateHolder.dispatch(EmitterAction.SendToSelected(playlistStateHolder.currentPlaylist()))
+                    onAction(EmitterAction.SendToSelected(playlistStateHolder.currentPlaylist()))
                 },
                 onProject = {
-                    stateHolder.dispatch(EmitterAction.RequestProjection(playlistStateHolder.currentPlaylist()))
+                    onAction(EmitterAction.RequestProjection(playlistStateHolder.currentPlaylist()))
                 },
-                onSync = { stateHolder.dispatch(EmitterAction.SynchronizePlayback) },
+                onSync = { onAction(EmitterAction.SynchronizePlayback) },
             )
 
             Spacer(Modifier.height(Space.xs))
@@ -299,10 +297,10 @@ fun EmitterScreen(
     state.passwordDialog?.let { dialog ->
         KioskPasswordDialog(
             dialog = dialog,
-            onDraftChange = { stateHolder.dispatch(EmitterAction.UpdatePasswordDraft(it)) },
-            onConfirmDraftChange = { stateHolder.dispatch(EmitterAction.UpdatePasswordConfirmDraft(it)) },
-            onConfirm = { stateHolder.dispatch(EmitterAction.ConfirmPassword) },
-            onDismiss = { stateHolder.dispatch(EmitterAction.DismissPasswordDialog) },
+            onDraftChange = { onAction(EmitterAction.UpdatePasswordDraft(it)) },
+            onConfirmDraftChange = { onAction(EmitterAction.UpdatePasswordConfirmDraft(it)) },
+            onConfirm = { onAction(EmitterAction.ConfirmPassword) },
+            onDismiss = { onAction(EmitterAction.DismissPasswordDialog) },
         )
     }
 
@@ -310,18 +308,18 @@ fun EmitterScreen(
         SecurityDialog(
             dialog = dialog,
             hasPassword = state.hasKioskPassword,
-            onAddKey = { stateHolder.dispatch(EmitterAction.AppendUnlockKey(it)) },
-            onRemoveLast = { stateHolder.dispatch(EmitterAction.RemoveLastUnlockKey) },
-            onResetSequence = { stateHolder.dispatch(EmitterAction.ResetUnlockSequence) },
-            onSaveSequence = { stateHolder.dispatch(EmitterAction.SaveUnlockSequence) },
-            onToggleRecovery = { stateHolder.dispatch(EmitterAction.ToggleRecoveryEditor) },
-            onAcceptedChange = { stateHolder.dispatch(EmitterAction.SetRecoveryAccepted(it)) },
-            onRecoveryChange = { stateHolder.dispatch(EmitterAction.UpdateRecoveryDraft(it)) },
-            onRecoveryConfirmChange = { stateHolder.dispatch(EmitterAction.UpdateRecoveryConfirmDraft(it)) },
-            onSaveRecovery = { stateHolder.dispatch(EmitterAction.SaveRecoveryPhrase) },
-            onResetRecovery = { stateHolder.dispatch(EmitterAction.ResetRecoveryPhrase) },
-            onChangePassword = { stateHolder.dispatch(EmitterAction.OpenChangePasswordDialog) },
-            onDismiss = { stateHolder.dispatch(EmitterAction.DismissSecurityDialog) },
+            onAddKey = { onAction(EmitterAction.AppendUnlockKey(it)) },
+            onRemoveLast = { onAction(EmitterAction.RemoveLastUnlockKey) },
+            onResetSequence = { onAction(EmitterAction.ResetUnlockSequence) },
+            onSaveSequence = { onAction(EmitterAction.SaveUnlockSequence) },
+            onToggleRecovery = { onAction(EmitterAction.ToggleRecoveryEditor) },
+            onAcceptedChange = { onAction(EmitterAction.SetRecoveryAccepted(it)) },
+            onRecoveryChange = { onAction(EmitterAction.UpdateRecoveryDraft(it)) },
+            onRecoveryConfirmChange = { onAction(EmitterAction.UpdateRecoveryConfirmDraft(it)) },
+            onSaveRecovery = { onAction(EmitterAction.SaveRecoveryPhrase) },
+            onResetRecovery = { onAction(EmitterAction.ResetRecoveryPhrase) },
+            onChangePassword = { onAction(EmitterAction.OpenChangePasswordDialog) },
+            onDismiss = { onAction(EmitterAction.DismissSecurityDialog) },
         )
     }
 
@@ -405,9 +403,9 @@ fun EmitterScreen(
             code = state.pairingCode,
             error = state.pairingError,
             isPairing = state.isPairing,
-            onCodeChange = { stateHolder.dispatch(EmitterAction.UpdatePairingCode(it)) },
-            onConfirm = { stateHolder.dispatch(EmitterAction.ConfirmPair) },
-            onDismiss = { stateHolder.dispatch(EmitterAction.DismissPairDialog) },
+            onCodeChange = { onAction(EmitterAction.UpdatePairingCode(it)) },
+            onConfirm = { onAction(EmitterAction.ConfirmPair) },
+            onDismiss = { onAction(EmitterAction.DismissPairDialog) },
         )
     }
 
@@ -415,7 +413,7 @@ fun EmitterScreen(
         AppDialog(
             title = Strings.UNPAIR_DIALOG_TITLE,
             icon = AppIcon.LINK,
-            onDismissRequest = { stateHolder.dispatch(EmitterAction.DismissUnpairDialog) },
+            onDismissRequest = { onAction(EmitterAction.DismissUnpairDialog) },
             content = {
                 Text(
                     text = "${Strings.UNPAIR_DIALOG_CONFIRM}\n\n${device.deviceName}",
@@ -426,13 +424,13 @@ fun EmitterScreen(
             actions = {
                 AppButton(
                     text = Strings.CANCEL_BUTTON,
-                    onClick = { stateHolder.dispatch(EmitterAction.DismissUnpairDialog) },
+                    onClick = { onAction(EmitterAction.DismissUnpairDialog) },
                     variant = AppButtonVariant.TEXT,
                     size = AppButtonSize.SMALL,
                 )
                 AppButton(
                     text = Strings.UNPAIR_BUTTON,
-                    onClick = { stateHolder.dispatch(EmitterAction.ConfirmUnpair) },
+                    onClick = { onAction(EmitterAction.ConfirmUnpair) },
                     variant = AppButtonVariant.DANGER,
                     size = AppButtonSize.SMALL,
                     icon = AppIcon.LINK,
@@ -446,9 +444,9 @@ fun EmitterScreen(
             value = state.manualIpInput,
             error = state.manualIpError,
             isLoading = state.isManualIpLoading,
-            onValueChange = { stateHolder.dispatch(EmitterAction.UpdateManualIp(it)) },
-            onConfirm = { stateHolder.dispatch(EmitterAction.ConfirmManualIp) },
-            onDismiss = { stateHolder.dispatch(EmitterAction.DismissManualIpDialog) },
+            onValueChange = { onAction(EmitterAction.UpdateManualIp(it)) },
+            onConfirm = { onAction(EmitterAction.ConfirmManualIp) },
+            onDismiss = { onAction(EmitterAction.DismissManualIpDialog) },
         )
     }
 

@@ -1,4 +1,4 @@
-package app.kiosksync.feature.emitter.presentation
+package app.kiosksync.feature.emitter.viewmodel
 
 import app.kiosksync.core.APP_VERSION
 import app.kiosksync.core.AppLogger
@@ -9,11 +9,20 @@ import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.STATUS_FAILURE_THRESHOLD
 import app.kiosksync.core.STATUS_POLL_INTERVAL_MS
 import app.kiosksync.core.Strings
+import app.kiosksync.feature.emitter.actions.EmitterAction
+import app.kiosksync.feature.emitter.actions.EmitterReducer
 import app.kiosksync.feature.emitter.domain.EmitterScreensRepository
+import app.kiosksync.feature.emitter.state.DeviceSyncUi
+import app.kiosksync.feature.emitter.state.DeviceUpdateStatus
+import app.kiosksync.feature.emitter.state.DeviceUpdateUi
+import app.kiosksync.feature.emitter.state.EmitterDeviceUi
+import app.kiosksync.feature.emitter.state.EmitterPendingAction
+import app.kiosksync.feature.emitter.state.EmitterUiState
+import app.kiosksync.feature.emitter.state.SyncUiStatus
 import app.kiosksync.feature.kiosk.domain.KioskLockRepository
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.playlist.domain.Playlist
-import app.kiosksync.feature.projection.presentation.ProjectionController
+import app.kiosksync.feature.projection.domain.ProjectionService
 import app.kiosksync.platform.DeviceDiscovery
 import app.kiosksync.platform.EmitterClient
 import app.kiosksync.platform.MediaRepository
@@ -32,7 +41,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class EmitterStateHolder(
+class EmitterViewModel(
     private val discovery: DeviceDiscovery,
     private val client: EmitterClient,
     private val screensRepository: EmitterScreensRepository,
@@ -44,13 +53,13 @@ class EmitterStateHolder(
     private val scope: CoroutineScope,
     private val serviceScope: CoroutineScope,
     private val kioskLockManager: KioskLockManager,
-    private val projectionController: ProjectionController,
+    private val projectionController: ProjectionService,
     passwordHasher: (String) -> String,
     private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val updatePackageProvider: UpdatePackageProvider? = null
 ) {
     private val _uiState = MutableStateFlow(EmitterUiState())
-    val uiState: StateFlow<EmitterUiState> = _uiState.asStateFlow()
+    val state: StateFlow<EmitterUiState> = _uiState.asStateFlow()
 
     private var discovered: List<DiscoveredDevice> = emptyList()
     private val manualDevices = mutableMapOf<String, DiscoveredDevice>()
@@ -167,7 +176,9 @@ class EmitterStateHolder(
     )
 
     /** Accepts typed UI actions; transient state changes pass through a pure reducer. */
-    fun dispatch(action: EmitterAction) {
+    fun onAction(action: EmitterAction) {
+        if (action == EmitterAction.DismissPairDialog && _uiState.value.isPairing) return
+        if (action == EmitterAction.DismissManualIpDialog && _uiState.value.isManualIpLoading) return
         _uiState.update { EmitterReducer.reduce(it, action) }
         when (action) {
             EmitterAction.RefreshDevices -> refreshDevices()
@@ -264,7 +275,7 @@ class EmitterStateHolder(
      * a screen that just appeared shows up without waiting for its next
      * announcement.
      */
-    fun refreshDevices() {
+    private fun refreshDevices() {
         if (_uiState.value.isRefreshing) return
         _uiState.update { it.copy(isRefreshing = true) }
         logger.info("Manual screen scan requested")
@@ -275,61 +286,20 @@ class EmitterStateHolder(
         }
     }
 
-    fun toggleSelection(deviceId: String) {
+    private fun toggleSelection(deviceId: String) {
         val device = _uiState.value.devices.firstOrNull { it.deviceId == deviceId } ?: return
         if (!device.isPairedToThisEmitter) return
         selectedIds = if (deviceId in selectedIds) selectedIds - deviceId else selectedIds + deviceId
         rebuild()
     }
 
-    fun openPairDialog(device: EmitterDeviceUi) {
-        _uiState.update {
-            it.copy(
-                pairingDevice = device,
-                pairingCode = "",
-                pairingError = null,
-                isPairing = false
-            )
-        }
-    }
+    private fun confirmPair() = pairingCoordinator.confirmPair()
 
-    fun dismissPairDialog() {
-        if (_uiState.value.isPairing) return
-        _uiState.update {
-            it.copy(pairingDevice = null, pairingCode = "", pairingError = null)
-        }
-    }
+    private fun confirmUnpair() = pairingCoordinator.confirmUnpair()
 
-    fun updatePairingCode(value: String) {
-        val digits = value.filter { it.isDigit() }.take(6)
-        _uiState.update { it.copy(pairingCode = digits, pairingError = null) }
-    }
+    private fun confirmManualIp() = manualIpCoordinator.confirm()
 
-    fun confirmPair() = pairingCoordinator.confirmPair()
-
-    fun requestUnpair(device: EmitterDeviceUi) {
-        _uiState.update { it.copy(unpairDevice = device) }
-    }
-
-    fun dismissUnpairDialog() {
-        _uiState.update { it.copy(unpairDevice = null) }
-    }
-
-    fun confirmUnpair() = pairingCoordinator.confirmUnpair()
-
-    fun openManualIpDialog() = manualIpCoordinator.openDialog()
-
-    fun dismissManualIpDialog() = manualIpCoordinator.dismissDialog()
-
-    fun updateManualIp(value: String) = manualIpCoordinator.updateInput(value)
-
-    fun confirmManualIp() = manualIpCoordinator.confirm()
-
-    fun dismissStatusMessage() {
-        _uiState.update { it.copy(statusMessage = null, statusIsError = false) }
-    }
-
-    fun sendToSelected(playlist: Playlist) {
+    private fun sendToSelected(playlist: Playlist) {
         val state = _uiState.value
         if (state.isSending || state.isSyncing) return
         if (playlist.items.isEmpty()) {
@@ -363,9 +333,7 @@ class EmitterStateHolder(
         }
     }
 
-    fun synchronizePlayback() = deliveryCoordinator.synchronizePlayback()
-
-    fun requestProjection(playlist: Playlist) {
+    private fun requestProjection(playlist: Playlist) {
         if (_uiState.value.isSending || _uiState.value.isSyncing || projectionController.isProjecting) return
         if (playlist.items.isEmpty()) {
             _uiState.update {
@@ -390,13 +358,9 @@ class EmitterStateHolder(
         }
     }
 
-    fun openSecurityDialog() = securityCoordinator.openSecurityDialog()
+    private fun openSecurityDialog() = securityCoordinator.openSecurityDialog()
 
-    fun dismissSecurityDialog() {
-        _uiState.update { it.copy(securityDialog = null) }
-    }
-
-    fun confirmPassword() = securityCoordinator.confirmPassword()
+    private fun confirmPassword() = securityCoordinator.confirmPassword()
 
     private fun startProjection(playlist: Playlist, lock: KioskLockConfig) {
         kioskLockManager.setConfig(lock)

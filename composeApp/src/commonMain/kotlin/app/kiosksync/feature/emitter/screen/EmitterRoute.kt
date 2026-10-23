@@ -1,20 +1,22 @@
-package app.kiosksync.ui
+package app.kiosksync.feature.emitter.screen
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import app.kiosksync.AppContainer
 import app.kiosksync.core.AppTheme
-import app.kiosksync.feature.emitter.presentation.EmitterScreen
-import app.kiosksync.feature.emitter.presentation.EmitterStateHolder
+import app.kiosksync.feature.emitter.actions.EmitterAction
+import app.kiosksync.feature.emitter.viewmodel.EmitterViewModel
 import app.kiosksync.feature.guide.domain.GuideManager
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorStateHolder
 import app.kiosksync.feature.role.domain.AppConfig
 
 @Composable
-fun EmitterHomeScreen(
+fun EmitterRoute(
     config: AppConfig,
     container: AppContainer,
     guideManager: GuideManager,
@@ -26,8 +28,8 @@ fun EmitterHomeScreen(
     onReduceMotionChange: (Boolean) -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
-    val stateHolder = remember(config.deviceId) {
-        EmitterStateHolder(
+    val viewModel = remember(config.deviceId) {
+        EmitterViewModel(
             discovery = container.discovery,
             client = container.emitterClient,
             screensRepository = container.screensRepository,
@@ -45,6 +47,7 @@ fun EmitterHomeScreen(
             updatePackageProvider = container.updatePackageProvider
         )
     }
+    val state by viewModel.state.collectAsState()
 
     val playlistStateHolder = remember(config.deviceId) {
         PlaylistEditorStateHolder(
@@ -56,19 +59,20 @@ fun EmitterHomeScreen(
         )
     }
 
-    LaunchedEffect(stateHolder, playlistStateHolder) {
+    LaunchedEffect(viewModel, playlistStateHolder) {
         container.projectionController.toggleRequests.collect {
-            stateHolder.requestProjection(playlistStateHolder.currentPlaylist())
+            viewModel.onAction(EmitterAction.RequestProjection(playlistStateHolder.currentPlaylist()))
         }
     }
 
-    DisposableEffect(stateHolder) {
-        stateHolder.start()
-        onDispose { stateHolder.stop() }
+    DisposableEffect(viewModel) {
+        viewModel.start()
+        onDispose { viewModel.stop() }
     }
 
     EmitterScreen(
-        stateHolder = stateHolder,
+        state = state,
+        onAction = viewModel::onAction,
         playlistStateHolder = playlistStateHolder,
         mediaRepository = container.mediaRepository,
         guideManager = guideManager,

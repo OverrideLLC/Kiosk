@@ -3,8 +3,8 @@ package app.kiosksync.feature.emitter
 import app.kiosksync.FakeRepositories
 import app.kiosksync.FakeUpdatePackageProvider
 import app.kiosksync.NoOpLogger
-import app.kiosksync.feature.emitter.presentation.DeviceUpdateStatus
-import app.kiosksync.feature.emitter.presentation.EmitterStateHolder
+import app.kiosksync.feature.emitter.state.DeviceUpdateStatus
+import app.kiosksync.feature.emitter.viewmodel.EmitterViewModel
 import app.kiosksync.core.APP_VERSION
 import app.kiosksync.core.DeviceInfo
 import app.kiosksync.core.DiscoveredDevice
@@ -62,7 +62,7 @@ class EmitterUpdateTest {
             )
         )
         val client = RecordingEmitterClient(screenVersion = "0.9.0")
-        val holder = EmitterStateHolder(
+        val holder = EmitterViewModel(
             discovery = discovery,
             client = client,
             screensRepository = storage,
@@ -96,9 +96,9 @@ class EmitterUpdateTest {
             assertEquals(listOf(APP_VERSION), client.uploadedVersions)
             assertEquals(
                 DeviceUpdateStatus.AWAITING_CONFIRMATION,
-                holder.uiState.value.updateByDevice["rx-1"]?.status
+                holder.state.value.updateByDevice["rx-1"]?.status
             )
-            assertTrue(holder.uiState.value.devices.single().appVersion == "0.9.0")
+            assertTrue(holder.state.value.devices.single().appVersion == "0.9.0")
         } finally {
             holder.stop()
             scope.cancel()

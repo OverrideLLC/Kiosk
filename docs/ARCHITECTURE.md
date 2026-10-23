@@ -55,7 +55,7 @@ composeApp/src/
 │   ├── feature/
 │   │   ├── role/{domain,presentation}/
 │   │   ├── pairing/{domain,presentation}/
-│   │   ├── emitter/{domain,presentation}/
+│   │   ├── emitter/{actions,components,domain,screen,state,viewmodel}/
 │   │   ├── playlist/{domain,presentation}/
 │   │   ├── sync/domain/
 │   │   ├── playback/{domain,presentation}/
@@ -269,6 +269,14 @@ cuando afectan a una acción del usuario.
   canal consumible (confirmar rol o abrir el selector de imágenes); las
   operaciones de red y almacenamiento mantienen su progreso y error en el estado.
   No hay ViewModels de AndroidX ni framework MVI.
+- `feature/emitter` separa `EmitterAction` y el reducer puro en `actions`, el
+  estado inmutable en `state`, la coordinación de estado y efectos en
+  `EmitterViewModel`, y las composables en `screen` y `components`. La pantalla
+  recibe `EmitterUiState` y un callback de acciones; no conserva ni invoca el
+  ViewModel. El ViewModel depende del contrato `domain/EmitterScreensRepository`;
+  el adaptador Room en `desktopMain/feature/emitter/data` implementa ese contrato.
+  Los controles propios del Controlador permanecen en `components`; botones,
+  diálogos e iconos reutilizados por otras features viven en `core/ui`.
 - Pairing, playback y kiosk conservan managers/state holders especializados para
   reglas con temporizadores, reproducción o eventos externos. Solo se introduce
   un reducer cuando aclara transiciones de UI; no se fuerza el mismo patrón a toda

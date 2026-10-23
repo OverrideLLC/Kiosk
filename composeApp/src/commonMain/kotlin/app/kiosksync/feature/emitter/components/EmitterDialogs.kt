@@ -1,4 +1,8 @@
-package app.kiosksync.feature.emitter.presentation
+package app.kiosksync.feature.emitter.components
+
+import app.kiosksync.feature.emitter.state.EmitterDeviceUi
+import app.kiosksync.feature.emitter.state.EmitterPendingAction
+import app.kiosksync.feature.emitter.state.KioskPasswordDialogUi
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row

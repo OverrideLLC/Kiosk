@@ -1,4 +1,7 @@
-package app.kiosksync.feature.emitter.presentation
+package app.kiosksync.feature.emitter.components
+
+import app.kiosksync.feature.emitter.actions.EmitterAction
+import app.kiosksync.feature.emitter.state.EmitterUiState
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -59,7 +62,7 @@ import app.kiosksync.core.ui.theme.Space
 
 @Composable
 internal fun ScreensPanel(
-    stateHolder: EmitterStateHolder,
+    onAction: (EmitterAction) -> Unit,
     state: EmitterUiState,
     fillHeight: Boolean,
     modifier: Modifier = Modifier,
@@ -72,7 +75,7 @@ internal fun ScreensPanel(
                 AppIconButton(
                     icon = AppIcon.REFRESH,
                     contentDescription = Strings.DISCOVERY_REFRESH,
-                    onClick = { stateHolder.dispatch(EmitterAction.RefreshDevices) },
+                    onClick = { onAction(EmitterAction.RefreshDevices) },
                     enabled = !state.isRefreshing,
                     tooltip = if (state.isRefreshing) {
                         Strings.DISCOVERY_REFRESHING
@@ -82,7 +85,7 @@ internal fun ScreensPanel(
                 )
                 AppButton(
                     text = Strings.ADD_BY_IP,
-                    onClick = { stateHolder.dispatch(EmitterAction.OpenManualIp) },
+                    onClick = { onAction(EmitterAction.OpenManualIp) },
                     variant = AppButtonVariant.OUTLINED,
                     size = AppButtonSize.SMALL,
                     icon = AppIcon.ADD,
@@ -115,11 +118,11 @@ internal fun ScreensPanel(
                         sync = state.syncByDevice[device.deviceId],
                         update = state.updateByDevice[device.deviceId],
                         onToggleSelection = {
-                            stateHolder.dispatch(EmitterAction.ToggleSelection(device.deviceId))
+                            onAction(EmitterAction.ToggleSelection(device.deviceId))
                         },
-                        onPair = { stateHolder.dispatch(EmitterAction.OpenPairDialog(device)) },
-                        onUnpair = { stateHolder.dispatch(EmitterAction.RequestUnpair(device)) },
-                        onUpdate = { stateHolder.dispatch(EmitterAction.RequestUpdate(device.deviceId)) },
+                        onPair = { onAction(EmitterAction.OpenPairDialog(device)) },
+                        onUnpair = { onAction(EmitterAction.RequestUnpair(device)) },
+                        onUpdate = { onAction(EmitterAction.RequestUpdate(device.deviceId)) },
                     )
                 }
             }

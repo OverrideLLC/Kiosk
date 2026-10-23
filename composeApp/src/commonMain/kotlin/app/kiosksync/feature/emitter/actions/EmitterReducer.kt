@@ -1,47 +1,10 @@
-package app.kiosksync.feature.emitter.presentation
+package app.kiosksync.feature.emitter.actions
 
 import app.kiosksync.core.DEFAULT_UNLOCK_SEQUENCE
 import app.kiosksync.core.MAX_RECOVERY_PHRASE_LENGTH
 import app.kiosksync.core.MAX_UNLOCK_SEQUENCE_LENGTH
-import app.kiosksync.feature.playlist.domain.Playlist
-
-sealed interface EmitterAction {
-    data object RefreshDevices : EmitterAction
-    data object OpenManualIp : EmitterAction
-    data class ToggleSelection(val deviceId: String) : EmitterAction
-    data class OpenPairDialog(val device: EmitterDeviceUi) : EmitterAction
-    data class RequestUnpair(val device: EmitterDeviceUi) : EmitterAction
-    data class RequestUpdate(val deviceId: String) : EmitterAction
-    data object OpenSecurityDialog : EmitterAction
-    data object DismissStatusMessage : EmitterAction
-    data class SendToSelected(val playlist: Playlist) : EmitterAction
-    data class RequestProjection(val playlist: Playlist) : EmitterAction
-    data object SynchronizePlayback : EmitterAction
-    data class UpdatePasswordDraft(val value: String) : EmitterAction
-    data class UpdatePasswordConfirmDraft(val value: String) : EmitterAction
-    data object ConfirmPassword : EmitterAction
-    data object DismissPasswordDialog : EmitterAction
-    data class AppendUnlockKey(val key: String) : EmitterAction
-    data object RemoveLastUnlockKey : EmitterAction
-    data object ResetUnlockSequence : EmitterAction
-    data object SaveUnlockSequence : EmitterAction
-    data object ToggleRecoveryEditor : EmitterAction
-    data class SetRecoveryAccepted(val accepted: Boolean) : EmitterAction
-    data class UpdateRecoveryDraft(val value: String) : EmitterAction
-    data class UpdateRecoveryConfirmDraft(val value: String) : EmitterAction
-    data object SaveRecoveryPhrase : EmitterAction
-    data object ResetRecoveryPhrase : EmitterAction
-    data object OpenChangePasswordDialog : EmitterAction
-    data object DismissSecurityDialog : EmitterAction
-    data class UpdatePairingCode(val value: String) : EmitterAction
-    data object ConfirmPair : EmitterAction
-    data object DismissPairDialog : EmitterAction
-    data object DismissUnpairDialog : EmitterAction
-    data object ConfirmUnpair : EmitterAction
-    data class UpdateManualIp(val value: String) : EmitterAction
-    data object ConfirmManualIp : EmitterAction
-    data object DismissManualIpDialog : EmitterAction
-}
+import app.kiosksync.feature.emitter.state.EmitterUiState
+import app.kiosksync.feature.emitter.state.SecurityDialogUi
 
 object EmitterReducer {
     fun reduce(state: EmitterUiState, action: EmitterAction): EmitterUiState = when (action) {

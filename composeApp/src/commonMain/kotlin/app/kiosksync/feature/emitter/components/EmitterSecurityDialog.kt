@@ -1,4 +1,6 @@
-package app.kiosksync.feature.emitter.presentation
+package app.kiosksync.feature.emitter.components
+
+import app.kiosksync.feature.emitter.state.SecurityDialogUi
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement

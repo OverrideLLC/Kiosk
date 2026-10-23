@@ -1,4 +1,9 @@
-package app.kiosksync.feature.emitter.presentation
+package app.kiosksync.feature.emitter.viewmodel
+
+import app.kiosksync.feature.emitter.state.EmitterPendingAction
+import app.kiosksync.feature.emitter.state.EmitterUiState
+import app.kiosksync.feature.emitter.state.KioskPasswordDialogUi
+import app.kiosksync.feature.emitter.state.SecurityDialogUi
 
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.DEFAULT_UNLOCK_SEQUENCE

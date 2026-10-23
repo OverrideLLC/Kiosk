@@ -1,4 +1,8 @@
-package app.kiosksync.feature.emitter.presentation
+package app.kiosksync.feature.emitter.viewmodel
+
+import app.kiosksync.feature.emitter.state.EmitterDeviceUi
+import app.kiosksync.feature.emitter.state.EmitterPendingAction
+import app.kiosksync.feature.emitter.state.EmitterUiState
 
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.EmitterPairedDevice

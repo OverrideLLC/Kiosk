@@ -1,4 +1,6 @@
-package app.kiosksync.feature.emitter.presentation
+package app.kiosksync.feature.emitter.viewmodel
+
+import app.kiosksync.feature.emitter.state.EmitterUiState
 
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.DiscoveredDevice
@@ -24,28 +26,6 @@ internal class EmitterManualIpCoordinator(
     private val onDeviceAdded: (DiscoveredDevice) -> Unit,
     private val parseHostPort: (String) -> Pair<String, Int>?,
 ) {
-    fun openDialog() {
-        uiState.update {
-            it.copy(
-                showManualIpDialog = true,
-                manualIpInput = "",
-                manualIpError = null,
-                isManualIpLoading = false,
-            )
-        }
-    }
-
-    fun dismissDialog() {
-        if (uiState.value.isManualIpLoading) return
-        uiState.update {
-            it.copy(showManualIpDialog = false, manualIpInput = "", manualIpError = null)
-        }
-    }
-
-    fun updateInput(value: String) {
-        uiState.update { it.copy(manualIpInput = value, manualIpError = null) }
-    }
-
     fun confirm() {
         val state = uiState.value
         if (state.isManualIpLoading) return
