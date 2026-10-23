@@ -1,6 +1,6 @@
 # Override Kiosk — Nota de continuidad
 
-Fecha: 2026-10-22  
+Fecha: 2026-10-23  
 Rama: `master`  
 Último commit de código: consulta `git log -1 --oneline`.
 Remoto: `https://github.com/OverrideLLC/Kiosk.git`
@@ -8,15 +8,16 @@ Remoto: `https://github.com/OverrideLLC/Kiosk.git`
 ## Estado actual
 
 El repositorio está limpio y sincronizado con `origin/master`. La versión de
-trabajo es **1.1.0** e incluye: playlists con nombre, bloqueo de la Pantalla,
-pantalla completa, rediseño visual, pruebas de integración, empaquetado y
-**actualizaciones automáticas por LAN** desde el Controlador hacia las Pantallas.
+trabajo es **1.1.1** e incluye lo de 1.1.0 (playlists con nombre, bloqueo de la
+Pantalla, pantalla completa, rediseño visual, pruebas de integración, empaquetado
+y **actualizaciones automáticas por LAN**) más la **guía interactiva** que recorre
+las pantallas reales hasta dejar una demo funcionando.
 
-Los documentos de actualizaciones, empaquetado, protocolo y límites ya describen
-la función; el logo oficial está normalizado, el `icon.ico` se regeneró y el pie
-enlaza a `https://override.com.mx`. La licencia es **MIT** (`LICENSE`) y el
-workflow `.github/workflows/release.yml` genera los artefactos de Windows y la
-release al empujar un tag `v1.1.0`.
+Los documentos de actualizaciones, empaquetado, protocolo, límites y la nueva
+[guía](docs/GUIDE.md) describen las funciones; el logo oficial está normalizado,
+el `icon.ico` se regeneró y el pie enlaza a `https://override.com.mx`. La licencia
+es **MIT** (`LICENSE`) y el workflow `.github/workflows/release.yml` genera los
+artefactos de Windows y la release al empujar un tag `v1.1.1`.
 
 Esta nota existe para dejar claro qué falta comprobar antes de considerar el
 trabajo cerrado y para poder continuar desde otra computadora.
@@ -28,8 +29,9 @@ trabajo cerrado y para poder continuar desde otra computadora.
    - Activar el bloqueo y pulsar **Bloquear ahora**.
    - Confirmar que aparece el overlay, que se consumen clics y teclas y que una
      frase incorrecta no desbloquea.
-   - Confirmar que la frase correcta desbloquea y que al reiniciar la Pantalla
-     con el bloqueo activo vuelve a aparecer bloqueada.
+   - Confirmar que la frase correcta desbloquea. Tras un reinicio normal la
+     Pantalla se limpia por diseño; si se prueba el reinicio de actualización,
+     debe conservar la vinculación y volver bloqueada.
    - Mientras está bloqueada, probar `Esc`, `Ctrl+Shift+P` y `Alt+F4`: no deben
      cerrar ni desbloquear la app.
 2. **Pantalla completa**
@@ -45,12 +47,12 @@ trabajo cerrado y para poder continuar desde otra computadora.
    - Cortar la red a mitad de una sincronización y comprobar que la Pantalla
      conserva la playlist anterior y sigue reproduciendo sin red.
 4. **Actualización automática**
-   - Instalar o descomprimir la versión anterior (1.0.0) en la Pantalla y la 1.1.0
+   - Instalar o descomprimir la versión anterior (1.0.0) en la Pantalla y la 1.1.1
      en el Controlador.
    - Vincular ambas y comprobar que el Controlador detecta la versión vieja,
      envía el paquete y la Pantalla muestra el aviso.
    - Aceptar la actualización y confirmar que la Pantalla se reinicia, conserva la
-     vinculación y la playlist y reporta `appVersion` 1.1.0.
+     vinculación y la playlist y reporta `appVersion` 1.1.1.
    - Probar **Ahora no** con una actualización opcional y el botón **Actualizar**
      de la tarjeta.
    - Si se puede, probar una diferencia de `major` para verificar la actualización
@@ -62,15 +64,17 @@ trabajo cerrado y para poder continuar desde otra computadora.
    - [ ] Probar la carpeta portable en una PC limpia sin JDK.
    - [x] RAM medida en Windows 11: Controlador ~241 MB, Pantalla ~231 MB
      (working set, sin imágenes cargadas).
-   - [ ] Regenerar los artefactos con la versión 1.1.0 y probar una actualización
-     desde 1.0.0.
+   - [x] Artefactos de la versión 1.1.1 generados por GitHub Actions.
+   - [ ] Probar una actualización desde 1.0.0.
 6. **Publicación**
    - Licencia MIT añadida en `LICENSE` y en el `README.md`.
-   - [x] Release `v1.1.0` publicada por GitHub Actions el 2026-10-22:
-     https://github.com/OverrideLLC/Kiosk/releases/tag/v1.1.0
-   - [x] Artefactos publicados: `OverrideKiosk-1.1.0.exe`,
-     `OverrideKiosk-1.1.0.msi`, `OverrideKiosk-1.1.0-portable.zip` y
+   - [x] Release `v1.1.1` publicada por GitHub Actions el 2026-10-23:
+     https://github.com/OverrideLLC/Kiosk/releases/tag/v1.1.1
+   - [x] Artefactos publicados: `OverrideKiosk-1.1.1.exe`,
+     `OverrideKiosk-1.1.1.msi`, `OverrideKiosk-1.1.1-portable.zip` y
      `SHA256SUMS.txt`.
+   - [x] Release anterior `v1.1.0` (2026-10-22):
+     https://github.com/OverrideLLC/Kiosk/releases/tag/v1.1.0
    - El `README.md` apunta a GitHub Releases para la descarga.
 
 ## Cómo continuar en otra computadora
