@@ -3,12 +3,15 @@ $ErrorActionPreference = "Stop"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
 $smokeRoot = Join-Path $env:RUNNER_TEMP "override-kiosk-windows-smoke"
 $receiverData = Join-Path $smokeRoot "receiver"
+$windowedReceiverData = Join-Path $smokeRoot "receiver-windowed"
 $emitterData = Join-Path $smokeRoot "emitter"
 $port = 18768
+$windowedPort = 18769
 $emitterId = "windows-smoke-emitter"
 $token = "windows-runtime-migration-token"
 $imageId = "windows-smoke-image"
 $receiverProcess = $null
+$windowedReceiverProcess = $null
 $emitterProcess = $null
 
 function Start-KioskProcess([string]$name, [string]$appArguments) {
@@ -56,6 +59,22 @@ function Wait-ForLog([string]$path, [string]$pattern, [int]$timeoutSeconds) {
     }
     $contents = if (Test-Path $path) { [System.IO.File]::ReadAllText($path) } else { "<log not created>" }
     throw "Timed out waiting for '$pattern' in $path.`n$contents"
+}
+
+function Wait-ForReceiverInfo($process, [int]$receiverPort) {
+    $deadline = (Get-Date).AddMinutes(3)
+    while ((Get-Date) -lt $deadline) {
+        $process.Refresh()
+        if ($process.HasExited) {
+            throw "Receiver process exited before /info became available (exit $($process.ExitCode))."
+        }
+        try {
+            return Invoke-RestMethod -Uri "http://127.0.0.1:$receiverPort/info" -TimeoutSec 2
+        } catch {
+            Start-Sleep -Seconds 2
+        }
+    }
+    throw "Receiver did not answer GET /info on port $receiverPort."
 }
 
 try {
@@ -111,21 +130,7 @@ try {
     )
 
     $receiverProcess = Start-KioskProcess "receiver" "--role=receiver --data-dir=$receiverData --port=$port"
-    $receiverInfo = $null
-    $serverDeadline = (Get-Date).AddMinutes(3)
-    while ((Get-Date) -lt $serverDeadline) {
-        $receiverProcess.Refresh()
-        if ($receiverProcess.HasExited) {
-            throw "Receiver process exited before /info became available (exit $($receiverProcess.ExitCode))."
-        }
-        try {
-            $receiverInfo = Invoke-RestMethod -Uri "http://127.0.0.1:$port/info" -TimeoutSec 2
-            break
-        } catch {
-            Start-Sleep -Seconds 2
-        }
-    }
-    if ($null -eq $receiverInfo) { throw "Receiver did not answer GET /info on port $port." }
+    $receiverInfo = Wait-ForReceiverInfo $receiverProcess $port
     if ($receiverInfo.role -ne "receiver" -or -not $receiverInfo.paired) {
         throw "Receiver returned unexpected info: $($receiverInfo | ConvertTo-Json -Compress)"
     }
@@ -175,16 +180,38 @@ try {
     $emitterLog = Join-Path $emitterData "logs/app.log"
     [void](Wait-ForLog $emitterLog "Discovered screen" 60)
 
-    Write-Host "Windows runtime smoke passed: Receiver /info, DPAPI migration, authenticated local playback, keyboard/mouse hooks, mDNS registration and Controller discovery."
+    Stop-KioskProcess $emitterProcess
+    $emitterProcess = $null
+    Stop-KioskProcess $receiverProcess
+    $receiverProcess = $null
+
+    New-Item -ItemType Directory -Force -Path $windowedReceiverData | Out-Null
+    $windowedReceiverProcess = Start-KioskProcess `
+        "receiver-windowed" `
+        "--role=receiver --data-dir=$windowedReceiverData --port=$windowedPort --windowed"
+    $windowedInfo = Wait-ForReceiverInfo $windowedReceiverProcess $windowedPort
+    if ($windowedInfo.role -ne "receiver" -or $windowedInfo.paired) {
+        throw "Windowed Receiver returned unexpected info: $($windowedInfo | ConvertTo-Json -Compress)"
+    }
+    $windowedLog = Join-Path $windowedReceiverData "logs/app.log"
+    $windowedLogContents = Wait-ForLog $windowedLog "windowed=true" 30
+    if ($windowedLogContents -match "Windows low-level (keyboard|mouse) hook installed") {
+        throw "Windowed Receiver unexpectedly installed kiosk input hooks."
+    }
+
+    Write-Host "Windows runtime smoke passed: fullscreen and windowed Receivers, DPAPI migration, authenticated local playback, keyboard/mouse hooks, mDNS registration and Controller discovery."
 } catch {
     Write-Host "Windows runtime smoke failed: $_"
     foreach ($path in @(
         (Join-Path $receiverData "logs/app.log"),
+        (Join-Path $windowedReceiverData "logs/app.log"),
         (Join-Path $emitterData "logs/app.log"),
         (Join-Path $smokeRoot "receiver.stdout.log"),
         (Join-Path $smokeRoot "receiver.stderr.log"),
         (Join-Path $smokeRoot "emitter.stdout.log"),
-        (Join-Path $smokeRoot "emitter.stderr.log")
+        (Join-Path $smokeRoot "emitter.stderr.log"),
+        (Join-Path $smokeRoot "receiver-windowed.stdout.log"),
+        (Join-Path $smokeRoot "receiver-windowed.stderr.log")
     )) {
         if (Test-Path $path) {
             Write-Host "--- $path ---"
@@ -194,5 +221,6 @@ try {
     throw
 } finally {
     Stop-KioskProcess $emitterProcess
+    Stop-KioskProcess $windowedReceiverProcess
     Stop-KioskProcess $receiverProcess
 }
