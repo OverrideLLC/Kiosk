@@ -2,7 +2,6 @@ package app.kiosksync
 
 import app.kiosksync.core.AppArgs
 import app.kiosksync.core.AppLogger
-import app.kiosksync.core.AppRole
 import app.kiosksync.data.local.RoomRepositories
 import app.kiosksync.data.local.migration.LegacyJsonMigrator
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
@@ -48,7 +47,6 @@ suspend fun createDesktopAppContainer(
 
     try {
         val existingConfig = configStore.initialize()
-        val activeRole = appArgs.role ?: existingConfig?.role
         val secretProtector = SecretProtectorFactory.create(logger)
         val createdDatabase = buildKioskDatabase(dataDir)
         database = createdDatabase
@@ -95,7 +93,8 @@ suspend fun createDesktopAppContainer(
             platformLockAvailable = kioskLockAvailable,
         )
         kioskLockManager.setConfig(createdRepositories.kioskLock.load())
-        if (activeRole == AppRole.RECEIVER) kioskLockManager.lock(force = true)
+        // App.kt engages the lock only after the Receiver is paired and has
+        // received its password; the role picker and pairing code stay usable.
 
         val projectionController = ProjectionController()
         val keyboardGuard = createKioskKeyboardGuard(

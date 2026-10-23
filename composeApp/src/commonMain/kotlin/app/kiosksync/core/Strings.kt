@@ -44,9 +44,9 @@ object Strings {
     const val RECEIVER_LOCKED_MESSAGE = "Espera unos segundos antes de intentarlo de nuevo."
     const val RECEIVER_WAITING_FOR_EMITTER = "Esperando al Controlador"
     const val RECEIVER_IP_HINT =
-        "Para vincular por IP, usa «Agregar por IP» en el Controlador."
+        "IP de Wi-Fi de esta Pantalla. Para vincular por IP, usa «Agregar por IP» en el Controlador."
     const val RECEIVER_IP_UNAVAILABLE =
-        "No se pudo detectar la IP de esta Pantalla. Usa la IP de este equipo en la red local."
+        "No se pudo detectar la IP de esta Pantalla. Revisa que el Wi-Fi tenga una dirección válida."
     const val RECEIVER_PORT_LABEL = "Puerto"
 
     fun receiverCodeRenewsIn(countdown: String): String = "$RECEIVER_CODE_RENEWS_IN $countdown"
@@ -75,7 +75,7 @@ object Strings {
     const val DISCOVERY_EMPTY = "Todavía no hay pantallas. Enciende una Pantalla en la misma red o agrégala por IP."
     const val PAIRED_OTHER_CONTROLLER = "Vinculada a otro Controlador"
     const val PAIR_BUTTON = "Vincular"
-    const val UNPAIR_BUTTON = "Desvincular"
+    const val UNPAIR_BUTTON = "Eliminar"
     const val PAIR_DIALOG_TITLE = "Vincular pantalla"
     const val PAIR_DIALOG_INSTRUCTION = "Escribe el código de 6 dígitos que aparece en la pantalla."
     const val PAIR_CODE_FIELD = "Código"
@@ -90,10 +90,11 @@ object Strings {
     const val PAIR_ERROR_ALREADY_PAIRED = "Esa pantalla ya está vinculada a otro Controlador."
     const val PAIR_ERROR_NETWORK = "No se pudo conectar con la pantalla. Revisa que esté encendida y en la misma red."
     const val PAIR_SUCCESS = "Pantalla vinculada correctamente."
-    const val UNPAIR_SUCCESS = "Pantalla desvinculada correctamente."
-    const val UNPAIR_ERROR = "No se pudo desvincular la pantalla. Inténtalo cuando esté en línea."
-    const val UNPAIR_DIALOG_TITLE = "Desvincular pantalla"
-    const val UNPAIR_DIALOG_CONFIRM = "¿Seguro que deseas desvincular esta pantalla?"
+    const val UNPAIR_SUCCESS = "Pantalla eliminada de este Controlador."
+    const val UNPAIR_ERROR = "No se pudo eliminar la pantalla."
+    const val UNPAIR_DIALOG_TITLE = "Eliminar pantalla"
+    const val UNPAIR_DIALOG_CONFIRM =
+        "¿Seguro que deseas eliminar esta pantalla del Controlador? No es necesario que esté en línea."
     const val MANUAL_IP_DIALOG_TITLE = "Agregar pantalla por IP"
     const val MANUAL_IP_DIALOG_INSTRUCTION = "Escribe la dirección IP y el puerto de la Pantalla."
     const val MANUAL_IP_FIELD = "IP:puerto"
@@ -357,6 +358,67 @@ object Strings {
 
     fun kioskLockoutSeconds(seconds: Int): String =
         "Demasiados intentos fallidos. Espera $seconds s."
+
+    // Interactive guide
+    const val GUIDE_TITLE = "Guía interactiva"
+    const val GUIDE_BUTTON = "Ver guía"
+    const val GUIDE_SKIP = "Saltar"
+    const val GUIDE_BACK = "Anterior"
+    const val GUIDE_NEXT = "Siguiente"
+    const val GUIDE_FINISH = "Finalizar"
+    const val GUIDE_RESTART = "Repetir"
+    const val GUIDE_REPLAY_HINT =
+        "Vuelve a recorrer la demo paso a paso. La guía se adapta a lo que ya tengas configurado."
+    const val GUIDE_ROLE_TITLE = "Vamos a dejar la demo funcionando"
+    const val GUIDE_ROLE_BODY =
+        "Elige el rol de este equipo. La guía irá cambiando de pantalla contigo y avanzará " +
+            "cuando cada paso esté realmente listo."
+    const val GUIDE_ROLE_HINT =
+        "Puedes cambiar de rol después y repetir esta guía desde Ajustes en el Controlador " +
+            "o desde Opciones en la Pantalla."
+    const val GUIDE_EMITTER_PLAYLIST_TITLE = "Agrega imágenes"
+    const val GUIDE_EMITTER_PLAYLIST_BODY =
+        "Estás en la playlist. Pulsa Agregar imágenes y elige al menos una foto JPG, PNG o WEBP. " +
+            "La guía avanzará sola cuando la playlist tenga contenido."
+    const val GUIDE_EMITTER_SCREENS_TITLE = "Vincula una Pantalla"
+    const val GUIDE_EMITTER_SCREENS_BODY =
+        "En la otra PC elige el rol Pantalla. Cuando aparezca aquí, pulsa Vincular y escribe " +
+            "el código de 6 dígitos. Si no aparece, usa Agregar por IP."
+    const val GUIDE_EMITTER_PASSWORD_TITLE = "Crea la contraseña de bloqueo"
+    const val GUIDE_EMITTER_PASSWORD_BODY =
+        "Al vincular, la app pedirá una contraseña. Escríbela y guárdala: la Pantalla la recibirá " +
+            "para bloquearse y comenzar el carrusel. La guía seguirá sola al guardarla."
+    const val GUIDE_EMITTER_SEND_TITLE = "Envía la playlist"
+    const val GUIDE_EMITTER_SEND_BODY =
+        "La Pantalla ya está vinculada. Selecciónala y pulsa Enviar a pantallas seleccionadas. " +
+            "La guía avanzará cuando el envío termine correctamente."
+    const val GUIDE_EMITTER_DONE_TITLE = "Demo lista"
+    const val GUIDE_EMITTER_DONE_BODY =
+        "La Pantalla recibe y reproduce el contenido, y sigue funcionando aunque se caiga la red. " +
+            "Puedes repetir la guía desde Ajustes cuando quieras."
+    const val GUIDE_RECEIVER_CODE_TITLE = "Comparte el código"
+    const val GUIDE_RECEIVER_CODE_BODY =
+        "Esta Pantalla muestra un código de 6 dígitos. En el Controlador elige esta pantalla, " +
+            "pulsa Vincular y escríbelo. La guía avanzará cuando quede vinculada."
+    const val GUIDE_RECEIVER_PASSWORD_TITLE = "Espera la contraseña"
+    const val GUIDE_RECEIVER_PASSWORD_BODY =
+        "El Controlador pedirá una contraseña de bloqueo. Cuando la reciba, la Pantalla se bloqueará " +
+            "y empezará el carrusel. Mientras espera, el teclado y el mouse siguen disponibles."
+    const val GUIDE_RECEIVER_CONTENT_TITLE = "Recibe el contenido"
+    const val GUIDE_RECEIVER_CONTENT_BODY =
+        "Cuando el Controlador envíe la playlist, verás las imágenes a pantalla completa. " +
+            "La guía terminará sola al detectar el contenido."
+    const val GUIDE_RECEIVER_DONE_TITLE = "Demo lista"
+    const val GUIDE_RECEIVER_DONE_BODY =
+        "La Pantalla ya reproduce el contenido. Para volver a ver la guía, desbloquea la Pantalla " +
+            "y ábrela desde Opciones."
+    const val GUIDE_ACTION_ADD_IMAGES = "Agregar imágenes"
+    const val GUIDE_ACTION_REFRESH = "Buscar pantallas"
+    const val GUIDE_ACTION_SEND = "Enviar ahora"
+    const val GUIDE_SEND_NEEDS_PLAYLIST = "Agrega al menos una imagen a la playlist."
+    const val GUIDE_SEND_NEEDS_SCREEN = "Selecciona la pantalla vinculada."
+
+    fun guideProgress(current: Int, total: Int): String = "Paso $current de $total"
 
     // Skeleton indicator for Phase 0
     const val SKELETON_READY = "Override Kiosk - Fase 0 inicializada correctamente"

@@ -67,6 +67,34 @@ menú Inicio y permite elegir la carpeta.
 entre versiones o Windows instalará copias en paralelo en lugar de actualizar.
 Si algún día cambias de nombre de paquete o de vendor, genera uno nuevo.
 
+## Personalización del instalador
+
+El bloque `nativeDistributions` de `composeApp/build.gradle.kts` ya define la
+identidad que muestra Windows:
+
+- Nombre del producto: **OverrideKiosk** (el ejecutable y la carpeta de
+  instalación; el título visible de la app es **Override Kiosk**).
+- Fabricante: **Override**.
+- Descripción y copyright.
+- Ícono de la app y del instalador (`icon.ico`).
+- Licencia **MIT**: `licenseFile.set(rootProject.file("LICENSE"))` agrega la
+  página de aceptación al asistente.
+- Instalación **por usuario**, sin administrador.
+- Acceso directo en el escritorio (`shortcut = true`) y en el menú Inicio
+  (`menuGroup = "Override Kiosk"`).
+- Selector de carpeta de instalación (`dirChooser = true`).
+
+El asistente visual sigue siendo el estándar de `jpackage`/WiX. Para cambiar las
+imágenes del asistente, el banner o los textos internos hace falta un `main.wxs`
+propio y el plugin de Compose 1.7.3 no expone esa opción; habría que ejecutar
+`jpackage` con `--resource-dir` en un paso aparte. La personalización anterior
+(nombre, fabricante, icono, licencia, accesos y carpeta) no requiere WiX propio.
+
+Si algún día quieres cambiar `packageName` a `Override Kiosk` (con espacio),
+actualiza también `APP_EXECUTABLE_NAME`, las rutas del workflow de release y las
+pruebas de actualización; de lo contrario la actualización por LAN no encontrará
+el ejecutable.
+
 ## Ícono
 
 El ícono está en:
@@ -97,9 +125,9 @@ Con el nombre actual, las tareas de empaquetado generan estos archivos:
 
 | Archivo en `dist\` | Tamaño | Para qué sirve |
 | --- | --- | --- |
-| `OverrideKiosk-1.1.0.exe` | ~72 MB | Instalador único. Instala por usuario, sin administrador, con acceso directo. |
-| `OverrideKiosk-1.1.0.msi` | ~71 MB | Instalador MSI equivalente, útil para despliegue con `msiexec`. |
-| `OverrideKiosk-1.1.0-portable.zip` | ~70 MB | Carpeta portable comprimida: descomprimir y ejecutar `OverrideKiosk.exe`. |
+| `OverrideKiosk-1.1.3.exe` | ~72 MB | Instalador único. Instala por usuario, sin administrador, con acceso directo. |
+| `OverrideKiosk-1.1.3.msi` | ~71 MB | Instalador MSI equivalente, útil para despliegue con `msiexec`. |
+| `OverrideKiosk-1.1.3-portable.zip` | ~70 MB | Carpeta portable comprimida: descomprimir y ejecutar `OverrideKiosk.exe`. |
 
 Los originales quedan en `composeApp\build\compose\binaries\main\`; la carpeta
 `dist\` es solo una copia cómoda para distribuir y está ignorada por Git. Incluye
@@ -134,8 +162,8 @@ El workflow `.github/workflows/release.yml` compila en `windows-latest` y public
 la release cuando se empuja un tag con la versión:
 
 ```powershell
-git tag v1.1.0
-git push origin v1.1.0
+git tag v1.1.3
+git push origin v1.1.3
 ```
 
 El workflow:
@@ -151,7 +179,7 @@ WiX. Los artefactos también quedan adjuntos al run del workflow.
 
 ## Consumo de memoria
 
-Medición con la carpeta portable en Windows 11 (JDK 21, ventana normal, sin
+Medición con la carpeta portable en Windows 11 (JDK 21, pantalla completa, sin
 imágenes cargadas):
 
 | Rol | Working set | Memoria privada |
@@ -195,7 +223,7 @@ con `signtool`. No es parte del MVP.
 - `.\gradlew.bat run` sigue siendo la forma rápida de probar; el empaquetado es
   solo para entregar. Las ejecuciones desde Gradle **no pueden enviar ni recibir
   actualizaciones** porque no tienen una carpeta `app/` empaquetada.
-- Si cambias `packageVersion`, usa `mayor.menor.parche` (por ejemplo `1.1.1`) y
+- Si cambias `packageVersion`, usa `mayor.menor.parche` (por ejemplo `1.1.3`) y
   actualiza también `APP_VERSION`.
 - Para probar una actualización: instala la versión anterior en el Controlador y la
   Pantalla, genera la versión nueva, sustituye solo la instalación del Controlador

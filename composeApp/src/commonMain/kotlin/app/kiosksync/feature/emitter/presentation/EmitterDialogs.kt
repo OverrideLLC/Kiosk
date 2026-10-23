@@ -40,6 +40,7 @@ internal fun SettingsDialog(
     reduceMotion: Boolean,
     onThemeChange: (AppTheme) -> Unit,
     onReduceMotionChange: (Boolean) -> Unit,
+    onOpenGuide: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val colors = KioskColors.scheme
@@ -97,6 +98,28 @@ internal fun SettingsDialog(
                     ),
                 )
             }
+
+            Spacer(Modifier.height(Space.lg))
+            Text(
+                text = Strings.GUIDE_TITLE,
+                style = MaterialTheme.typography.titleSmall,
+                color = colors.onSurface,
+            )
+            Spacer(Modifier.height(Space.xs))
+            Text(
+                text = Strings.GUIDE_REPLAY_HINT,
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(Space.sm))
+            AppButton(
+                text = Strings.GUIDE_BUTTON,
+                onClick = onOpenGuide,
+                variant = AppButtonVariant.TONAL,
+                size = AppButtonSize.SMALL,
+                icon = AppIcon.HELP,
+                modifier = Modifier.fillMaxWidth(),
+            )
         },
         actions = {
             AppButton(

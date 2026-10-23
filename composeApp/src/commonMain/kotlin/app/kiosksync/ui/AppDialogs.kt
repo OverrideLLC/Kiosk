@@ -14,6 +14,7 @@ import app.kiosksync.core.ui.theme.KioskColors
 @Composable
 internal fun ReceiverOptionsDialog(
     isReceiver: Boolean,
+    onOpenGuide: () -> Unit = {},
     onDismiss: () -> Unit,
     onChangeRole: () -> Unit,
     onExit: () -> Unit,
@@ -31,6 +32,13 @@ internal fun ReceiverOptionsDialog(
             )
         },
         actions = {
+            AppButton(
+                text = Strings.GUIDE_BUTTON,
+                onClick = onOpenGuide,
+                variant = AppButtonVariant.TEXT,
+                size = AppButtonSize.SMALL,
+                icon = AppIcon.HELP,
+            )
             AppButton(
                 text = Strings.CHANGE_ROLE,
                 onClick = onChangeRole,

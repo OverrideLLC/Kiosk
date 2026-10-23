@@ -11,7 +11,7 @@ private object NoopKioskMouseGuard : KioskMouseGuard {
 /**
  * Windows uses a low-level mouse hook (WH_MOUSE_LL) so the kiosk can swallow
  * pointer movement, clicks, wheel and touchpad taps while locked. On other
- * systems, or with --windowed, the guard is a no-op.
+ * systems the guard is a no-op; `--windowed` also disables it for debugging.
  */
 fun createKioskMouseGuard(
     enabled: Boolean,

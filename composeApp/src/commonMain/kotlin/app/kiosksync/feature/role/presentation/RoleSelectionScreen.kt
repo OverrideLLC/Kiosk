@@ -60,7 +60,8 @@ fun RoleSelectionScreen(
     port: Int,
     onExitRequested: () -> Unit = {},
     theme: AppTheme = AppTheme.DARK,
-    reduceMotion: Boolean = false
+    reduceMotion: Boolean = false,
+    onOpenGuide: () -> Unit = {}
 ) {
     val uiState by stateHolder.uiState.collectAsState()
     val currentOnRoleConfirmed by rememberUpdatedState(onRoleConfirmed)
@@ -88,7 +89,10 @@ fun RoleSelectionScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Column(modifier = Modifier.widthIn(max = Sizes.contentMaxWidth).fillMaxWidth()) {
-                BrandHeader(onExitRequested = onExitRequested)
+                BrandHeader(
+                    onExitRequested = onExitRequested,
+                    onOpenGuide = onOpenGuide
+                )
 
                 Spacer(Modifier.height(Space.huge))
 
@@ -185,7 +189,10 @@ fun RoleSelectionScreen(
 }
 
 @Composable
-private fun BrandHeader(onExitRequested: () -> Unit) {
+private fun BrandHeader(
+    onExitRequested: () -> Unit,
+    onOpenGuide: () -> Unit
+) {
     val colors = KioskColors.scheme
 
     Row(
@@ -217,6 +224,13 @@ private fun BrandHeader(onExitRequested: () -> Unit) {
                 color = colors.onSurfaceVariant,
             )
         }
+        AppButton(
+            text = Strings.GUIDE_BUTTON,
+            onClick = onOpenGuide,
+            variant = AppButtonVariant.TEXT,
+            size = AppButtonSize.SMALL,
+            icon = AppIcon.HELP,
+        )
         AppButton(
             text = Strings.EXIT_APP,
             onClick = onExitRequested,

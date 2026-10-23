@@ -99,6 +99,9 @@ solo sirve contra ese servicio falso.
   requiere una prueba manual en un equipo Windows 11 real. En Linux o con
   `--windowed` se usa un manejo de teclas de Compose, que no bloquea atajos del
   sistema ni el mouse.
+- La Pantalla solo entra en bloqueo kiosco cuando está vinculada y tiene una
+  contraseña recibida del Controlador. El código de vinculación y la espera de
+  esa contraseña quedan accesibles para completar la configuración.
 - El hook de mouse descarta movimiento, clics, rueda y los toques del touchpad que
   Windows entrega como eventos de mouse. Los gestos de precisión de tres o cuatro
   dedos que maneja el shell pueden escapar; desactívalos en la configuración del

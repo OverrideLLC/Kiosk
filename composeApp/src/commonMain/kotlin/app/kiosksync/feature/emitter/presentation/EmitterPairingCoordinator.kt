@@ -131,45 +131,47 @@ internal class EmitterPairingCoordinator(
         scope.launch {
             uiState.update { it.copy(unpairDevice = null) }
             val target = targetFor(storedDevice)
-            if (target == null) {
+            try {
+                val stored = withContext(backgroundDispatcher) {
+                    screensRepository.removePairedScreen(device.deviceId)
+                    screensRepository.loadPairedScreens()
+                }
+                setStoredDevices(stored)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                logger.error("Could not remove pairing for '${device.deviceName}'", error)
                 uiState.update { it.copy(statusMessage = Strings.UNPAIR_ERROR, statusIsError = true) }
                 return@launch
             }
-            val result = withContext(backgroundDispatcher) {
-                client.unpair(target.first, target.second, emitterId, storedDevice.token)
+
+            onUnpaired(device.deviceId)
+            uiState.update {
+                it.copy(
+                    statusMessage = Strings.UNPAIR_SUCCESS,
+                    statusIsError = false,
+                    syncByDevice = it.syncByDevice - device.deviceId,
+                )
             }
-            result.fold(
-                onSuccess = {
-                    try {
-                        val stored = withContext(backgroundDispatcher) {
-                            screensRepository.removePairedScreen(device.deviceId)
-                            screensRepository.loadPairedScreens()
-                        }
-                        setStoredDevices(stored)
-                    } catch (cancelled: CancellationException) {
-                        throw cancelled
-                    } catch (error: Exception) {
-                        logger.error("Could not remove pairing for '${device.deviceName}'", error)
-                        uiState.update { it.copy(statusMessage = Strings.UNPAIR_ERROR, statusIsError = true) }
-                        return@fold
-                    }
-                    logger.info("Screen '${device.deviceName}' unpaired")
-                    onUnpaired(device.deviceId)
-                    uiState.update {
-                        it.copy(
-                            statusMessage = Strings.UNPAIR_SUCCESS,
-                            statusIsError = false,
-                            syncByDevice = it.syncByDevice - device.deviceId,
-                        )
-                    }
-                    rebuild()
-                },
-                onFailure = { error ->
+            rebuild()
+            logger.info("Screen '${device.deviceName}' removed from this Controller")
+
+            // Local removal succeeds even when a Screen is offline. Notify it
+            // best-effort so it also forgets this Controller when reachable.
+            if (target != null) {
+                val result = withContext(backgroundDispatcher) {
+                    client.unpair(target.first, target.second, emitterId, storedDevice.token)
+                }
+                result.onSuccess {
+                    logger.info("Screen '${device.deviceName}' also unpaired remotely")
+                }.onFailure { error ->
                     if (error is CancellationException) throw error
-                    logger.warn("Could not unpair '${device.deviceName}': ${error.message}")
-                    uiState.update { it.copy(statusMessage = Strings.UNPAIR_ERROR, statusIsError = true) }
-                },
-            )
+                    logger.warn(
+                        "Screen '${device.deviceName}' removed locally; " +
+                            "remote unpair failed: ${error.message}"
+                    )
+                }
+            }
         }
     }
 

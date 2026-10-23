@@ -137,6 +137,7 @@ composeApp/src/
 │   │   ├── playback/{domain,presentation}/
 │   │   ├── kiosk/{domain,presentation}/
 │   │   ├── projection/presentation/
+│   │   ├── guide/{domain,presentation}/
 │   │   └── update/presentation/
 │   ├── platform/        # contratos de repositorios y servicios de plataforma
 │   ├── ui/              # App.kt, navegación y pantallas por rol
@@ -267,13 +268,16 @@ Soporta estos **argumentos de línea de comandos** desde `Main.kt`, para poder p
 - `--data-dir=<ruta>`: carpeta de datos alternativa.
 - `--role=emitter|receiver`: fuerza el rol (omite la pantalla de selección).
 - `--port=<n>`: puerto del Receptor.
-- `--windowed`: ejecuta el Receptor en ventana normal en lugar de pantalla completa (para depurar).
+- `--windowed`: abre en ventana normal para depuración y desactiva los hooks nativos de kiosco.
+
+Por defecto, todos los roles abren a pantalla completa y sin bordes desde la 1.1.3.
+`--windowed` se conserva para depuración y recorridos automatizados.
 
 Ejemplo de prueba local con dos procesos:
 
 ```powershell
 .\gradlew.bat run --args="--role=receiver --data-dir=C:\tmp\rx --windowed"
-.\gradlew.bat run --args="--role=emitter --data-dir=C:\tmp\tx"
+.\gradlew.bat run --args="--role=emitter --data-dir=C:\tmp\tx --windowed"
 ```
 
 Si el mDNS no encuentra el proceso en la misma PC, el campo manual de IP con `127.0.0.1:8765` debe funcionar.
@@ -292,7 +296,11 @@ Si el mDNS no encuentra el proceso en la misma PC, el campo manual de IP con `12
 
 - **Sin vincular:** pantalla negra con el código grande y el texto "Escribe este código en el Controlador".
 - **Vinculada:** solo la imagen actual, a pantalla completa, fondo negro, `ContentScale.Fit`, transición de 500 ms entre imágenes. Si no hay playlist, texto discreto "Esperando contenido".
-- Ventana sin bordes, siempre encima, cursor oculto. `Esc` abre un diálogo de salida con confirmación (solo en modo `--windowed` o si se mantiene presionado 3 segundos).
+- Ventana sin bordes, a pantalla completa y siempre encima, cursor oculto mientras está bloqueada. `Esc` abre el diálogo de opciones de la Pantalla cuando está desbloqueada.
+
+**Guía interactiva:** aparece en el primer arranque y acompaña la configuración
+real de rol, playlist, vinculación, contraseña y envío. Se puede volver a abrir
+desde Ajustes del Controlador o las opciones de la Pantalla.
 
 **Una playlist única en el MVP.** El Emisor tiene una playlist y la envía a las pantallas que seleccione. Varias playlists por pantalla quedan para después.
 

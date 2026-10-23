@@ -9,6 +9,7 @@ import app.kiosksync.AppContainer
 import app.kiosksync.core.AppTheme
 import app.kiosksync.feature.emitter.presentation.EmitterScreen
 import app.kiosksync.feature.emitter.presentation.EmitterStateHolder
+import app.kiosksync.feature.guide.domain.GuideManager
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorStateHolder
 import app.kiosksync.feature.role.domain.AppConfig
 
@@ -16,6 +17,7 @@ import app.kiosksync.feature.role.domain.AppConfig
 fun EmitterHomeScreen(
     config: AppConfig,
     container: AppContainer,
+    guideManager: GuideManager,
     onExitRequested: () -> Unit,
     onRoleReset: () -> Unit,
     theme: AppTheme = AppTheme.DARK,
@@ -69,6 +71,7 @@ fun EmitterHomeScreen(
         stateHolder = stateHolder,
         playlistStateHolder = playlistStateHolder,
         mediaRepository = container.mediaRepository,
+        guideManager = guideManager,
         onExitRequested = onExitRequested,
         onRoleReset = onRoleReset,
         theme = theme,

@@ -88,16 +88,18 @@ prometer funciones o de instalar la app en un comercio real.
 - Al desbloquear, el puntero se libera para poder usar la card de opciones; solo
   vuelve a quedar capturado cuando se cierra la card o se elige **Volver a
   bloquear**.
-- En `--windowed` o en Linux, el bloqueo usa el manejo de teclas de Compose y no
-  bloquea atajos del sistema ni el mouse; es solo para depuración.
+- En Linux, el bloqueo usa el manejo de teclas de Compose y no bloquea atajos del
+  sistema ni el mouse; es solo para depuración.
 - Si Windows minimiza o restaura la ventana por un evento externo, un vigilante
   la devuelve a pantalla completa mientras el bloqueo siga activo. Eso no impide
   `Ctrl+Alt+Del` ni el acceso físico al equipo.
 - La frase de recuperación es universal y está compilada en la app; no es un
   secreto.
 - La contraseña se guarda con SHA-256 sin sal ni derivación lenta.
-- No hay bloqueo por inactividad ni por horario; la Pantalla se bloquea al
-  arrancar y al salir del diálogo de opciones.
+- No hay bloqueo por inactividad ni por horario; la Pantalla se bloquea cuando
+  está vinculada y recibe la contraseña, y al salir del diálogo de opciones si ya
+  está configurada. Mientras muestra el código o espera la contraseña, la ventana
+  sigue siendo usable.
 
 ## Red y descubrimiento
 
@@ -122,6 +124,8 @@ prometer funciones o de instalar la app en un comercio real.
   una pantalla de producto.
 - La navegación por teclado cubre Tab/Enter/Esc y flechas en las tarjetas de rol,
   pero no se probó con todos los lectores de pantalla de Windows.
+- La guía interactiva está en español y no reemplaza la configuración de red ni
+  el aviso del Firewall de Windows; solo recorre las pantallas reales.
 - No hay internacionalización completa: los textos están en español y
   centralizados en `Strings.kt` para traducirlos más adelante.
 - No hay temas visuales personalizados ni perfiles de usuario.

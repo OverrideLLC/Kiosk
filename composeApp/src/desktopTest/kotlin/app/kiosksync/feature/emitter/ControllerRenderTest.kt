@@ -6,6 +6,7 @@ import app.kiosksync.FakeRepositories
 import app.kiosksync.NoOpLogger
 import app.kiosksync.feature.emitter.presentation.EmitterScreen
 import app.kiosksync.feature.emitter.presentation.EmitterStateHolder
+import app.kiosksync.feature.guide.domain.GuideManager
 import app.kiosksync.core.AppTheme
 import app.kiosksync.core.DeviceInfo
 import app.kiosksync.core.DiscoveredDevice
@@ -121,12 +122,14 @@ class ControllerRenderTest {
                 scope = scope,
                 newPlaylistId = { "new" },
             )
+            val guideManager = GuideManager(NoOpLogger())
 
             render(output, "controller-dark", AppTheme.DARK, 1280, 800) {
                 EmitterScreen(
                     stateHolder = holder,
                     playlistStateHolder = editor,
                     mediaRepository = storage,
+                    guideManager = guideManager,
                     onExitRequested = {},
                     onRoleReset = {},
                     theme = AppTheme.DARK,
@@ -138,6 +141,7 @@ class ControllerRenderTest {
                     stateHolder = holder,
                     playlistStateHolder = editor,
                     mediaRepository = storage,
+                    guideManager = guideManager,
                     onExitRequested = {},
                     onRoleReset = {},
                     theme = AppTheme.LIGHT,
@@ -149,6 +153,7 @@ class ControllerRenderTest {
                     stateHolder = holder,
                     playlistStateHolder = editor,
                     mediaRepository = storage,
+                    guideManager = guideManager,
                     onExitRequested = {},
                     onRoleReset = {},
                     theme = AppTheme.DARK,
@@ -160,6 +165,7 @@ class ControllerRenderTest {
                     stateHolder = holder,
                     playlistStateHolder = editor,
                     mediaRepository = storage,
+                    guideManager = guideManager,
                     onExitRequested = {},
                     onRoleReset = {},
                     theme = AppTheme.DARK,
@@ -172,6 +178,7 @@ class ControllerRenderTest {
                     stateHolder = holder,
                     playlistStateHolder = editor,
                     mediaRepository = storage,
+                    guideManager = guideManager,
                     onExitRequested = {},
                     onRoleReset = {},
                     theme = AppTheme.DARK,
@@ -186,6 +193,7 @@ class ControllerRenderTest {
                     stateHolder = holder,
                     playlistStateHolder = editor,
                     mediaRepository = storage,
+                    guideManager = guideManager,
                     onExitRequested = {},
                     onRoleReset = {},
                     theme = AppTheme.DARK,

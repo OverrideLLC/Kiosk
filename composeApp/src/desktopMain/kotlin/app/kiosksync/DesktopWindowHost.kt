@@ -35,7 +35,8 @@ internal fun DesktopWindowHost(
 ) {
     val args = container.args
     val activeRole by container.activeRole.collectAsState()
-    val isFullscreenReceiver = !args.windowed && activeRole == AppRole.RECEIVER
+    val appFullscreen = !args.windowed
+    val isReceiverWindow = activeRole == AppRole.RECEIVER
     val isWindows = System.getProperty("os.name").orEmpty().startsWith("Windows", ignoreCase = true)
     val kioskLockAvailable = isWindows && !args.windowed
 
@@ -46,27 +47,27 @@ internal fun DesktopWindowHost(
     }
 
     val windowState = rememberWindowState(
-        placement = if (isFullscreenReceiver) WindowPlacement.Fullscreen else WindowPlacement.Floating,
+        placement = if (appFullscreen) WindowPlacement.Fullscreen else WindowPlacement.Floating,
         width = 900.dp,
         height = 650.dp,
     )
     val projectionPlaylist by container.projectionController.playlist.collectAsState()
     val lockState by container.kioskLockManager.uiState.collectAsState()
     val receiverUpdateState by container.receiverUpdateManager.uiState.collectAsState()
-    val updatePromptVisible = isFullscreenReceiver && receiverUpdateState.isVisible
+    val updatePromptVisible = isReceiverWindow && receiverUpdateState.isVisible
 
     LaunchedEffect(
-        isFullscreenReceiver,
-        lockState.isLocked,
+        appFullscreen,
         windowState.placement,
         windowState.isMinimized,
+        projectionPlaylist != null,
     ) {
-        if (isFullscreenReceiver) {
-            if (lockState.isLocked && windowState.isMinimized) windowState.isMinimized = false
+        if (projectionPlaylist == null && appFullscreen) {
+            if (windowState.isMinimized) windowState.isMinimized = false
             if (windowState.placement != WindowPlacement.Fullscreen) {
                 windowState.placement = WindowPlacement.Fullscreen
             }
-        } else {
+        } else if (!appFullscreen) {
             if (windowState.placement != WindowPlacement.Floating) {
                 windowState.placement = WindowPlacement.Floating
             }
@@ -106,9 +107,9 @@ internal fun DesktopWindowHost(
         },
         title = APP_NAME,
         state = windowState,
-        undecorated = isFullscreenReceiver,
-        alwaysOnTop = isFullscreenReceiver,
-        resizable = !isFullscreenReceiver,
+        undecorated = appFullscreen,
+        alwaysOnTop = isReceiverWindow && appFullscreen,
+        resizable = !appFullscreen,
         onKeyEvent = { keyEvent ->
             when {
                 container.kioskLockManager.uiState.value.isLocked -> {
@@ -133,8 +134,10 @@ internal fun DesktopWindowHost(
             }
         },
     ) {
-        if (isFullscreenReceiver) {
-            window.cursor = if (updatePromptVisible) Cursor.getDefaultCursor() else blankCursor()
+        window.cursor = if (isReceiverWindow && lockState.isLocked && !updatePromptVisible) {
+            blankCursor()
+        } else {
+            Cursor.getDefaultCursor()
         }
         App(
             container = container,

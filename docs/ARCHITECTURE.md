@@ -61,6 +61,7 @@ composeApp/src/
 │   │   ├── playback/{domain,presentation}/
 │   │   ├── kiosk/{domain,presentation}/
 │   │   ├── projection/presentation/
+│   │   ├── guide/{domain,presentation}/
 │   │   └── update/presentation/
 │   ├── data/local/room/ # esquema Room compartido: entidades, DAO y base de datos
 │   ├── platform/        # contratos de repositorios y servicios de plataforma
@@ -123,9 +124,9 @@ heredados antes de abrir la UI y entrega contratos pequeños a `AppContainer`.
 `Main.kt` lee los argumentos, configura el logger y abre `DesktopApplicationRoot`.
 La raíz crea el contenedor fuera del hilo de UI y muestra carga o reintento.
 `DesktopWindowHost` posee las ventanas y el cierre de recursos, y sigue los cambios
-de rol en tiempo de ejecución: la Pantalla usa fullscreen, sin bordes y siempre
-encima salvo que se pase `--windowed`; al volver al selector o al Controlador la
-ventana vuelve al modo normal.
+de rol en tiempo de ejecución. Desde 1.1.3 todos los roles abren fullscreen y sin
+bordes; la Pantalla además queda siempre encima. `--windowed` conserva una ventana
+normal para depuración y desactiva los hooks nativos de kiosco.
 
 ## Flujos
 
@@ -200,14 +201,16 @@ Pantalla no cambia su comportamiento por estar desconectada.
 
 ### 6. Bloqueo tipo kiosco
 
-La Pantalla arranca bloqueada. En Windows se instalan hooks de bajo nivel para
-teclado (`WH_KEYBOARD_LL`) y mouse/touchpad (`WH_MOUSE_LL`); en Linux o con
-`--windowed` se usa el manejo de teclas de Compose y el mouse no se bloquea. Al
-desbloquear se libera el puntero para la card de opciones y se vuelve a capturar
-al cerrarla. La secuencia de desbloqueo (solo Shift/Ctrl/Alt) se configura desde
-el Controlador y se envía con la playlist o con `PUT /lock`. Si hay contraseña,
-después de la secuencia se pide. Hay 5 intentos y 30 segundos de bloqueo. La
-recuperación usa una frase universal compilada en la app; ver
+La Pantalla se bloquea cuando está vinculada y recibió una contraseña del
+Controlador; el código de vinculación y la espera de esa contraseña siguen
+usables. En Windows se instalan hooks de bajo nivel para teclado
+(`WH_KEYBOARD_LL`) y mouse/touchpad (`WH_MOUSE_LL`); en Linux o con `--windowed` se
+usa el manejo de teclas de Compose y el mouse no se bloquea. Al desbloquear se
+libera el puntero para la card de opciones y se vuelve a capturar al cerrarla. La
+secuencia de desbloqueo (solo Shift/Ctrl/Alt) se configura desde el Controlador y
+se envía con la playlist o con `PUT /lock`. Si hay contraseña, después de la
+secuencia se pide. Hay 5 intentos y 30 segundos de bloqueo. La recuperación usa
+una frase universal compilada en la app; ver
 [KIOSK_UNLOCK.md](KIOSK_UNLOCK.md) y los riesgos en [SECURITY.md](SECURITY.md).
 
 ### 7. Actualización de la aplicación
@@ -277,6 +280,11 @@ cuando afectan a una acción del usuario.
 - Los componentes compartidos se promueven a `core.ui` cuando tienen consumidores
   reales en varias features; componentes específicos permanecen junto a su feature.
 - Todos los textos visibles están en `core/Strings.kt`.
+- La guía interactiva vive en `feature/guide/`: `GuideManager` mantiene la
+  máquina de estados en `domain`, `GuideOverlay` la presenta en `presentation`,
+  y las pantallas reportan playlist, vinculación, contraseña y contenido para
+  que avance al completar cada paso. Sus pruebas están junto al source set
+  correspondiente. Ver [GUIDE.md](GUIDE.md).
 - El Controlador usa un layout de dos paneles en anchos ≥1100 dp y pestañas
   Pantallas/Playlist en anchos menores.
 

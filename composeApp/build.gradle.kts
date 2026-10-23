@@ -87,10 +87,12 @@ compose.desktop {
             // Toolset 3.x installed and on PATH; createDistributable does not.
             targetFormats(TargetFormat.Msi, TargetFormat.Exe)
             packageName = "OverrideKiosk"
-            packageVersion = "1.1.0"
+            packageVersion = "1.1.3"
             description = "Override Kiosk: carrusel de imágenes para la red local"
             vendor = "Override"
             copyright = "© 2026 Override"
+            // Shows the MIT license in the Windows installer wizard.
+            licenseFile.set(rootProject.file("LICENSE"))
 
             // Keep the bundled runtime small. java.desktop, java.base,
             // java.logging and java.prefs are added by the Compose plugin.

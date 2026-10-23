@@ -22,6 +22,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import app.kiosksync.core.AppRole
 import app.kiosksync.core.AppTheme
 import app.kiosksync.core.Strings
 import app.kiosksync.core.ui.components.AppButton
@@ -34,6 +35,9 @@ import app.kiosksync.core.ui.theme.KioskColors
 import app.kiosksync.core.ui.components.OverrideFooter
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
+import app.kiosksync.feature.guide.domain.GuideAction
+import app.kiosksync.feature.guide.domain.GuideManager
+import app.kiosksync.feature.guide.domain.GuideStep
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorAction
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorEffect
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorStateHolder
@@ -47,6 +51,7 @@ fun EmitterScreen(
     stateHolder: EmitterStateHolder,
     playlistStateHolder: PlaylistEditorStateHolder,
     mediaRepository: MediaRepository,
+    guideManager: GuideManager,
     onExitRequested: () -> Unit,
     onRoleReset: () -> Unit,
     theme: AppTheme = AppTheme.DARK,
@@ -57,6 +62,7 @@ fun EmitterScreen(
 ) {
     val state by stateHolder.uiState.collectAsState()
     val editorState by playlistStateHolder.uiState.collectAsState()
+    val guideState by guideManager.uiState.collectAsState()
     var showChangeRoleConfirm by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
     var removeTarget by remember { mutableStateOf<PlaylistItem?>(null) }
@@ -88,6 +94,12 @@ fun EmitterScreen(
         else -> Strings.selectedScreens(selectedCount)
     }
     val pairedCount = state.devices.count { it.isPairedToThisEmitter }
+    val selectedIds = state.devices
+        .filter { it.isSelected && it.isPairedToThisEmitter }
+        .map { it.deviceId }
+        .toSet()
+    val selectedSendSucceeded = selectedIds.isNotEmpty() &&
+        selectedIds.all { deviceId -> state.syncByDevice[deviceId]?.status == SyncUiStatus.SUCCESS }
     val canSend = !state.isSending &&
         !state.isSyncing &&
         selectedCount > 0 &&
@@ -96,6 +108,65 @@ fun EmitterScreen(
         !state.isSyncing &&
         editorState.playlist.items.isNotEmpty()
     val canSync = !state.isSending && !state.isSyncing && pairedCount > 0
+
+    LaunchedEffect(guideState.step) {
+        when (guideState.step) {
+            GuideStep.EMITTER_PLAYLIST -> compactTab = 1
+            GuideStep.EMITTER_SCREENS,
+            GuideStep.EMITTER_PASSWORD,
+            GuideStep.EMITTER_SEND -> compactTab = 0
+
+            else -> Unit
+        }
+    }
+
+    LaunchedEffect(
+        editorState.playlist.items.size,
+        pairedCount,
+        selectedCount,
+        state.hasKioskPassword,
+        selectedSendSucceeded,
+    ) {
+        guideManager.updateEmitter(
+            playlistItems = editorState.playlist.items.size,
+            pairedScreens = pairedCount,
+            selectedScreens = selectedCount,
+            hasPassword = state.hasKioskPassword,
+            sendSucceeded = selectedSendSucceeded,
+        )
+    }
+
+    LaunchedEffect(guideState.step, guideState.isActive, pairedCount, selectedCount) {
+        if (
+            guideState.isActive &&
+            guideState.role == AppRole.EMITTER &&
+            guideState.step == GuideStep.EMITTER_SEND &&
+            selectedCount == 0
+        ) {
+            state.devices
+                .firstOrNull { it.isPairedToThisEmitter && !it.isSelected }
+                ?.let { stateHolder.toggleSelection(it.deviceId) }
+        }
+    }
+
+    LaunchedEffect(guideManager, stateHolder, playlistStateHolder) {
+        guideManager.actions.collect { action ->
+            when (action) {
+                GuideAction.ADD_IMAGES -> playlistStateHolder.addImages()
+                GuideAction.REFRESH_DEVICES -> stateHolder.refreshDevices()
+                GuideAction.SEND -> {
+                    val current = stateHolder.uiState.value
+                    val playlist = playlistStateHolder.currentPlaylist()
+                    val hasSelection = current.devices.any {
+                        it.isSelected && it.isPairedToThisEmitter
+                    }
+                    if (!current.isSending && !current.isSyncing && playlist.items.isNotEmpty() && hasSelection) {
+                        stateHolder.sendToSelected(playlist)
+                    }
+                }
+            }
+        }
+    }
 
     BoxWithConstraints(
         modifier = Modifier
@@ -217,6 +288,10 @@ fun EmitterScreen(
             reduceMotion = reduceMotion,
             onThemeChange = onThemeChange,
             onReduceMotionChange = onReduceMotionChange,
+            onOpenGuide = {
+                showSettings = false
+                guideManager.start(AppRole.EMITTER)
+            },
             onDismiss = { showSettings = false },
         )
     }

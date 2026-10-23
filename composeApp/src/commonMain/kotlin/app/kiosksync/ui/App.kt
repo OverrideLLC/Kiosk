@@ -19,6 +19,9 @@ import app.kiosksync.core.AppTheme
 import app.kiosksync.core.DEFAULT_PORT
 import app.kiosksync.core.ui.theme.KioskColors
 import app.kiosksync.core.ui.theme.KioskTheme
+import app.kiosksync.feature.guide.domain.GuideManager
+import app.kiosksync.feature.guide.domain.GuideStep
+import app.kiosksync.feature.guide.presentation.GuideOverlay
 import app.kiosksync.feature.kiosk.presentation.KioskUnlockOverlay
 import app.kiosksync.feature.pairing.domain.PairingManager
 import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
@@ -42,6 +45,8 @@ fun App(
     val initialDeviceId = remember { existingConfig?.deviceId ?: container.newDeviceId() }
     val effectivePort = container.args.port ?: existingConfig?.port ?: DEFAULT_PORT
     val pairingManager: PairingManager = container.pairingManager
+    val guideManager = remember { GuideManager(container.logger) }
+    val guideState by guideManager.uiState.collectAsState()
 
     // Determine initial screen based on CLI args and saved config
     val initialScreen = remember {
@@ -170,10 +175,18 @@ fun App(
     var roleResetFailed by remember { mutableStateOf(false) }
     var wasLocked by remember { mutableStateOf(lockState.isLocked) }
 
+    LaunchedEffect(Unit) {
+        if (existingConfig == null && container.args.role == null) {
+            guideManager.start()
+        }
+    }
+
     fun relockReceiverIfNeeded() {
-        if (currentScreen is Screen.ReceiverHome) {
-            // The screen role is always locked, including --windowed/Linux where
-            // the Compose key fallback handles the unlock sequence.
+        if (
+            currentScreen is Screen.ReceiverHome &&
+            pairingState.isPaired &&
+            lockState.hasPassword
+        ) {
             container.kioskLockManager.lock(force = true)
         }
     }
@@ -205,6 +218,7 @@ fun App(
                 container.pairingManager.unpair()
                 container.kioskLockRepository.clearLock()
                 container.configStore.clear()
+                guideManager.stop()
                 roleStateHolder.confirmChangeRole()
                 currentConfig = null
                 container.kioskLockManager.release()
@@ -226,8 +240,8 @@ fun App(
         }
     }
 
-    // The screen role is always a kiosk: lock the keyboard as soon as the
-    // receiver UI is shown, including --windowed (Compose feeds the keys).
+    // Only a paired Screen with a blocking password is a kiosk. The pairing
+    // screen and the waiting-for-password screen remain usable.
     LaunchedEffect(currentScreen) {
         container.updateActiveRole(
             when (currentScreen) {
@@ -238,9 +252,15 @@ fun App(
         )
     }
 
-    LaunchedEffect(currentScreen) {
+    LaunchedEffect(currentScreen, pairingState.isPaired, lockState.hasPassword) {
         when (currentScreen) {
-            is Screen.ReceiverHome -> container.kioskLockManager.lock(force = true)
+            is Screen.ReceiverHome -> {
+                if (pairingState.isPaired && lockState.hasPassword) {
+                    container.kioskLockManager.lock(force = true)
+                } else {
+                    container.kioskLockManager.release()
+                }
+            }
 
             is Screen.RoleSelection -> container.kioskLockManager.release()
             is Screen.EmitterHome -> {
@@ -259,6 +279,7 @@ fun App(
         if (lockState.isLocked) {
             showReceiverOptions = false
             showUnpairConfirm = false
+            if (currentScreen is Screen.ReceiverHome) guideManager.stop()
         } else if (previous && currentScreen is Screen.ReceiverHome) {
             showReceiverOptions = true
         }
@@ -286,8 +307,8 @@ fun App(
         }
     }
 
-    LaunchedEffect(currentScreen) {
-        if (currentScreen is Screen.ReceiverHome) {
+    LaunchedEffect(currentScreen, pairingState.isPaired) {
+        if (currentScreen is Screen.ReceiverHome && pairingState.isPaired) {
             registerUnpairHandler { showUnpairConfirm = true }
         } else {
             registerUnpairHandler(null)
@@ -311,13 +332,15 @@ fun App(
                                     AppRole.EMITTER -> Screen.EmitterHome(confirmedConfig)
                                     AppRole.RECEIVER -> Screen.ReceiverHome(confirmedConfig)
                                 }
+                                guideManager.onRoleConfirmed(confirmedConfig.role)
                             },
                             deviceId = initialDeviceId,
                             deviceName = container.deviceName,
                             port = effectivePort,
                             onExitRequested = onExitRequested,
                             theme = appTheme,
-                            reduceMotion = reduceMotion
+                            reduceMotion = reduceMotion,
+                            onOpenGuide = { guideManager.start() }
                         )
                     }
 
@@ -325,6 +348,7 @@ fun App(
                         EmitterHomeScreen(
                             config = screen.config,
                             container = container,
+                            guideManager = guideManager,
                             onExitRequested = onExitRequested,
                             onRoleReset = { resetRole() },
                             theme = appTheme,
@@ -340,6 +364,8 @@ fun App(
                             container = container,
                             pairingManager = pairingManager,
                             playbackStateHolder = playbackStateHolder,
+                            guideManager = guideManager,
+                            onOpenGuide = { guideManager.start(AppRole.RECEIVER) },
                             onExitRequested = onExitRequested,
                             onChangeRoleRequested = { showChangeRoleConfirm = true }
                         )
@@ -347,6 +373,55 @@ fun App(
                 }
 
                 KioskUnlockOverlay(lockState)
+
+                val guideMatchesScreen = when (guideState.step) {
+                    GuideStep.ROLE -> currentScreen is Screen.RoleSelection
+                    else -> when (guideState.role) {
+                        AppRole.EMITTER -> currentScreen is Screen.EmitterHome
+                        AppRole.RECEIVER -> currentScreen is Screen.ReceiverHome
+                        null -> false
+                    }
+                }
+                if (
+                    guideState.isActive &&
+                    !lockState.isLocked &&
+                    !receiverUpdateState.isVisible &&
+                    guideMatchesScreen
+                ) {
+                    GuideOverlay(
+                        state = guideState,
+                        onChooseRole = { role ->
+                            roleStateHolder.selectRole(role)
+                            val config = roleStateHolder.confirmRole(
+                                deviceId = initialDeviceId,
+                                deviceName = container.deviceName,
+                                port = effectivePort,
+                                theme = appTheme,
+                                reduceMotion = reduceMotion,
+                            )
+                            config?.let { confirmed ->
+                                persistConfig(confirmed)
+                                currentScreen = when (confirmed.role) {
+                                    AppRole.EMITTER -> Screen.EmitterHome(confirmed)
+                                    AppRole.RECEIVER -> Screen.ReceiverHome(confirmed)
+                                }
+                                guideManager.onRoleConfirmed(confirmed.role)
+                            }
+                        },
+                        onNext = { guideManager.next() },
+                        onBack = { guideManager.back() },
+                        onSkip = {
+                            guideManager.stop()
+                            relockReceiverIfNeeded()
+                        },
+                        onAction = { guideManager.requestAction(it) },
+                        onFinish = {
+                            guideManager.stop()
+                            relockReceiverIfNeeded()
+                        },
+                        onRestart = { guideManager.restart() },
+                    )
+                }
 
                 if (currentScreen is Screen.ReceiverHome && receiverUpdateState.isVisible) {
                     ReceiverUpdateOverlay(
@@ -368,6 +443,10 @@ fun App(
         if (showReceiverOptions) {
             ReceiverOptionsDialog(
                 isReceiver = currentScreen is Screen.ReceiverHome,
+                onOpenGuide = {
+                    showReceiverOptions = false
+                    guideManager.start(AppRole.RECEIVER)
+                },
                 onDismiss = { closeReceiverOptions() },
                 onChangeRole = {
                     showReceiverOptions = false
