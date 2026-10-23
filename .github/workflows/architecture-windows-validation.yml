@@ -30,3 +30,7 @@ jobs:
       - name: Build and test on Windows
         shell: pwsh
         run: .\gradlew.bat --no-daemon --console=plain clean build
+
+      - name: Smoke test Windows desktop roles and local playback
+        shell: pwsh
+        run: .\.github\scripts\windows-runtime-smoke.ps1
