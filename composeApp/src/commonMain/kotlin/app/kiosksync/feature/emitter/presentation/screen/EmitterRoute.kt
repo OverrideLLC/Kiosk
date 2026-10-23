@@ -1,4 +1,4 @@
-package app.kiosksync.feature.emitter.screen
+package app.kiosksync.feature.emitter.presentation.screen
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -9,8 +9,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import app.kiosksync.AppContainer
 import app.kiosksync.core.AppTheme
-import app.kiosksync.feature.emitter.actions.EmitterAction
-import app.kiosksync.feature.emitter.viewmodel.EmitterViewModel
+import app.kiosksync.feature.emitter.presentation.actions.EmitterAction
+import app.kiosksync.feature.emitter.presentation.viewmodel.EmitterViewModel
 import app.kiosksync.feature.guide.domain.GuideManager
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorStateHolder
 import app.kiosksync.feature.role.domain.AppConfig
@@ -34,7 +34,7 @@ fun EmitterRoute(
             client = container.emitterClient,
             screensRepository = container.screensRepository,
             kioskLockRepository = container.kioskLockRepository,
-            mediaRepository = container.mediaRepository,
+            syncRepository = container.emitterSyncRepository,
             logger = container.logger,
             emitterId = config.deviceId,
             emitterName = container.deviceName,

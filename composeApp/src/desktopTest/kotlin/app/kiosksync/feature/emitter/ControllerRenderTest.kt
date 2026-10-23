@@ -4,9 +4,9 @@ import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.unit.Density
 import app.kiosksync.FakeRepositories
 import app.kiosksync.NoOpLogger
-import app.kiosksync.feature.emitter.actions.EmitterAction
-import app.kiosksync.feature.emitter.screen.EmitterScreen
-import app.kiosksync.feature.emitter.viewmodel.EmitterViewModel
+import app.kiosksync.feature.emitter.presentation.actions.EmitterAction
+import app.kiosksync.feature.emitter.presentation.screen.EmitterScreen
+import app.kiosksync.feature.emitter.presentation.viewmodel.EmitterViewModel
 import app.kiosksync.feature.guide.domain.GuideManager
 import app.kiosksync.core.AppTheme
 import app.kiosksync.core.DeviceInfo
@@ -27,7 +27,7 @@ import app.kiosksync.feature.playlist.domain.PlaylistItem
 import app.kiosksync.feature.playlist.domain.PlaylistLibrary
 import app.kiosksync.feature.projection.presentation.ProjectionController
 import app.kiosksync.platform.DeviceDiscovery
-import app.kiosksync.platform.EmitterClient
+import app.kiosksync.feature.emitter.domain.EmitterClient
 import java.io.File
 import kotlin.test.Test
 import kotlinx.coroutines.CoroutineScope
@@ -96,7 +96,7 @@ class ControllerRenderTest {
                 client = FakeEmitterClient(),
                 screensRepository = storage,
                 kioskLockRepository = storage,
-                mediaRepository = storage,
+                syncRepository = storage,
                 logger = NoOpLogger(),
                 emitterId = "tx-1",
                 emitterName = "Caja principal",

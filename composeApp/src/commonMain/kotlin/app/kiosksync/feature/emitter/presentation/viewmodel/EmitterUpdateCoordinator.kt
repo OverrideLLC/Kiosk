@@ -1,8 +1,8 @@
-package app.kiosksync.feature.emitter.viewmodel
+package app.kiosksync.feature.emitter.presentation.viewmodel
 
-import app.kiosksync.feature.emitter.state.DeviceUpdateStatus
-import app.kiosksync.feature.emitter.state.DeviceUpdateUi
-import app.kiosksync.feature.emitter.state.EmitterUiState
+import app.kiosksync.feature.emitter.presentation.state.DeviceUpdateStatus
+import app.kiosksync.feature.emitter.presentation.state.DeviceUpdateUi
+import app.kiosksync.feature.emitter.presentation.state.EmitterUiState
 
 import app.kiosksync.core.APP_VERSION
 import app.kiosksync.core.AppLogger
@@ -10,7 +10,7 @@ import app.kiosksync.core.AppVersionPolicy
 import app.kiosksync.core.EmitterPairedDevice
 import app.kiosksync.core.Strings
 import app.kiosksync.core.UpdateUrgency
-import app.kiosksync.platform.EmitterClient
+import app.kiosksync.feature.emitter.domain.EmitterClient
 import app.kiosksync.platform.UpdatePackageProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher

@@ -1,49 +1,37 @@
-package app.kiosksync.feature.sync.domain
+package app.kiosksync.feature.sync.data
 
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.EmitterPairedDevice
 import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.PlaylistRejectedException
 import app.kiosksync.feature.playlist.domain.Playlist
-import app.kiosksync.platform.EmitterClient
+import app.kiosksync.feature.emitter.domain.EmitterClient
+import app.kiosksync.feature.sync.domain.EmitterSyncRepository
+import app.kiosksync.feature.sync.domain.LocalMediaMissingException
+import app.kiosksync.feature.sync.domain.SyncProgress
+import app.kiosksync.feature.sync.domain.SyncSummary
+import app.kiosksync.feature.sync.domain.SyncPlanner
 import app.kiosksync.platform.MediaRepository
 import kotlinx.coroutines.CancellationException
-
-data class SyncProgress(
-    val uploaded: Int,
-    val total: Int
-) {
-    val fraction: Float
-        get() = if (total <= 0) 0f else uploaded.toFloat() / total.toFloat()
-}
-
-data class SyncSummary(
-    val uploadedCount: Int,
-    val skippedCount: Int,
-    val appliedVersion: Int
-)
-
-class LocalMediaMissingException(val mediaId: String) :
-    Exception("Local media file is missing for mediaId='$mediaId'")
 
 /**
  * Sends one playlist to one receiver following the diff protocol:
  * /sync/state -> upload missing media -> /playlist.
  */
-class EmitterSyncService(
+class EmitterSyncRepositoryImpl(
     private val client: EmitterClient,
     private val mediaRepository: MediaRepository,
     private val logger: AppLogger
-) {
-    suspend fun sync(
+) : EmitterSyncRepository {
+    override suspend fun sync(
         device: EmitterPairedDevice,
         host: String,
         port: Int,
         emitterId: String,
         playlist: Playlist,
-        lock: KioskLockConfig? = null,
-        onUploadProgress: (SyncProgress) -> Unit = {},
-        onApplying: () -> Unit = {}
+        lock: KioskLockConfig?,
+        onUploadProgress: (SyncProgress) -> Unit,
+        onApplying: () -> Unit
     ): Result<SyncSummary> {
         return try {
             val remoteState = client.getSyncState(host, port, emitterId, device.token).getOrThrow()

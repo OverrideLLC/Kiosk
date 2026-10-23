@@ -3,8 +3,8 @@ package app.kiosksync.feature.emitter
 import app.kiosksync.FakeRepositories
 import app.kiosksync.FakeUpdatePackageProvider
 import app.kiosksync.NoOpLogger
-import app.kiosksync.feature.emitter.state.DeviceUpdateStatus
-import app.kiosksync.feature.emitter.viewmodel.EmitterViewModel
+import app.kiosksync.feature.emitter.presentation.state.DeviceUpdateStatus
+import app.kiosksync.feature.emitter.presentation.viewmodel.EmitterViewModel
 import app.kiosksync.core.APP_VERSION
 import app.kiosksync.core.DeviceInfo
 import app.kiosksync.core.DiscoveredDevice
@@ -20,7 +20,7 @@ import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.projection.presentation.ProjectionController
 import app.kiosksync.platform.DeviceDiscovery
-import app.kiosksync.platform.EmitterClient
+import app.kiosksync.feature.emitter.domain.EmitterClient
 import app.kiosksync.platform.UpdatePackage
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -67,7 +67,7 @@ class EmitterUpdateTest {
             client = client,
             screensRepository = storage,
             kioskLockRepository = storage,
-            mediaRepository = storage,
+            syncRepository = storage,
             logger = NoOpLogger(),
             emitterId = "tx-1",
             emitterName = "Caja",

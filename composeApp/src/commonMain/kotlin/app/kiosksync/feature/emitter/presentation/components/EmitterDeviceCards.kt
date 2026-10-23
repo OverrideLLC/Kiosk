@@ -1,10 +1,10 @@
-package app.kiosksync.feature.emitter.components
+package app.kiosksync.feature.emitter.presentation.components
 
-import app.kiosksync.feature.emitter.state.DeviceSyncUi
-import app.kiosksync.feature.emitter.state.DeviceUpdateStatus
-import app.kiosksync.feature.emitter.state.DeviceUpdateUi
-import app.kiosksync.feature.emitter.state.EmitterDeviceUi
-import app.kiosksync.feature.emitter.state.SyncUiStatus
+import app.kiosksync.feature.emitter.presentation.state.DeviceSyncUi
+import app.kiosksync.feature.emitter.presentation.state.DeviceUpdateStatus
+import app.kiosksync.feature.emitter.presentation.state.DeviceUpdateUi
+import app.kiosksync.feature.emitter.presentation.state.EmitterDeviceUi
+import app.kiosksync.feature.emitter.presentation.state.SyncUiStatus
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background

@@ -1,11 +1,11 @@
 package app.kiosksync.feature.emitter
 
 import app.kiosksync.core.MAX_RECOVERY_PHRASE_LENGTH
-import app.kiosksync.feature.emitter.actions.EmitterAction
-import app.kiosksync.feature.emitter.actions.EmitterReducer
-import app.kiosksync.feature.emitter.state.EmitterDeviceUi
-import app.kiosksync.feature.emitter.state.EmitterUiState
-import app.kiosksync.feature.emitter.state.SecurityDialogUi
+import app.kiosksync.feature.emitter.presentation.actions.EmitterAction
+import app.kiosksync.feature.emitter.presentation.actions.EmitterReducer
+import app.kiosksync.feature.emitter.presentation.state.EmitterDeviceUi
+import app.kiosksync.feature.emitter.presentation.state.EmitterUiState
+import app.kiosksync.feature.emitter.presentation.state.SecurityDialogUi
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

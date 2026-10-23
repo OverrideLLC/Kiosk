@@ -1,10 +1,10 @@
-package app.kiosksync.feature.emitter.actions
+package app.kiosksync.feature.emitter.presentation.actions
 
 import app.kiosksync.core.DEFAULT_UNLOCK_SEQUENCE
 import app.kiosksync.core.MAX_RECOVERY_PHRASE_LENGTH
 import app.kiosksync.core.MAX_UNLOCK_SEQUENCE_LENGTH
-import app.kiosksync.feature.emitter.state.EmitterUiState
-import app.kiosksync.feature.emitter.state.SecurityDialogUi
+import app.kiosksync.feature.emitter.presentation.state.EmitterUiState
+import app.kiosksync.feature.emitter.presentation.state.SecurityDialogUi
 
 object EmitterReducer {
     fun reduce(state: EmitterUiState, action: EmitterAction): EmitterUiState = when (action) {

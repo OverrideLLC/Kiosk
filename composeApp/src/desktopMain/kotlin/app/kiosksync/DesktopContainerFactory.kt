@@ -15,7 +15,8 @@ import app.kiosksync.feature.role.data.DataStoreAppConfigStore
 import app.kiosksync.platform.FileMediaStore
 import app.kiosksync.platform.FileReceiverUpdateManager
 import app.kiosksync.platform.JmDnsDiscovery
-import app.kiosksync.platform.KtorEmitterClient
+import app.kiosksync.feature.emitter.data.KtorEmitterClient
+import app.kiosksync.feature.sync.data.EmitterSyncRepositoryImpl
 import app.kiosksync.platform.KtorReceiverServer
 import app.kiosksync.platform.LocalUpdatePackageProvider
 import app.kiosksync.platform.Sha256
@@ -128,6 +129,11 @@ suspend fun createDesktopAppContainer(
             updateManager = receiverUpdateManager,
         )
         val emitterClient = KtorEmitterClient(logger)
+        val emitterSyncRepository = EmitterSyncRepositoryImpl(
+            client = emitterClient,
+            mediaRepository = createdRepositories.media,
+            logger = logger,
+        )
         val updatePackageProvider = LocalUpdatePackageProvider(dataDir, logger)
         val pickImageFiles: suspend () -> List<String> = {
             DesktopFilePicker.pickImages(logger)
@@ -146,6 +152,7 @@ suspend fun createDesktopAppContainer(
             playlistRepository = createdRepositories.playlists,
             kioskLockRepository = createdRepositories.kioskLock,
             mediaRepository = createdRepositories.media,
+            emitterSyncRepository = emitterSyncRepository,
             receiverDataResetter = createdRepositories.receiverDataResetter,
             configStore = configStore,
             initialConfig = existingConfig,

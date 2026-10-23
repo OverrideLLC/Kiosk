@@ -1,4 +1,4 @@
-package app.kiosksync.feature.emitter.components
+package app.kiosksync.feature.emitter.presentation.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background

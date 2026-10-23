@@ -14,8 +14,9 @@ import app.kiosksync.feature.projection.presentation.ProjectionController
 import app.kiosksync.feature.role.domain.AppConfig
 import app.kiosksync.feature.role.domain.AppConfigStore
 import app.kiosksync.feature.playlist.domain.PlaylistRepository
+import app.kiosksync.feature.sync.domain.EmitterSyncRepository
 import app.kiosksync.platform.DeviceDiscovery
-import app.kiosksync.platform.EmitterClient
+import app.kiosksync.feature.emitter.domain.EmitterClient
 import app.kiosksync.platform.KioskKeyboardGuard
 import app.kiosksync.platform.KioskMouseGuard
 import app.kiosksync.platform.MediaRepository
@@ -48,6 +49,7 @@ class AppContainer(
     val playlistRepository: PlaylistRepository,
     val kioskLockRepository: KioskLockRepository,
     val mediaRepository: MediaRepository,
+    val emitterSyncRepository: EmitterSyncRepository,
     val receiverDataResetter: ReceiverDataResetter,
     val configStore: AppConfigStore,
     val initialConfig: AppConfig?,

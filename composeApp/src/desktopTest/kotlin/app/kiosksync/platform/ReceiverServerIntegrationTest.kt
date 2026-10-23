@@ -8,6 +8,7 @@ import app.kiosksync.core.PlaylistRejectedException
 import app.kiosksync.core.ReceiverStatusResponse
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.pairing.domain.PairingManager
+import app.kiosksync.feature.emitter.data.KtorEmitterClient
 import app.kiosksync.feature.playback.domain.ReceiverPlaybackSyncBridge
 import app.kiosksync.feature.playback.domain.ReceiverPlaylistBridge
 import app.kiosksync.feature.playlist.domain.Playlist

@@ -1,7 +1,7 @@
-package app.kiosksync.feature.emitter.components
+package app.kiosksync.feature.emitter.presentation.components
 
-import app.kiosksync.feature.emitter.actions.EmitterAction
-import app.kiosksync.feature.emitter.state.EmitterUiState
+import app.kiosksync.feature.emitter.presentation.actions.EmitterAction
+import app.kiosksync.feature.emitter.presentation.state.EmitterUiState
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background

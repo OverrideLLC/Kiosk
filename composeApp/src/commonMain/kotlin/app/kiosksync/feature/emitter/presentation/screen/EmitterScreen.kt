@@ -1,9 +1,9 @@
-package app.kiosksync.feature.emitter.screen
+package app.kiosksync.feature.emitter.presentation.screen
 
-import app.kiosksync.feature.emitter.actions.EmitterAction
-import app.kiosksync.feature.emitter.components.*
-import app.kiosksync.feature.emitter.state.EmitterUiState
-import app.kiosksync.feature.emitter.state.SyncUiStatus
+import app.kiosksync.feature.emitter.presentation.actions.EmitterAction
+import app.kiosksync.feature.emitter.presentation.components.*
+import app.kiosksync.feature.emitter.presentation.state.EmitterUiState
+import app.kiosksync.feature.emitter.presentation.state.SyncUiStatus
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxWithConstraints

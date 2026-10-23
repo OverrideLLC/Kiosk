@@ -55,9 +55,9 @@ composeApp/src/
 │   ├── feature/
 │   │   ├── role/{domain,presentation}/
 │   │   ├── pairing/{domain,presentation}/
-│   │   ├── emitter/{actions,components,domain,screen,state,viewmodel}/
+│   │   ├── emitter/{domain,data,presentation/{actions,components,screen,state,viewmodel}}/
 │   │   ├── playlist/{domain,presentation}/
-│   │   ├── sync/domain/
+│   │   ├── sync/{domain,data}/
 │   │   ├── playback/{domain,presentation}/
 │   │   ├── kiosk/{domain,presentation}/
 │   │   ├── projection/presentation/
@@ -150,7 +150,9 @@ mDNS la vuelve a ubicar.
 
 ### 2. Sincronización
 
-`EmitterSyncService` ejecuta el mismo plan para cada pantalla seleccionada:
+`EmitterSyncRepositoryImpl` en `feature/sync/data` ejecuta el plan para cada
+pantalla seleccionada. El contrato y los tipos de progreso/resumen viven en
+`feature/sync/domain`; el plan de comparación sigue siendo lógica pura allí:
 
 1. `GET /sync/state` → versión actual y lista de `mediaId` + SHA-256.
 2. `SyncPlanner.plan()` compara la playlist local con ese estado y devuelve:
@@ -269,14 +271,17 @@ cuando afectan a una acción del usuario.
   canal consumible (confirmar rol o abrir el selector de imágenes); las
   operaciones de red y almacenamiento mantienen su progreso y error en el estado.
   No hay ViewModels de AndroidX ni framework MVI.
-- `feature/emitter` separa `EmitterAction` y el reducer puro en `actions`, el
-  estado inmutable en `state`, la coordinación de estado y efectos en
-  `EmitterViewModel`, y las composables en `screen` y `components`. La pantalla
-  recibe `EmitterUiState` y un callback de acciones; no conserva ni invoca el
-  ViewModel. El ViewModel depende del contrato `domain/EmitterScreensRepository`;
-  el adaptador Room en `desktopMain/feature/emitter/data` implementa ese contrato.
-  Los controles propios del Controlador permanecen en `components`; botones,
-  diálogos e iconos reutilizados por otras features viven en `core/ui`.
+- `feature/emitter/presentation` contiene el MVI y la UI: `EmitterAction` y el
+  reducer en `actions`, el estado inmutable en `state`, `EmitterViewModel`, la
+  pantalla y los componentes. La pantalla recibe `EmitterUiState` y un callback
+  de acciones; no conserva ni invoca el ViewModel. Hay un solo `EmitterViewModel`;
+  sus coordinadores internos son adaptadores de presentación que actualizan el
+  estado/progreso, no ViewModels independientes. Emparejamiento, dirección manual
+  y configuración de seguridad usan casos de uso en `domain`. `EmitterClient`,
+  `EmitterScreensRepository` y `EmitterSyncRepository` son contratos de dominio;
+  Ktor, Room y la transferencia de medios se implementan en `data`. Los controles
+  propios del Controlador permanecen en `components`; botones, diálogos e iconos
+  reutilizados por otras features viven en `core/ui`.
 - Pairing, playback y kiosk conservan managers/state holders especializados para
   reglas con temporizadores, reproducción o eventos externos. Solo se introduce
   un reducer cuando aclara transiciones de UI; no se fuerza el mismo patrón a toda

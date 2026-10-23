@@ -1,9 +1,9 @@
-package app.kiosksync.feature.emitter.viewmodel
+package app.kiosksync.feature.emitter.presentation.viewmodel
 
-import app.kiosksync.feature.emitter.state.EmitterPendingAction
-import app.kiosksync.feature.emitter.state.EmitterUiState
-import app.kiosksync.feature.emitter.state.KioskPasswordDialogUi
-import app.kiosksync.feature.emitter.state.SecurityDialogUi
+import app.kiosksync.feature.emitter.presentation.state.EmitterPendingAction
+import app.kiosksync.feature.emitter.presentation.state.EmitterUiState
+import app.kiosksync.feature.emitter.presentation.state.KioskPasswordDialogUi
+import app.kiosksync.feature.emitter.presentation.state.SecurityDialogUi
 
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.DEFAULT_UNLOCK_SEQUENCE
@@ -12,7 +12,7 @@ import app.kiosksync.core.Strings
 import app.kiosksync.core.isValidKioskPassword
 import app.kiosksync.core.isValidRecoveryPhrase
 import app.kiosksync.core.isValidUnlockSequence
-import app.kiosksync.feature.kiosk.domain.KioskLockManager
+import app.kiosksync.feature.kiosk.domain.KioskLockConfigurationUseCases
 import app.kiosksync.feature.kiosk.domain.KioskLockRepository
 import app.kiosksync.feature.playlist.domain.Playlist
 import kotlinx.coroutines.CancellationException
@@ -31,8 +31,7 @@ internal class EmitterSecurityCoordinator(
     private val scope: CoroutineScope,
     private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val logger: AppLogger,
-    private val kioskLockManager: KioskLockManager,
-    private val passwordHasher: (String) -> String,
+    private val configurationUseCases: KioskLockConfigurationUseCases,
     private val pushLockToAllPaired: (KioskLockConfig) -> Unit,
     private val onPasswordConfirmed: (KioskPasswordDialogUi, KioskLockConfig) -> Unit,
 ) {
@@ -82,13 +81,7 @@ internal class EmitterSecurityCoordinator(
             return
         }
         launchStorage {
-            val previous = repository.load()
-            val config = (previous ?: KioskLockConfig()).copy(
-                enabled = true,
-                unlockSequence = dialog.sequence,
-            )
-            repository.save(config)
-            kioskLockManager.setConfig(config)
+            val config = configurationUseCases.saveUnlockSequence(dialog.sequence)
             uiState.update {
                 it.copy(
                     hasKioskPassword = config.passwordHash != null,
@@ -118,14 +111,7 @@ internal class EmitterSecurityCoordinator(
             return
         }
         launchStorage {
-            val previous = repository.load() ?: KioskLockConfig()
-            val config = previous.copy(
-                enabled = true,
-                recoveryHash = passwordHasher(phrase),
-                recoveryLength = phrase.length,
-            )
-            repository.save(config)
-            kioskLockManager.setConfig(config)
+            val config = configurationUseCases.saveRecoveryPhrase(phrase)
             uiState.update {
                 it.copy(
                     hasKioskPassword = config.passwordHash != null,
@@ -148,10 +134,7 @@ internal class EmitterSecurityCoordinator(
 
     fun resetRecoveryPhrase() {
         launchStorage {
-            val previous = repository.load() ?: return@launchStorage
-            val config = previous.copy(recoveryHash = null, recoveryLength = 0)
-            repository.save(config)
-            kioskLockManager.setConfig(config)
+            val config = configurationUseCases.resetRecoveryPhrase() ?: return@launchStorage
             uiState.update {
                 it.copy(
                     securityDialog = it.securityDialog?.copy(
@@ -187,18 +170,7 @@ internal class EmitterSecurityCoordinator(
             return
         }
         launchStorage {
-            val previous = repository.load()
-            val config = KioskLockConfig(
-                passwordHash = passwordHasher(password),
-                passwordLength = password.length,
-                unlockSequence = previous?.unlockSequence
-                    ?.takeIf(::isValidUnlockSequence)
-                    ?: DEFAULT_UNLOCK_SEQUENCE,
-                recoveryHash = previous?.recoveryHash,
-                recoveryLength = previous?.recoveryLength ?: 0,
-            )
-            repository.save(config)
-            kioskLockManager.setConfig(config)
+            val config = configurationUseCases.savePassword(password)
             uiState.update {
                 it.copy(
                     passwordDialog = null,

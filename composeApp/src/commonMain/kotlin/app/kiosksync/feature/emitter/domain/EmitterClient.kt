@@ -1,4 +1,4 @@
-package app.kiosksync.platform
+package app.kiosksync.feature.emitter.domain
 
 import app.kiosksync.core.DeviceInfo
 import app.kiosksync.core.KioskLockConfig

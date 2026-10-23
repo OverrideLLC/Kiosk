@@ -131,9 +131,9 @@ composeApp/src/
 │   ├── feature/
 │   │   ├── role/{domain,presentation}/
 │   │   ├── pairing/{domain,presentation}/
-│   │   ├── emitter/{actions,components,domain,screen,state,viewmodel}/
+│   │   ├── emitter/{domain,data,presentation/{actions,components,screen,state,viewmodel}}/
 │   │   ├── playlist/{domain,presentation}/
-│   │   ├── sync/domain/
+│   │   ├── sync/{domain,data}/
 │   │   ├── playback/{domain,presentation}/
 │   │   ├── kiosk/{domain,presentation}/
 │   │   ├── projection/presentation/
@@ -153,7 +153,7 @@ composeApp/src/
     └── Main.kt          # argumentos de línea de comandos y punto de entrada
 ```
 
-Dentro de cada `feature/<nombre>/` crea capas solo cuando contengan responsabilidades reales. En `feature/emitter`, MVI se organiza en `viewmodel`, `screen`, `state` y `actions`; los componentes exclusivos viven en `components`. La pantalla recibe estado y emite acciones, y el ViewModel consume contratos del dominio. La implementación de Room vive en `desktopMain/feature/emitter/data` y depende del contrato en `domain`. Las entidades Room nunca son modelos de protocolo. Comparte un componente `core.ui` cuando tenga consumidores reales en más de una feature; los componentes exclusivos permanecen en su feature. Mantén un solo módulo Gradle y el `AppContainer` manual. DataStore Preferences almacena preferencias pequeñas; Room 3 datos estructurados; archivos, imágenes, logs y paquetes.
+Dentro de cada `feature/<nombre>/` crea capas solo cuando contengan responsabilidades reales. En `feature/emitter`, el MVI y la UI viven bajo `presentation/{viewmodel,screen,state,actions,components}`. La pantalla recibe estado y emite acciones; el ViewModel consume contratos y casos de uso del dominio, nunca DAOs ni implementaciones. Las implementaciones de Room, DataStore y red viven en `data` y dependen de contratos del dominio. Las entidades Room nunca son modelos de protocolo. Comparte un componente `core.ui` cuando tenga consumidores reales en más de una feature; los componentes exclusivos permanecen en su feature. Mantén un solo módulo Gradle y el `AppContainer` manual. DataStore Preferences almacena preferencias pequeñas; Room 3 datos estructurados; archivos, imágenes, logs y paquetes.
 
 ---
 

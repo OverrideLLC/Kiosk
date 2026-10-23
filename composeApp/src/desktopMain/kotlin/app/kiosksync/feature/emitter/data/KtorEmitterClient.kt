@@ -1,6 +1,7 @@
-package app.kiosksync.platform
+package app.kiosksync.feature.emitter.data
 
 import app.kiosksync.core.AppLogger
+import app.kiosksync.feature.emitter.domain.EmitterClient
 import app.kiosksync.core.DeviceInfo
 import app.kiosksync.core.ErrorResponse
 import app.kiosksync.core.HEADER_AUTH_TOKEN

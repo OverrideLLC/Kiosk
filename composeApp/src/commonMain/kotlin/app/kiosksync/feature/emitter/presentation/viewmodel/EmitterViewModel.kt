@@ -1,4 +1,4 @@
-package app.kiosksync.feature.emitter.viewmodel
+package app.kiosksync.feature.emitter.presentation.viewmodel
 
 import app.kiosksync.core.APP_VERSION
 import app.kiosksync.core.AppLogger
@@ -9,23 +9,27 @@ import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.STATUS_FAILURE_THRESHOLD
 import app.kiosksync.core.STATUS_POLL_INTERVAL_MS
 import app.kiosksync.core.Strings
-import app.kiosksync.feature.emitter.actions.EmitterAction
-import app.kiosksync.feature.emitter.actions.EmitterReducer
+import app.kiosksync.feature.emitter.presentation.actions.EmitterAction
+import app.kiosksync.feature.emitter.presentation.actions.EmitterReducer
+import app.kiosksync.feature.emitter.domain.AddReceiverByAddressUseCase
 import app.kiosksync.feature.emitter.domain.EmitterScreensRepository
-import app.kiosksync.feature.emitter.state.DeviceSyncUi
-import app.kiosksync.feature.emitter.state.DeviceUpdateStatus
-import app.kiosksync.feature.emitter.state.DeviceUpdateUi
-import app.kiosksync.feature.emitter.state.EmitterDeviceUi
-import app.kiosksync.feature.emitter.state.EmitterPendingAction
-import app.kiosksync.feature.emitter.state.EmitterUiState
-import app.kiosksync.feature.emitter.state.SyncUiStatus
+import app.kiosksync.feature.emitter.domain.PairReceiverUseCase
+import app.kiosksync.feature.emitter.domain.UnpairReceiverUseCase
+import app.kiosksync.feature.emitter.presentation.state.DeviceSyncUi
+import app.kiosksync.feature.emitter.presentation.state.DeviceUpdateStatus
+import app.kiosksync.feature.emitter.presentation.state.DeviceUpdateUi
+import app.kiosksync.feature.emitter.presentation.state.EmitterDeviceUi
+import app.kiosksync.feature.emitter.presentation.state.EmitterPendingAction
+import app.kiosksync.feature.emitter.presentation.state.EmitterUiState
+import app.kiosksync.feature.emitter.presentation.state.SyncUiStatus
 import app.kiosksync.feature.kiosk.domain.KioskLockRepository
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
+import app.kiosksync.feature.kiosk.domain.KioskLockConfigurationUseCases
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.projection.domain.ProjectionService
+import app.kiosksync.feature.sync.domain.EmitterSyncRepository
 import app.kiosksync.platform.DeviceDiscovery
-import app.kiosksync.platform.EmitterClient
-import app.kiosksync.platform.MediaRepository
+import app.kiosksync.feature.emitter.domain.EmitterClient
 import app.kiosksync.platform.UpdatePackageProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -46,7 +50,7 @@ class EmitterViewModel(
     private val client: EmitterClient,
     private val screensRepository: EmitterScreensRepository,
     private val kioskLockRepository: KioskLockRepository,
-    private val mediaRepository: MediaRepository,
+    private val syncRepository: EmitterSyncRepository,
     private val logger: AppLogger,
     private val emitterId: String,
     private val emitterName: String,
@@ -93,7 +97,7 @@ class EmitterViewModel(
     private val deliveryCoordinator = EmitterDeliveryCoordinator(
         uiState = _uiState,
         client = client,
-        mediaRepository = mediaRepository,
+        syncRepository = syncRepository,
         logger = logger,
         emitterId = emitterId,
         scope = scope,
@@ -108,8 +112,11 @@ class EmitterViewModel(
         scope = scope,
         backgroundDispatcher = backgroundDispatcher,
         logger = logger,
-        kioskLockManager = kioskLockManager,
-        passwordHasher = passwordHasher,
+        configurationUseCases = KioskLockConfigurationUseCases(
+            repository = kioskLockRepository,
+            manager = kioskLockManager,
+            passwordHasher = passwordHasher,
+        ),
         pushLockToAllPaired = ::pushLockToAllPaired,
         onPasswordConfirmed = { dialog, config ->
             when (dialog.action) {
@@ -123,8 +130,8 @@ class EmitterViewModel(
 
     private val pairingCoordinator = EmitterPairingCoordinator(
         uiState = _uiState,
-        client = client,
-        screensRepository = screensRepository,
+        pairReceiver = PairReceiverUseCase(client, screensRepository),
+        unpairReceiver = UnpairReceiverUseCase(client, screensRepository),
         kioskLockRepository = kioskLockRepository,
         logger = logger,
         emitterId = emitterId,
@@ -163,16 +170,17 @@ class EmitterViewModel(
 
     private val manualIpCoordinator = EmitterManualIpCoordinator(
         uiState = _uiState,
-        client = client,
+        addReceiverByAddress = AddReceiverByAddressUseCase(client),
         logger = logger,
         scope = scope,
-        backgroundDispatcher = backgroundDispatcher,
-        onDeviceInfo = updateCoordinator::updateDeviceInfo,
-        onDeviceAdded = { device ->
+        onDeviceAdded = { details ->
+            val device = details.device
             manualDevices[device.deviceId] = device
+            device.appVersion?.let {
+                updateCoordinator.updateDeviceInfo(device.deviceId, it, details.skippedUpdateVersion)
+            }
             rebuild()
         },
-        parseHostPort = ::parseHostPort,
     )
 
     /** Accepts typed UI actions; transient state changes pass through a pure reducer. */
@@ -519,17 +527,4 @@ class EmitterViewModel(
         updateCoordinator.maybeAutoUpdateAll()
     }
 
-    companion object {
-        fun parseHostPort(input: String): Pair<String, Int>? {
-            val trimmed = input.trim()
-                .removePrefix("http://")
-                .removePrefix("https://")
-            val separator = trimmed.lastIndexOf(':')
-            if (separator <= 0) return null
-            val host = trimmed.substring(0, separator).trim().trim('[', ']')
-            val port = trimmed.substring(separator + 1).trim().toIntOrNull() ?: return null
-            if (host.isBlank() || port !in 1..65535) return null
-            return host to port
-        }
-    }
 }

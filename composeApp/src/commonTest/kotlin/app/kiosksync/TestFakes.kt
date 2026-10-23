@@ -12,6 +12,9 @@ import app.kiosksync.feature.pairing.domain.PairingRepository
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.domain.PlaylistLibrary
 import app.kiosksync.feature.playlist.domain.PlaylistRepository
+import app.kiosksync.feature.sync.domain.EmitterSyncRepository
+import app.kiosksync.feature.sync.domain.SyncProgress
+import app.kiosksync.feature.sync.domain.SyncSummary
 import app.kiosksync.platform.MediaImportError
 import app.kiosksync.platform.MediaImportResult
 import app.kiosksync.platform.MediaRepository
@@ -35,6 +38,7 @@ class FakeRepositories(
     PlaylistRepository,
     KioskLockRepository,
     MediaRepository,
+    EmitterSyncRepository,
     ReceiverDataResetter {
     var receiverPairedInfo: ReceiverPairedInfo? = null
     var emitterPairedDevices: List<EmitterPairedDevice> = emptyList()
@@ -122,6 +126,17 @@ class FakeRepositories(
         storedMedia.clear()
         mediaBytes.clear()
     }
+
+    override suspend fun sync(
+        device: EmitterPairedDevice,
+        host: String,
+        port: Int,
+        emitterId: String,
+        playlist: Playlist,
+        lock: KioskLockConfig?,
+        onUploadProgress: (SyncProgress) -> Unit,
+        onApplying: () -> Unit,
+    ): Result<SyncSummary> = Result.failure(UnsupportedOperationException("Sync not configured in test fake"))
 
     override suspend fun clearReceiverData() {
         clearReceiverDataCalled = true

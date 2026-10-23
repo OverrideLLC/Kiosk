@@ -1,8 +1,8 @@
-package app.kiosksync.feature.emitter.viewmodel
+package app.kiosksync.feature.emitter.presentation.viewmodel
 
-import app.kiosksync.feature.emitter.state.DeviceSyncUi
-import app.kiosksync.feature.emitter.state.EmitterUiState
-import app.kiosksync.feature.emitter.state.SyncUiStatus
+import app.kiosksync.feature.emitter.presentation.state.DeviceSyncUi
+import app.kiosksync.feature.emitter.presentation.state.EmitterUiState
+import app.kiosksync.feature.emitter.presentation.state.SyncUiStatus
 
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.EmitterPairedDevice
@@ -11,10 +11,9 @@ import app.kiosksync.core.PLAYBACK_SYNC_DELAY_MS
 import app.kiosksync.core.PlaylistRejectedException
 import app.kiosksync.core.Strings
 import app.kiosksync.feature.playlist.domain.Playlist
-import app.kiosksync.feature.sync.domain.EmitterSyncService
+import app.kiosksync.feature.sync.domain.EmitterSyncRepository
 import app.kiosksync.feature.sync.domain.LocalMediaMissingException
-import app.kiosksync.platform.EmitterClient
-import app.kiosksync.platform.MediaRepository
+import app.kiosksync.feature.emitter.domain.EmitterClient
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
@@ -28,7 +27,7 @@ import kotlinx.coroutines.withContext
 internal class EmitterDeliveryCoordinator(
     private val uiState: MutableStateFlow<EmitterUiState>,
     private val client: EmitterClient,
-    mediaRepository: MediaRepository,
+    private val syncRepository: EmitterSyncRepository,
     private val logger: AppLogger,
     private val emitterId: String,
     private val scope: CoroutineScope,
@@ -36,7 +35,6 @@ internal class EmitterDeliveryCoordinator(
     private val getStoredDevices: () -> List<EmitterPairedDevice>,
     private val targetFor: (EmitterPairedDevice) -> Pair<String, Int>?,
 ) {
-    private val syncService = EmitterSyncService(client, mediaRepository, logger)
 
     fun synchronizePlayback() {
         val state = uiState.value
@@ -138,7 +136,7 @@ internal class EmitterDeliveryCoordinator(
 
                 updateDeviceSync(device.deviceId) { DeviceSyncUi(SyncUiStatus.UPLOADING) }
                 val syncResult = withContext(backgroundDispatcher) {
-                    syncService.sync(
+                    syncRepository.sync(
                         device = stored,
                         host = target.first,
                         port = target.second,
