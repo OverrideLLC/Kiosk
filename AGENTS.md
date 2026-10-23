@@ -247,12 +247,14 @@ Soporta estos **argumentos de línea de comandos** desde `Main.kt`, para poder p
 - `--data-dir=<ruta>`: carpeta de datos alternativa.
 - `--role=emitter|receiver`: fuerza el rol (omite la pantalla de selección).
 - `--port=<n>`: puerto del Receptor.
-- `--windowed`: ejecuta el Receptor en ventana normal en lugar de pantalla completa (para depurar).
+
+`--windowed` se eliminó en la 1.1.3: la app siempre abre a pantalla completa y sin
+bordes, incluida la selección de rol y el Controlador.
 
 Ejemplo de prueba local con dos procesos:
 
 ```powershell
-.\gradlew.bat run --args="--role=receiver --data-dir=C:\tmp\rx --windowed"
+.\gradlew.bat run --args="--role=receiver --data-dir=C:\tmp\rx"
 .\gradlew.bat run --args="--role=emitter --data-dir=C:\tmp\tx"
 ```
 
@@ -272,7 +274,7 @@ Si el mDNS no encuentra el proceso en la misma PC, el campo manual de IP con `12
 
 - **Sin vincular:** pantalla negra con el código grande y el texto "Escribe este código en el Controlador".
 - **Vinculada:** solo la imagen actual, a pantalla completa, fondo negro, `ContentScale.Fit`, transición de 500 ms entre imágenes. Si no hay playlist, texto discreto "Esperando contenido".
-- Ventana sin bordes, siempre encima, cursor oculto. `Esc` abre un diálogo de salida con confirmación (solo en modo `--windowed` o si se mantiene presionado 3 segundos).
+- Ventana sin bordes, a pantalla completa y siempre encima, cursor oculto mientras está bloqueada. `Esc` abre el diálogo de opciones de la Pantalla cuando está desbloqueada.
 
 **Una playlist única en el MVP.** El Emisor tiene una playlist y la envía a las pantallas que seleccione. Varias playlists por pantalla quedan para después.
 

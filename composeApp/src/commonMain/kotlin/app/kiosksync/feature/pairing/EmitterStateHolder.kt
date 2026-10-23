@@ -937,8 +937,8 @@ class EmitterStateHolder(
         kioskLockManager.setConfig(lock)
         projectionController.start(playlist)
         // The controller is also on display: lock it with the same password.
-        // `force` keeps the lock even in --windowed debug mode, where the
-        // native hook is disabled and Compose feeds the key events instead.
+        // `force` keeps the lock even when the native hook is disabled and
+        // Compose feeds the key events instead.
         kioskLockManager.lock(force = true)
         logger.info("Projection started with playlist '${playlist.name}'")
     }

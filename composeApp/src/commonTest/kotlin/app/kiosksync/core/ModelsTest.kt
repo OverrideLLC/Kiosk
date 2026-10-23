@@ -13,7 +13,6 @@ class ModelsTest {
             "--data-dir=C:\\custom\\data",
             "--role=receiver",
             "--port=9000",
-            "--windowed",
             "--ui-catalog"
         )
         val parsed = AppArgs.parse(args)
@@ -21,7 +20,6 @@ class ModelsTest {
         assertEquals("C:\\custom\\data", parsed.dataDir)
         assertEquals(AppRole.RECEIVER, parsed.role)
         assertEquals(9000, parsed.port)
-        assertTrue(parsed.windowed)
         assertTrue(parsed.uiCatalog)
     }
 

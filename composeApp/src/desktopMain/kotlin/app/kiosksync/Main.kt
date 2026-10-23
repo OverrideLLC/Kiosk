@@ -91,7 +91,7 @@ fun main(args: Array<String>) {
     logger.info("==========================================")
     logger.info("Starting $APP_NAME")
     logger.info("CLI args: ${args.joinToString(" ")}")
-    logger.info("Parsed: dataDir=${appArgs.dataDir}, role=${appArgs.role}, port=${appArgs.port}, windowed=${appArgs.windowed}")
+    logger.info("Parsed: dataDir=${appArgs.dataDir}, role=${appArgs.role}, port=${appArgs.port}")
     logger.info("Effective data directory: ${effectiveDataDir.absolutePath}")
     logger.info("Logs directory: ${logsDir.absolutePath}")
 
@@ -233,27 +233,17 @@ fun main(args: Array<String>) {
     mouseGuard.start()
 
     application {
-        // The role picker starts in a normal window. When the Screen role is
-        // chosen, App.kt reports it and this state turns the window into the
-        // fullscreen, borderless kiosk used for pairing and playback. The old
-        // --windowed flag is intentionally ignored for the Screen role.
+        // 1.1.3: the whole app is a projection surface from the first frame.
+        // The role picker, the Controller and the Screen all use a borderless
+        // fullscreen window, so Windows chrome or a floating window never
+        // appear. The Screen role is additionally pinned on top; the role
+        // picker and Controller stay fullscreen but let modal dialogs (for
+        // example the image picker) come to the front.
         var receiverModeActive by remember {
             mutableStateOf(activeRole == AppRole.RECEIVER)
         }
         val receiverKioskWindow = receiverModeActive
-        val windowState = rememberWindowState(
-            placement = if (receiverKioskWindow) WindowPlacement.Fullscreen else WindowPlacement.Floating,
-            width = 900.dp,
-            height = 650.dp
-        )
-
-        LaunchedEffect(receiverKioskWindow) {
-            windowState.placement = if (receiverKioskWindow) {
-                WindowPlacement.Fullscreen
-            } else {
-                WindowPlacement.Floating
-            }
-        }
+        val windowState = rememberWindowState(placement = WindowPlacement.Fullscreen)
 
         val projectionPlaylist by projectionController.playlist.collectAsState()
         val lockState by kioskLockManager.uiState.collectAsState()
@@ -264,17 +254,17 @@ fun main(args: Array<String>) {
         val updatePromptVisible =
             receiverKioskWindow && receiverUpdateState.isVisible
 
-        // The screen is a kiosk. If Windows ever minimizes or restores the
-        // fullscreen window (remote session, shell shortcut, display change),
-        // put it back while the lock is active. The native input guards should
-        // prevent the user from doing this; this is a second barrier.
+        // The app must always stay fullscreen. If Windows minimizes or
+        // restores the window (remote session, shell shortcut, display change),
+        // put it back. The only exception is the Controller projection: the
+        // management window is intentionally hidden while the projection
+        // window is on screen.
         LaunchedEffect(
-            receiverKioskWindow,
-            lockState.isLocked,
             windowState.placement,
-            windowState.isMinimized
+            windowState.isMinimized,
+            projectionPlaylist != null
         ) {
-            if (receiverKioskWindow && lockState.isLocked) {
+            if (projectionPlaylist == null) {
                 if (windowState.isMinimized) {
                     windowState.isMinimized = false
                 }
@@ -291,8 +281,8 @@ fun main(args: Array<String>) {
             windowState.isMinimized = isProjecting
             if (isProjecting) {
                 // The controller is a display too while projecting: lock it with
-                // the same password as the screens. `force` also covers Linux and
-                // --windowed debugging, where the native hook is disabled.
+                // the same password as the screens. `force` also covers Linux,
+                // where the native hook is disabled.
                 kioskLockManager.lock(force = true)
                 logger.info("Projection active: controller locked")
             }
@@ -329,12 +319,14 @@ fun main(args: Array<String>) {
             },
             title = APP_NAME,
             state = windowState,
-            // AWT does not allow changing this flag once the frame is
-            // displayable, so it stays false. Fullscreen placement is enough to
-            // hide the decorations and fill the display.
-            undecorated = false,
+            // Borderless from the first frame: no title bar, no window frame
+            // and no floating window while the role picker or Controller runs.
+            undecorated = true,
+            // Only the Screen is pinned above other windows. The role picker
+            // and Controller stay fullscreen, but their modal dialogs (image
+            // picker, file dialogs) can still come to the front.
             alwaysOnTop = receiverKioskWindow,
-            resizable = !receiverKioskWindow,
+            resizable = false,
             onKeyEvent = { keyEvent ->
                 when {
                     // The native hook already swallows keys on Windows. This is a

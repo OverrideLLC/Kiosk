@@ -77,8 +77,8 @@ prometer funciones o de instalar la app en un comercio real.
 - Al desbloquear, el puntero se libera para poder usar la card de opciones; solo
   vuelve a quedar capturado cuando se cierra la card o se elige **Volver a
   bloquear**.
-- En `--windowed` o en Linux, el bloqueo usa el manejo de teclas de Compose y no
-  bloquea atajos del sistema ni el mouse; es solo para depuración.
+- En Linux, el bloqueo usa el manejo de teclas de Compose y no bloquea atajos del
+  sistema ni el mouse; es solo para depuración.
 - Si Windows minimiza o restaura la ventana por un evento externo, un vigilante
   la devuelve a pantalla completa mientras el bloqueo siga activo. Eso no impide
   `Ctrl+Alt+Del` ni el acceso físico al equipo.

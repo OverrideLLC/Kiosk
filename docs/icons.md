@@ -44,7 +44,7 @@ desktop del proyecto; no hay targets Android/iOS/web que validar.
 El logo de marca no es un ícono de Material Symbols. Vive en
 `composeApp/src/commonMain/composeResources/drawable/override_logo.svg` y se dibuja
 con `OverrideLogo` (`designsystem/OverrideBrand.kt`), que aplica el tinte del tema.
-El pie de las pantallas de ventana usa `OverrideFooter`; las pantallas de
+El pie de las pantallas de gestión usa `OverrideFooter`; las pantallas de
 reproducción a pantalla completa no lo muestran.
 
 El SVG actual es el **logo oficial de Override** (marca de tres lóbulos), con

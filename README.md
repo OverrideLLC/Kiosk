@@ -12,6 +12,10 @@ misma red local lo reciben y lo reproducen a pantalla completa.
 Todo ocurre en la LAN. La app no hace ninguna llamada a internet y no envía
 telemetría.
 
+Desde la **1.1.3** la app abre siempre a pantalla completa y sin bordes, también
+en la selección de rol, para que el equipo se vea como una pantalla de proyección
+y no como una ventana de Windows.
+
 ## Los pasos
 
 1. **Controlador**: abre la app, elige *Controlador*, agrega imágenes a la playlist
@@ -67,13 +71,13 @@ Los detalles, límites y el procedimiento para publicar una versión están en
 
 ## Descarga
 
-La versión **1.1.2** está publicada en
-[GitHub Releases](https://github.com/OverrideLLC/Kiosk/releases/tag/v1.1.2)
+La versión **1.1.3** se publica en
+[GitHub Releases](https://github.com/OverrideLLC/Kiosk/releases)
 con tres variantes para Windows 10/11:
 
-- `OverrideKiosk-1.1.2.exe`: instalador único.
-- `OverrideKiosk-1.1.2.msi`: instalador MSI para despliegue.
-- `OverrideKiosk-1.1.2-portable.zip`: carpeta portable; descomprime y ejecuta
+- `OverrideKiosk-1.1.3.exe`: instalador único.
+- `OverrideKiosk-1.1.3.msi`: instalador MSI para despliegue.
+- `OverrideKiosk-1.1.3-portable.zip`: carpeta portable; descomprime y ejecuta
   `OverrideKiosk.exe`.
 
 No hace falta JDK ni internet para usar ninguna de las tres. La carpeta portable

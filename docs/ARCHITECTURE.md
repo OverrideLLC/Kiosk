@@ -96,9 +96,10 @@ dominio:
 - `LocalNetwork.detectLocalIpv4Address()` para mostrar la IP de la Pantalla en la
   pantalla de vinculación.
 
-`Main.kt` lee los argumentos, crea el contenedor y abre la ventana. Si el rol es
-Pantalla y no se pasó `--windowed`, la ventana es fullscreen, sin bordes y siempre
-encima.
+`Main.kt` lee los argumentos, crea el contenedor y abre la ventana. Desde la
+1.1.3 la ventana es siempre fullscreen y sin bordes, incluida la selección de rol
+y el Controlador. La Pantalla además queda siempre encima; el Controlador y la
+selección de rol dejan que sus diálogos modales aparezcan al frente.
 
 ## Flujos
 
@@ -175,8 +176,7 @@ La Pantalla **solo se bloquea cuando está vinculada y ya recibió su contraseñ
 del Controlador. Mientras muestra el código de vinculación o espera la contraseña,
 la ventana sigue siendo usable con teclado y mouse. En Windows se instalan hooks
 de bajo nivel para teclado (`WH_KEYBOARD_LL`) y mouse/touchpad (`WH_MOUSE_LL`);
-en Linux o con `--windowed` se usa el manejo de teclas de Compose y el mouse no se
-bloquea. Al desbloquear se libera el puntero para la card de opciones y se vuelve
+en Linux se usa el manejo de teclas de Compose y el mouse no se bloquea. Al desbloquear se libera el puntero para la card de opciones y se vuelve
 a capturar al cerrarla. La secuencia de desbloqueo (solo Shift/Ctrl/Alt) se
 configura desde el Controlador y se envía con la playlist o con `PUT /lock`. Si
 hay contraseña, después de la secuencia se pide. Hay 5 intentos y 30 segundos de

@@ -77,7 +77,7 @@ Tras 5 intentos fallidos, el desbloqueo se rechaza durante 30 segundos.
 - La ventana de la Pantalla no es redimensionable y, si Windows la minimiza o la
   restaura por un evento externo, vuelve a pantalla completa mientras el bloqueo
   siga activo.
-- En `--windowed` (solo depuración) el mouse no se bloquea, para poder usar la
+- En Linux (sin hooks nativos) el mouse no se bloquea, para poder usar la
   interfaz y cerrar la app.
 
 ## Límites conocidos
@@ -86,6 +86,6 @@ Tras 5 intentos fallidos, el desbloqueo se rechaza durante 30 segundos.
 - Los gestos de precisión de tres o cuatro dedos que maneja Windows directamente
   pueden escapar del hook de mouse. Si el equipo queda expuesto al público,
   desactívalos en la configuración del touchpad.
-- En modo `--windowed` (solo depuración) el bloqueo es "blando": algunos atajos
-  del sistema (Alt+Tab, tecla Windows) pueden escapar y el mouse sigue activo. En
-  modo normal, los enganches nativos de Windows bloquean teclado y mouse.
+- En Linux (sin hooks nativos) el bloqueo es "blando": algunos atajos del sistema
+  (Alt+Tab, tecla Windows) pueden escapar y el mouse sigue activo. En Windows, los
+  enganches nativos bloquean teclado y mouse.

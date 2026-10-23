@@ -18,7 +18,6 @@ data class AppArgs(
     val dataDir: String? = null,
     val role: AppRole? = null,
     val port: Int? = null,
-    val windowed: Boolean = false,
     val uiCatalog: Boolean = false
 ) {
     companion object {
@@ -26,7 +25,6 @@ data class AppArgs(
             var dataDir: String? = null
             var role: AppRole? = null
             var port: Int? = null
-            var windowed = false
             var uiCatalog = false
 
             for (arg in args) {
@@ -41,9 +39,6 @@ data class AppArgs(
                     arg.startsWith("--port=") -> {
                         port = arg.removePrefix("--port=").trim().toIntOrNull()
                     }
-                    arg == "--windowed" -> {
-                        windowed = true
-                    }
                     arg == "--ui-catalog" -> {
                         uiCatalog = true
                     }
@@ -54,7 +49,6 @@ data class AppArgs(
                 dataDir = dataDir,
                 role = role,
                 port = port,
-                windowed = windowed,
                 uiCatalog = uiCatalog
             )
         }

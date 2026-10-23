@@ -44,7 +44,7 @@ fun OverrideLogo(
 }
 
 /**
- * Small branding footer for windowed screens. Receivers and the projection
+ * Small branding footer for management screens. Receivers and the projection
  * window deliberately do not use it: those screens are pure image playback.
  */
 @Composable

@@ -94,7 +94,7 @@ solo sirve contra ese servicio falso.
 - Los hooks de teclado y mouse son de bajo nivel y **solo existen en Windows**.
   Esta versión se verificó en Windows 11 (los hooks se instalan), pero el bloqueo
   efectivo de atajos y gestos del sistema requiere una prueba manual en el equipo
-  destino. En Linux o con `--windowed` se usa un manejo de teclas de Compose, que
+  destino. En Linux se usa un manejo de teclas de Compose, que
   no bloquea atajos del sistema ni el mouse.
 - El hook de mouse descarta movimiento, clics, rueda y los toques del touchpad que
   Windows entrega como eventos de mouse. Los gestos de precisión de tres o cuatro
