@@ -88,7 +88,11 @@ trabajo cerrado y para poder continuar desde otra computadora.
    - [x] Artefactos publicados: `OverrideKiosk-1.1.3.exe`,
      `OverrideKiosk-1.1.3.msi`, `OverrideKiosk-1.1.3-portable.zip` y
      `SHA256SUMS.txt`.
-   - [ ] Release `v1.1.4` publicada (pendiente de generar los artefactos).
+   - [x] Release `v1.1.4` publicada:
+     https://github.com/OverrideLLC/Kiosk/releases/tag/v1.1.4
+   - [x] Artefactos publicados: `OverrideKiosk-1.1.4.exe`,
+     `OverrideKiosk-1.1.4.msi`, `OverrideKiosk-1.1.4-portable.zip` y
+     `SHA256SUMS.txt`.
    - El `README.md` apunta a GitHub Releases para la descarga.
 
 ## Cómo continuar en otra computadora
