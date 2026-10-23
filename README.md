@@ -12,7 +12,7 @@ misma red local lo reciben y lo reproducen a pantalla completa.
 Todo ocurre en la LAN. La app no hace ninguna llamada a internet y no envía
 telemetría.
 
-## Los tres pasos
+## Los pasos
 
 1. **Controlador**: abre la app, elige *Controlador*, agrega imágenes a la playlist
    y ajusta la duración de cada una.
@@ -27,6 +27,22 @@ telemetría.
 Las próximas veces basta con abrir la app: la pantalla se anuncia sola y el
 Controlador la vuelve a encontrar aunque cambie de IP. Si la red no permite mDNS,
 usa **Agregar por IP** (`192.168.1.40:8765`).
+
+## Guía interactiva
+
+La primera vez que abres la app, una guía te acompaña por las pantallas reales
+hasta dejar una demo funcionando. No es un tutorial aparte: elige el rol, agrega
+imágenes, vincula la Pantalla, crea la contraseña y envía la playlist usando los
+mismos controles de siempre. La guía avanza sola cuando detecta que cada paso está
+listo y cambia de pestaña para mostrarte dónde continuar.
+
+- En el **Controlador** puedes repetirla desde **Ajustes → Guía interactiva**.
+- En la **Pantalla** puedes repetirla desde **Opciones → Ver guía** (con la
+  Pantalla desbloqueada).
+- Una Pantalla vinculada **no se bloquea** hasta recibir la contraseña del
+  Controlador; mientras espera, el teclado y el mouse siguen disponibles.
+
+Los detalles del recorrido están en [Guía interactiva](docs/GUIDE.md).
 
 ## Actualizaciones
 
@@ -51,13 +67,13 @@ Los detalles, límites y el procedimiento para publicar una versión están en
 
 ## Descarga
 
-La versión **1.1.0** está publicada en
-[GitHub Releases](https://github.com/OverrideLLC/Kiosk/releases/tag/v1.1.0)
+La versión **1.1.1** está publicada en
+[GitHub Releases](https://github.com/OverrideLLC/Kiosk/releases/tag/v1.1.1)
 con tres variantes para Windows 10/11:
 
-- `OverrideKiosk-1.1.0.exe`: instalador único.
-- `OverrideKiosk-1.1.0.msi`: instalador MSI para despliegue.
-- `OverrideKiosk-1.1.0-portable.zip`: carpeta portable; descomprime y ejecuta
+- `OverrideKiosk-1.1.1.exe`: instalador único.
+- `OverrideKiosk-1.1.1.msi`: instalador MSI para despliegue.
+- `OverrideKiosk-1.1.1-portable.zip`: carpeta portable; descomprime y ejecuta
   `OverrideKiosk.exe`.
 
 No hace falta JDK ni internet para usar ninguna de las tres. La carpeta portable
@@ -114,6 +130,7 @@ actualización, que conserva todo. Consulta
 
 ## Documentación
 
+- [Guía interactiva](docs/GUIDE.md)
 - [Arquitectura](docs/ARCHITECTURE.md)
 - [Protocolo de red](docs/PROTOCOL.md)
 - [Seguridad y riesgos aceptados](docs/SECURITY.md)
@@ -127,9 +144,9 @@ actualización, que conserva todo. Consulta
 ## Estado
 
 MVP funcional: vinculación por código, sincronización incremental, reproducción
-local, bloqueo tipo kiosco, tema claro/oscuro, empaquetado para Windows y
-actualizaciones automáticas por LAN. Consulta los límites conocidos antes de
-usarlo en producción.
+local, bloqueo tipo kiosco, guía interactiva, tema claro/oscuro, empaquetado para
+Windows y actualizaciones automáticas por LAN. Consulta los límites conocidos
+antes de usarlo en producción.
 
 ## Licencia
 

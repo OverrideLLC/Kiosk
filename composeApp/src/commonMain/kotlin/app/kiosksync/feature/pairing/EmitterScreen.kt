@@ -33,6 +33,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,6 +50,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import app.kiosksync.core.APP_NAME
 import app.kiosksync.core.APP_VERSION
+import app.kiosksync.core.AppRole
 import app.kiosksync.core.AppTheme
 import app.kiosksync.core.AppVersionPolicy
 import app.kiosksync.core.MAX_DURATION_SEC
@@ -80,6 +82,9 @@ import app.kiosksync.designsystem.OverrideFooter
 import app.kiosksync.designsystem.OverrideLogo
 import app.kiosksync.designsystem.Sizes
 import app.kiosksync.designsystem.Space
+import app.kiosksync.feature.guide.GuideAction
+import app.kiosksync.feature.guide.GuideManager
+import app.kiosksync.feature.guide.GuideStep
 import app.kiosksync.feature.playlist.PlaylistEditorStateHolder
 import app.kiosksync.feature.playlist.PlaylistEditorUiState
 import app.kiosksync.feature.playlist.PlaylistItem
@@ -96,6 +101,7 @@ fun EmitterScreen(
     stateHolder: EmitterStateHolder,
     playlistStateHolder: PlaylistEditorStateHolder,
     storage: LocalStorage,
+    guideManager: GuideManager,
     onExitRequested: () -> Unit,
     onRoleReset: () -> Unit,
     theme: AppTheme = AppTheme.DARK,
@@ -105,6 +111,7 @@ fun EmitterScreen(
 ) {
     val state by stateHolder.uiState.collectAsState()
     val editorState by playlistStateHolder.uiState.collectAsState()
+    val guideState by guideManager.uiState.collectAsState()
     var showChangeRoleConfirm by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
     var removeTarget by remember { mutableStateOf<PlaylistItem?>(null) }
@@ -120,6 +127,12 @@ fun EmitterScreen(
         else -> Strings.selectedScreens(selectedCount)
     }
     val pairedCount = state.devices.count { it.isPairedToThisEmitter }
+    val selectedIds = state.devices
+        .filter { it.isSelected && it.isPairedToThisEmitter }
+        .map { it.deviceId }
+        .toSet()
+    val selectedSendSucceeded = selectedIds.isNotEmpty() &&
+        selectedIds.all { id -> state.syncByDevice[id]?.status == SyncUiStatus.SUCCESS }
     val canSend = !state.isSending &&
         !state.isSyncing &&
         selectedCount > 0 &&
@@ -128,6 +141,74 @@ fun EmitterScreen(
         !state.isSyncing &&
         editorState.playlist.items.isNotEmpty()
     val canSync = !state.isSending && !state.isSyncing && pairedCount > 0
+
+    // The guide moves through the real panels below the narrow breakpoint, where
+    // screens and playlist are tabs. On wide windows both panels stay visible.
+    LaunchedEffect(guideState.step) {
+        when (guideState.step) {
+            GuideStep.EMITTER_PLAYLIST -> compactTab = 1
+            GuideStep.EMITTER_SCREENS,
+            GuideStep.EMITTER_PASSWORD,
+            GuideStep.EMITTER_SEND -> compactTab = 0
+
+            else -> Unit
+        }
+    }
+
+    // Feed the real Controller state to the guide. The manager decides when a
+    // step is complete; this screen never has to duplicate that logic.
+    LaunchedEffect(
+        editorState.playlist.items.size,
+        pairedCount,
+        selectedCount,
+        state.hasKioskPassword,
+        selectedSendSucceeded,
+    ) {
+        guideManager.updateEmitter(
+            playlistItems = editorState.playlist.items.size,
+            pairedScreens = pairedCount,
+            selectedScreens = selectedCount,
+            hasPassword = state.hasKioskPassword,
+            sendSucceeded = selectedSendSucceeded,
+        )
+    }
+
+    // When the person reaches the send step, select the first paired screen so
+    // the "Enviar ahora" shortcut is immediately usable. They can still change
+    // the selection in the normal list.
+    LaunchedEffect(guideState.step, guideState.isActive, pairedCount, selectedCount) {
+        if (
+            guideState.isActive &&
+            guideState.role == AppRole.EMITTER &&
+            guideState.step == GuideStep.EMITTER_SEND &&
+            selectedCount == 0
+        ) {
+            state.devices
+                .firstOrNull { it.isPairedToThisEmitter && !it.isSelected }
+                ?.let { stateHolder.toggleSelection(it.deviceId) }
+        }
+    }
+
+    // Actions requested from the guide card. They operate the real screen, so
+    // the person sees exactly the same result as if they had clicked directly.
+    LaunchedEffect(guideManager, stateHolder, playlistStateHolder) {
+        guideManager.actions.collect { action ->
+            when (action) {
+                GuideAction.ADD_IMAGES -> playlistStateHolder.addImages()
+                GuideAction.REFRESH_DEVICES -> stateHolder.refreshDevices()
+                GuideAction.SEND -> {
+                    val current = stateHolder.uiState.value
+                    val hasPlaylist = playlistStateHolder.currentPlaylist().items.isNotEmpty()
+                    val hasSelection = current.devices.any {
+                        it.isSelected && it.isPairedToThisEmitter
+                    }
+                    if (!current.isSending && !current.isSyncing && hasPlaylist && hasSelection) {
+                        stateHolder.sendToSelected(playlistStateHolder.currentPlaylist())
+                    }
+                }
+            }
+        }
+    }
 
     BoxWithConstraints(
         modifier = Modifier
@@ -249,6 +330,10 @@ fun EmitterScreen(
             reduceMotion = reduceMotion,
             onThemeChange = onThemeChange,
             onReduceMotionChange = onReduceMotionChange,
+            onOpenGuide = {
+                showSettings = false
+                guideManager.start(AppRole.EMITTER)
+            },
             onDismiss = { showSettings = false },
         )
     }
@@ -1565,6 +1650,7 @@ private fun SettingsDialog(
     reduceMotion: Boolean,
     onThemeChange: (AppTheme) -> Unit,
     onReduceMotionChange: (Boolean) -> Unit,
+    onOpenGuide: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val colors = KioskColors.scheme
@@ -1622,6 +1708,30 @@ private fun SettingsDialog(
                     ),
                 )
             }
+
+            Spacer(Modifier.height(Space.lg))
+            HorizontalDivider(color = colors.outlineVariant)
+            Spacer(Modifier.height(Space.md))
+            Text(
+                text = Strings.GUIDE_TITLE,
+                style = MaterialTheme.typography.titleSmall,
+                color = colors.onSurface,
+            )
+            Spacer(Modifier.height(Space.xs))
+            Text(
+                text = Strings.GUIDE_REPLAY_HINT,
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(Space.sm))
+            AppButton(
+                text = Strings.GUIDE_BUTTON,
+                onClick = onOpenGuide,
+                variant = AppButtonVariant.TONAL,
+                size = AppButtonSize.SMALL,
+                icon = AppIcon.HELP,
+                modifier = Modifier.fillMaxWidth(),
+            )
         },
         actions = {
             AppButton(

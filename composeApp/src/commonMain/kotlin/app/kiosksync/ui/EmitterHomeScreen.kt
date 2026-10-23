@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import app.kiosksync.AppContainer
 import app.kiosksync.core.AppTheme
+import app.kiosksync.feature.guide.GuideManager
 import app.kiosksync.feature.pairing.EmitterScreen
 import app.kiosksync.feature.pairing.EmitterStateHolder
 import app.kiosksync.feature.playlist.PlaylistEditorStateHolder
@@ -16,6 +17,7 @@ import app.kiosksync.feature.role.AppConfig
 fun EmitterHomeScreen(
     config: AppConfig,
     container: AppContainer,
+    guideManager: GuideManager,
     onExitRequested: () -> Unit,
     onRoleReset: () -> Unit,
     theme: AppTheme = AppTheme.DARK,
@@ -67,6 +69,7 @@ fun EmitterHomeScreen(
         stateHolder = stateHolder,
         playlistStateHolder = playlistStateHolder,
         storage = container.localStorage,
+        guideManager = guideManager,
         onExitRequested = onExitRequested,
         onRoleReset = onRoleReset,
         theme = theme,

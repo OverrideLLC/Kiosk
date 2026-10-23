@@ -35,7 +35,7 @@ Hay **un único módulo Gradle** (`composeApp`) con dos source sets:
 
 | Source set | Contenido |
 | --- | --- |
-| `commonMain` | Modelos y DTOs, lógica pura (`PairingManager`, `SyncPlanner`, reproducción), estado de UI, pantallas Compose, sistema de diseño. |
+| `commonMain` | Modelos y DTOs, lógica pura (`PairingManager`, `SyncPlanner`, `GuideManager`, reproducción), estado de UI, pantallas Compose, sistema de diseño. |
 | `desktopMain` | Servidor y cliente Ktor, JmDNS, archivos, ventana a pantalla completa, argumentos y arranque. |
 
 ```
@@ -51,6 +51,7 @@ composeApp/src/
 │   │   ├── projection/  # proyección del Controlador a sus propias pantallas
 │   │   ├── update/      # aviso de actualización en la Pantalla
 │   │   ├── kiosk/       # bloqueo, secuencia y recuperación
+│   │   ├── guide/       # GuideManager y tarjeta de la guía interactiva
 │   │   └── role/        # selección y persistencia del rol
 │   ├── platform/        # interfaces: DeviceDiscovery, ReceiverServer,
 │   │                    # EmitterClient, LocalStorage, ReceiverUpdateManager,
@@ -170,14 +171,16 @@ Pantalla no cambia su comportamiento por estar desconectada.
 
 ### 6. Bloqueo tipo kiosco
 
-La Pantalla arranca bloqueada. En Windows se instalan hooks de bajo nivel para
-teclado (`WH_KEYBOARD_LL`) y mouse/touchpad (`WH_MOUSE_LL`); en Linux o con
-`--windowed` se usa el manejo de teclas de Compose y el mouse no se bloquea. Al
-desbloquear se libera el puntero para la card de opciones y se vuelve a capturar
-al cerrarla. La secuencia de desbloqueo (solo Shift/Ctrl/Alt) se configura desde
-el Controlador y se envía con la playlist o con `PUT /lock`. Si hay contraseña,
-después de la secuencia se pide. Hay 5 intentos y 30 segundos de bloqueo. La
-recuperación usa una frase universal compilada en la app; ver
+La Pantalla **solo se bloquea cuando está vinculada y ya recibió su contraseña**
+del Controlador. Mientras muestra el código de vinculación o espera la contraseña,
+la ventana sigue siendo usable con teclado y mouse. En Windows se instalan hooks
+de bajo nivel para teclado (`WH_KEYBOARD_LL`) y mouse/touchpad (`WH_MOUSE_LL`);
+en Linux o con `--windowed` se usa el manejo de teclas de Compose y el mouse no se
+bloquea. Al desbloquear se libera el puntero para la card de opciones y se vuelve
+a capturar al cerrarla. La secuencia de desbloqueo (solo Shift/Ctrl/Alt) se
+configura desde el Controlador y se envía con la playlist o con `PUT /lock`. Si
+hay contraseña, después de la secuencia se pide. Hay 5 intentos y 30 segundos de
+bloqueo. La recuperación usa una frase universal compilada en la app; ver
 [KIOSK_UNLOCK.md](KIOSK_UNLOCK.md) y los riesgos en [SECURITY.md](SECURITY.md).
 
 ### 7. Actualización de la aplicación
@@ -236,6 +239,11 @@ a una acción del usuario.
 - Todos los textos visibles están en `core/Strings.kt`.
 - El Controlador usa un layout de dos paneles en anchos ≥1100 dp y pestañas
   Pantallas/Playlist en anchos menores.
+- La guía interactiva vive en `feature/guide/`: `GuideManager` es una máquina de
+  estados pura con tests y `GuideOverlay` dibuja el diálogo de rol y la tarjeta
+  flotante. Las pantallas reales reportan su estado (playlist, vinculación,
+  contraseña, contenido) y la guía avanza sola cuando el paso está cumplido. Ver
+  [GUIDE.md](GUIDE.md).
 
 ## Errores y logs
 
@@ -250,9 +258,9 @@ a una acción del usuario.
 
 ## Pruebas
 
-- `commonTest`: lógica pura (`PairingManager`, `SyncPlanner`, serialización,
-  playlist, carrusel, bloqueo, `AppVersionPolicy`).
-- `desktopTest`: render offscreen de las pantallas a PNG
+- `commonTest`: lógica pura (`PairingManager`, `SyncPlanner`, `GuideManager`,
+  serialización, playlist, carrusel, bloqueo, `AppVersionPolicy`).
+- `desktopTest`: render offscreen de las pantallas y de la guía a PNG
   (`build/reports/ui/`) para revisar tipografía, espaciado y estados vacíos, y
   pruebas del empaquetado, staging y aplicación de actualizaciones.
 - Comando: `.\gradlew.bat build`.

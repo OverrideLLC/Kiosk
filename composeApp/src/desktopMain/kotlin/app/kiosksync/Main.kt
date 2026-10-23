@@ -11,6 +11,9 @@ import androidx.compose.ui.input.key.utf16CodePoint
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
@@ -94,25 +97,28 @@ fun main(args: Array<String>) {
 
     val localStorage = FileLocalStorage(effectiveDataDir, logger)
     val existingConfig = localStorage.loadConfig()
+    // The saved role is the default, and --role=<role> forces it. A first run
+    // without either still shows the role picker.
     val activeRole = appArgs.role ?: existingConfig?.role
-
-    if (activeRole == AppRole.RECEIVER) {
-        // A screen always starts blank: wipe any content, blocking password and
-        // pairing left by a previous session so it never replays stale content.
-        // The Controller role keeps all of its data untouched.
-        //
-        // The one exception is the first start after an update: the helper wrote
-        // a marker so pairing and content survive the restart. Consume it once.
-        val updateRestartMarker = File(effectiveDataDir, "update-restart.marker")
+    val updateRestartMarker = File(effectiveDataDir, "update-restart.marker")
+    val consumeUpdateRestartMarker: () -> Boolean = {
         if (updateRestartMarker.isFile) {
             logger.info("Update restart detected; preserving receiver pairing and content")
             updateRestartMarker.delete()
+            true
         } else {
+            false
+        }
+    }
+
+    if (activeRole == AppRole.RECEIVER) {
+        // The Screen starts blank, except on the first start after an update.
+        // The Controller role keeps all of its data untouched.
+        if (!consumeUpdateRestartMarker()) {
             localStorage.clearReceiverData()
         }
     }
 
-    val isFullscreenReceiver = !appArgs.windowed && activeRole == AppRole.RECEIVER
     val deviceName = try {
         System.getenv("COMPUTERNAME") ?: InetAddress.getLocalHost().hostName ?: "WindowsPC"
     } catch (_: Exception) {
@@ -140,12 +146,8 @@ fun main(args: Array<String>) {
         platformLockAvailable = kioskLockAvailable
     )
     kioskLockManager.setConfig(localStorage.loadKioskLock())
-    if (activeRole == AppRole.RECEIVER) {
-        // The screen role is always a kiosk. `force` locks even on Linux or in
-        // --windowed debug, where the native hook is disabled and Compose feeds
-        // the key events instead.
-        kioskLockManager.lock(force = true)
-    }
+    // The lock is engaged from App.kt as soon as the Screen is paired, never at
+    // startup: an unpaired Screen and the role picker must stay usable.
 
     val projectionController = ProjectionController()
     val keyboardGuard = createKioskKeyboardGuard(
@@ -222,6 +224,7 @@ fun main(args: Array<String>) {
         passwordHasher = passwordHasher,
         newDeviceId = { UUID.randomUUID().toString() },
         pickImageFiles = pickImageFiles,
+        consumeUpdateRestartMarker = consumeUpdateRestartMarker,
         backgroundDispatcher = Dispatchers.IO,
         serviceDispatcher = serviceDispatcher
     )
@@ -230,11 +233,26 @@ fun main(args: Array<String>) {
     mouseGuard.start()
 
     application {
+        // The role picker starts in a normal window. When the Screen role is
+        // chosen, App.kt reports it and this state turns the window into the
+        // fullscreen, borderless kiosk used for playback.
+        var receiverModeActive by remember {
+            mutableStateOf(activeRole == AppRole.RECEIVER)
+        }
+        val receiverKioskWindow = receiverModeActive && !appArgs.windowed
         val windowState = rememberWindowState(
-            placement = if (isFullscreenReceiver) WindowPlacement.Fullscreen else WindowPlacement.Floating,
+            placement = if (receiverKioskWindow) WindowPlacement.Fullscreen else WindowPlacement.Floating,
             width = 900.dp,
             height = 650.dp
         )
+
+        LaunchedEffect(receiverKioskWindow) {
+            windowState.placement = if (receiverKioskWindow) {
+                WindowPlacement.Fullscreen
+            } else {
+                WindowPlacement.Floating
+            }
+        }
 
         val projectionPlaylist by projectionController.playlist.collectAsState()
         val lockState by kioskLockManager.uiState.collectAsState()
@@ -243,19 +261,19 @@ fun main(args: Array<String>) {
         // remains locked: the screen is still a kiosk, only this decision is
         // temporarily clickable.
         val updatePromptVisible =
-            isFullscreenReceiver && receiverUpdateState.isVisible
+            receiverKioskWindow && receiverUpdateState.isVisible
 
         // The screen is a kiosk. If Windows ever minimizes or restores the
         // fullscreen window (remote session, shell shortcut, display change),
         // put it back while the lock is active. The native input guards should
         // prevent the user from doing this; this is a second barrier.
         LaunchedEffect(
-            isFullscreenReceiver,
+            receiverKioskWindow,
             lockState.isLocked,
             windowState.placement,
             windowState.isMinimized
         ) {
-            if (isFullscreenReceiver && lockState.isLocked) {
+            if (receiverKioskWindow && lockState.isLocked) {
                 if (windowState.isMinimized) {
                     windowState.isMinimized = false
                 }
@@ -310,9 +328,12 @@ fun main(args: Array<String>) {
             },
             title = APP_NAME,
             state = windowState,
-            undecorated = isFullscreenReceiver,
-            alwaysOnTop = isFullscreenReceiver,
-            resizable = !isFullscreenReceiver,
+            // AWT does not allow changing this flag once the frame is
+            // displayable, so it stays false. Fullscreen placement is enough to
+            // hide the decorations and fill the display.
+            undecorated = false,
+            alwaysOnTop = receiverKioskWindow,
+            resizable = !receiverKioskWindow,
             onKeyEvent = { keyEvent ->
                 when {
                     // The native hook already swallows keys on Windows. This is a
@@ -339,12 +360,14 @@ fun main(args: Array<String>) {
                 }
             }
         ) {
-            if (isFullscreenReceiver) {
-                window.cursor = if (updatePromptVisible) {
-                    Cursor.getDefaultCursor()
-                } else {
-                    blankCursor()
-                }
+            // Hide the pointer only while the paired Screen is actually locked.
+            // The role picker and the pairing code keep a visible cursor.
+            window.cursor = if (
+                receiverKioskWindow && lockState.isLocked && !updatePromptVisible
+            ) {
+                blankCursor()
+            } else {
+                Cursor.getDefaultCursor()
             }
 
             App(
@@ -358,6 +381,9 @@ fun main(args: Array<String>) {
                 },
                 registerUnpairHandler = { handler ->
                     unpairHandler = handler
+                },
+                onReceiverModeChanged = { active ->
+                    receiverModeActive = active
                 }
             )
         }

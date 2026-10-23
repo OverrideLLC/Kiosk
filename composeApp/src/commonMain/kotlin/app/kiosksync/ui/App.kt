@@ -27,6 +27,9 @@ import app.kiosksync.designsystem.AppDialog
 import app.kiosksync.designsystem.AppIcon
 import app.kiosksync.designsystem.KioskColors
 import app.kiosksync.designsystem.KioskTheme
+import app.kiosksync.feature.guide.GuideManager
+import app.kiosksync.feature.guide.GuideOverlay
+import app.kiosksync.feature.guide.GuideStep
 import app.kiosksync.feature.kiosk.KioskUnlockOverlay
 import app.kiosksync.feature.pairing.PairingManager
 import app.kiosksync.feature.playback.PlaybackStateHolder
@@ -40,13 +43,16 @@ fun App(
     container: AppContainer,
     onExitRequested: () -> Unit = {},
     registerEscHandler: ((() -> Unit)?) -> Unit = {},
-    registerUnpairHandler: ((() -> Unit)?) -> Unit = {}
+    registerUnpairHandler: ((() -> Unit)?) -> Unit = {},
+    onReceiverModeChanged: (Boolean) -> Unit = {}
 ) {
     val coroutineScope = rememberCoroutineScope()
     val existingConfig = remember { container.localStorage.loadConfig() }
     val initialDeviceId = remember { existingConfig?.deviceId ?: container.newDeviceId() }
     val effectivePort = container.args.port ?: existingConfig?.port ?: DEFAULT_PORT
     val pairingManager: PairingManager = container.pairingManager
+    val guideManager = remember { GuideManager(container.logger) }
+    val guideState by guideManager.uiState.collectAsState()
 
     // Appearance is shared by every role and persisted in config.json.
     var appTheme by remember { mutableStateOf(existingConfig?.theme ?: AppTheme.DARK) }
@@ -68,7 +74,11 @@ fun App(
         persistConfig { it.copy(reduceMotion = enabled) }
     }
 
-    // Determine initial screen based on CLI args and saved config
+    // Determine the initial screen from the CLI or the saved role. A first
+    // normal launch shows the role picker; later launches go straight to the
+    // saved role. --role=<role> still forces a role for automated or two-process
+    // debugging. Once a Screen is paired and has its password, the kiosk lock
+    // takes over.
     val initialScreen = remember {
         val forcedRole = container.args.role
         if (forcedRole != null) {
@@ -144,10 +154,25 @@ fun App(
     var showUnpairConfirm by remember { mutableStateOf(false) }
     var wasLocked by remember { mutableStateOf(lockState.isLocked) }
 
+    // Only the very first normal launch (no config.json yet) opens the guide by
+    // itself. After that it stays available from the role screen, the Controller
+    // settings and the Screen options. Forced roles skip the role picker, so
+    // they do not open it either.
+    LaunchedEffect(Unit) {
+        if (existingConfig == null && container.args.role == null) {
+            guideManager.start()
+        }
+    }
+
     fun relockReceiverIfNeeded() {
-        if (currentScreen is Screen.ReceiverHome) {
-            // The screen role is always locked, including --windowed/Linux where
-            // the Compose key fallback handles the unlock sequence.
+        if (
+            currentScreen is Screen.ReceiverHome &&
+            pairingState.isPaired &&
+            lockState.hasPassword
+        ) {
+            // Only a paired Screen that already received its blocking password
+            // is a kiosk. The pairing code and the "waiting for password" state
+            // stay usable with the keyboard and the mouse.
             container.kioskLockManager.lock(force = true)
         }
     }
@@ -157,22 +182,71 @@ fun App(
         relockReceiverIfNeeded()
     }
 
+    fun handleRoleConfirmed(confirmedConfig: AppConfig) {
+        if (confirmedConfig.role == AppRole.RECEIVER) {
+            // Entering the Screen role clears the previous session, except when
+            // this process just restarted after an update. In that case the
+            // restart marker preserves pairing and content.
+            if (!container.consumeUpdateRestartMarker()) {
+                container.localStorage.clearReceiverData()
+                // Drop the password that lived only on disk: the next lock
+                // must use the password this Controller sends.
+                container.kioskLockManager.setConfig(null)
+            }
+            pairingManager.checkInitialPairing()
+        }
+        currentScreen = when (confirmedConfig.role) {
+            AppRole.EMITTER -> Screen.EmitterHome(confirmedConfig)
+            AppRole.RECEIVER -> Screen.ReceiverHome(confirmedConfig)
+        }
+        guideManager.onRoleConfirmed(confirmedConfig.role)
+    }
+
+    fun confirmRoleFromGuide(role: AppRole) {
+        roleStateHolder.selectRole(role)
+        val config = roleStateHolder.confirmRole(
+            deviceId = initialDeviceId,
+            deviceName = container.deviceName,
+            port = effectivePort,
+            theme = appTheme,
+            reduceMotion = reduceMotion,
+        )
+        if (config != null) {
+            handleRoleConfirmed(config)
+        }
+    }
+
+    fun closeGuide() {
+        guideManager.stop()
+        relockReceiverIfNeeded()
+    }
+
     fun resetRole() {
         roleStateHolder.confirmChangeRole()
+        container.kioskLockManager.setConfig(null)
         container.kioskLockManager.release()
         container.projectionController.stop()
         // Pairing is initialized only when the Receiver role is confirmed again,
         // so changing role does not generate an unused code on the UI thread.
         showReceiverOptions = false
         showUnpairConfirm = false
+        guideManager.stop()
         currentScreen = Screen.RoleSelection
     }
 
-    // The screen role is always a kiosk: lock the keyboard as soon as the
-    // receiver UI is shown, including --windowed (Compose feeds the keys).
-    LaunchedEffect(currentScreen) {
+    // The Screen only becomes a kiosk once it is paired AND the Controller has
+    // sent the blocking password. While the screen waits for that password it
+    // must stay usable with the keyboard and the mouse. Pairing, unpairing or
+    // provisioning the password updates this effect immediately.
+    LaunchedEffect(currentScreen, pairingState.isPaired, lockState.hasPassword) {
         when (currentScreen) {
-            is Screen.ReceiverHome -> container.kioskLockManager.lock(force = true)
+            is Screen.ReceiverHome -> {
+                if (pairingState.isPaired && lockState.hasPassword) {
+                    container.kioskLockManager.lock(force = true)
+                } else {
+                    container.kioskLockManager.release()
+                }
+            }
 
             is Screen.RoleSelection -> container.kioskLockManager.release()
             is Screen.EmitterHome -> {
@@ -183,6 +257,10 @@ fun App(
         }
     }
 
+    LaunchedEffect(currentScreen) {
+        onReceiverModeChanged(currentScreen is Screen.ReceiverHome)
+    }
+
     // While locked, the screen must never show the admin menu. The menu only
     // appears after the correct password unlocks the device.
     LaunchedEffect(lockState.isLocked) {
@@ -191,6 +269,11 @@ fun App(
         if (lockState.isLocked) {
             showReceiverOptions = false
             showUnpairConfirm = false
+            // The Screen is now a kiosk showing content. The setup guide has no
+            // place on top of a locked carousel.
+            if (currentScreen is Screen.ReceiverHome) {
+                guideManager.stop()
+            }
         } else if (previous && currentScreen is Screen.ReceiverHome) {
             showReceiverOptions = true
         }
@@ -218,8 +301,8 @@ fun App(
         }
     }
 
-    LaunchedEffect(currentScreen) {
-        if (currentScreen is Screen.ReceiverHome) {
+    LaunchedEffect(currentScreen, pairingState.isPaired) {
+        if (currentScreen is Screen.ReceiverHome && pairingState.isPaired) {
             registerUnpairHandler { showUnpairConfirm = true }
         } else {
             registerUnpairHandler(null)
@@ -238,22 +321,15 @@ fun App(
                         RoleSelectionScreen(
                             stateHolder = roleStateHolder,
                             onRoleConfirmed = { confirmedConfig ->
-                                if (confirmedConfig.role == AppRole.RECEIVER) {
-                                    // Entering the Screen role always starts blank.
-                                    container.localStorage.clearReceiverData()
-                                    pairingManager.checkInitialPairing()
-                                }
-                                currentScreen = when (confirmedConfig.role) {
-                                    AppRole.EMITTER -> Screen.EmitterHome(confirmedConfig)
-                                    AppRole.RECEIVER -> Screen.ReceiverHome(confirmedConfig)
-                                }
+                                handleRoleConfirmed(confirmedConfig)
                             },
                             deviceId = initialDeviceId,
                             deviceName = container.deviceName,
                             port = effectivePort,
                             onExitRequested = onExitRequested,
                             theme = appTheme,
-                            reduceMotion = reduceMotion
+                            reduceMotion = reduceMotion,
+                            onOpenGuide = { guideManager.start() }
                         )
                     }
 
@@ -261,6 +337,7 @@ fun App(
                         EmitterHomeScreen(
                             config = screen.config,
                             container = container,
+                            guideManager = guideManager,
                             onExitRequested = onExitRequested,
                             onRoleReset = { resetRole() },
                             theme = appTheme,
@@ -276,6 +353,8 @@ fun App(
                             container = container,
                             pairingManager = pairingManager,
                             playbackStateHolder = playbackStateHolder,
+                            guideManager = guideManager,
+                            onOpenGuide = { guideManager.start(AppRole.RECEIVER) },
                             onExitRequested = onExitRequested,
                             onChangeRoleRequested = { resetRole() }
                         )
@@ -283,6 +362,33 @@ fun App(
                 }
 
                 KioskUnlockOverlay(lockState)
+
+                val guideMatchesScreen = when (guideState.step) {
+                    GuideStep.ROLE -> currentScreen is Screen.RoleSelection
+                    else -> when (guideState.role) {
+                        AppRole.EMITTER -> currentScreen is Screen.EmitterHome
+                        AppRole.RECEIVER -> currentScreen is Screen.ReceiverHome
+                        null -> false
+                    }
+                }
+
+                if (
+                    guideState.isActive &&
+                    !lockState.isLocked &&
+                    !receiverUpdateState.isVisible &&
+                    guideMatchesScreen
+                ) {
+                    GuideOverlay(
+                        state = guideState,
+                        onChooseRole = { role -> confirmRoleFromGuide(role) },
+                        onNext = { guideManager.next() },
+                        onBack = { guideManager.back() },
+                        onSkip = { closeGuide() },
+                        onAction = { action -> guideManager.requestAction(action) },
+                        onFinish = { closeGuide() },
+                        onRestart = { guideManager.restart() }
+                    )
+                }
 
                 if (currentScreen is Screen.ReceiverHome && receiverUpdateState.isVisible) {
                     ReceiverUpdateOverlay(
@@ -318,6 +424,16 @@ fun App(
                     )
                 },
                 actions = {
+                    AppButton(
+                        text = Strings.GUIDE_BUTTON,
+                        onClick = {
+                            showReceiverOptions = false
+                            guideManager.start(AppRole.RECEIVER)
+                        },
+                        variant = AppButtonVariant.TEXT,
+                        size = AppButtonSize.SMALL,
+                        icon = AppIcon.HELP,
+                    )
                     AppButton(
                         text = Strings.CHANGE_ROLE,
                         onClick = { resetRole() },

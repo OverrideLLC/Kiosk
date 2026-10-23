@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import app.kiosksync.AppContainer
 import app.kiosksync.core.Strings
+import app.kiosksync.feature.guide.GuideManager
 import app.kiosksync.feature.pairing.PairingCodeScreen
 import app.kiosksync.feature.pairing.PairingManager
 import app.kiosksync.feature.playback.CarouselScreen
@@ -29,11 +30,14 @@ fun ReceiverHomeScreen(
     container: AppContainer,
     pairingManager: PairingManager,
     playbackStateHolder: PlaybackStateHolder,
+    guideManager: GuideManager,
+    onOpenGuide: () -> Unit,
     onExitRequested: () -> Unit,
     onChangeRoleRequested: () -> Unit
 ) {
     val pairingState by pairingManager.uiState.collectAsState()
     val lockState by container.kioskLockManager.uiState.collectAsState()
+    val playbackState by playbackStateHolder.uiState.collectAsState()
     val runtimeState = remember(config.deviceId, config.port) {
         MutableStateFlow(ReceiverRuntimeUi(port = config.port))
     }
@@ -79,10 +83,20 @@ fun ReceiverHomeScreen(
         }
     }
 
+    // The guide follows the real Screen state: pairing, password and content.
+    LaunchedEffect(pairingState.isPaired, lockState.hasPassword, playbackState.hasItems) {
+        guideManager.updateReceiver(
+            paired = pairingState.isPaired,
+            hasPassword = lockState.hasPassword,
+            hasContent = playbackState.hasItems,
+        )
+    }
+
     when {
         !pairingState.isPaired -> PairingCodeScreen(
             pairingManager = pairingManager,
             serviceError = runtime.error,
+            onOpenGuide = onOpenGuide,
             onExitRequested = onExitRequested,
             onChangeRoleRequested = onChangeRoleRequested,
             showAdminActions = !lockState.isLocked,

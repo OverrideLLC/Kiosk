@@ -49,6 +49,7 @@ import kotlinx.coroutines.delay
 fun PairingCodeScreen(
     pairingManager: PairingManager,
     serviceError: String?,
+    onOpenGuide: () -> Unit = {},
     onExitRequested: () -> Unit,
     onChangeRoleRequested: () -> Unit,
     showAdminActions: Boolean = true,
@@ -214,6 +215,13 @@ fun PairingCodeScreen(
                     .padding(Space.lg),
                 horizontalArrangement = Arrangement.spacedBy(Space.xs),
             ) {
+                AppButton(
+                    text = Strings.GUIDE_BUTTON,
+                    onClick = onOpenGuide,
+                    variant = AppButtonVariant.TEXT,
+                    size = AppButtonSize.SMALL,
+                    icon = AppIcon.HELP,
+                )
                 AppButton(
                     text = Strings.CHANGE_ROLE,
                     onClick = onChangeRoleRequested,

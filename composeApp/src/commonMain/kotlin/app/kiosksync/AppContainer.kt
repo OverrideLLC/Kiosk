@@ -53,6 +53,11 @@ class AppContainer(
     val passwordHasher: (String) -> String,
     val newDeviceId: () -> String,
     val pickImageFiles: suspend () -> List<String>,
+    /**
+     * Consumes the one-shot marker written by the update helper. When it returns
+     * true the Screen keeps its pairing and content after a restart.
+     */
+    val consumeUpdateRestartMarker: () -> Boolean = { false },
     val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
     val serviceDispatcher: CoroutineDispatcher = backgroundDispatcher
 ) {

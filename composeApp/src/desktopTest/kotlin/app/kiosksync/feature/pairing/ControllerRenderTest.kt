@@ -16,6 +16,7 @@ import app.kiosksync.core.ReceiverStatusResponse
 import app.kiosksync.core.SyncStateResponse
 import app.kiosksync.core.UpdateUploadResponse
 import app.kiosksync.designsystem.KioskTheme
+import app.kiosksync.feature.guide.GuideManager
 import app.kiosksync.feature.kiosk.KioskLockManager
 import app.kiosksync.feature.playlist.Playlist
 import app.kiosksync.feature.playlist.PlaylistEditorStateHolder
@@ -44,6 +45,7 @@ class ControllerRenderTest {
     fun rendersControllerStates() {
         val output = File("build/reports/ui").apply { mkdirs() }
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val guideManager = GuideManager(NoOpLogger())
         try {
             val storage = FakeLocalStorage().apply {
                 emitterPairedDevices = listOf(
@@ -123,6 +125,7 @@ class ControllerRenderTest {
                     stateHolder = holder,
                     playlistStateHolder = editor,
                     storage = storage,
+                    guideManager = guideManager,
                     onExitRequested = {},
                     onRoleReset = {},
                     theme = AppTheme.DARK,
@@ -134,6 +137,7 @@ class ControllerRenderTest {
                     stateHolder = holder,
                     playlistStateHolder = editor,
                     storage = storage,
+                    guideManager = guideManager,
                     onExitRequested = {},
                     onRoleReset = {},
                     theme = AppTheme.LIGHT,
@@ -145,6 +149,7 @@ class ControllerRenderTest {
                     stateHolder = holder,
                     playlistStateHolder = editor,
                     storage = storage,
+                    guideManager = guideManager,
                     onExitRequested = {},
                     onRoleReset = {},
                     theme = AppTheme.DARK,
@@ -156,6 +161,7 @@ class ControllerRenderTest {
                     stateHolder = holder,
                     playlistStateHolder = editor,
                     storage = storage,
+                    guideManager = guideManager,
                     onExitRequested = {},
                     onRoleReset = {},
                     theme = AppTheme.DARK,
@@ -168,6 +174,7 @@ class ControllerRenderTest {
                     stateHolder = holder,
                     playlistStateHolder = editor,
                     storage = storage,
+                    guideManager = guideManager,
                     onExitRequested = {},
                     onRoleReset = {},
                     theme = AppTheme.DARK,
@@ -182,6 +189,7 @@ class ControllerRenderTest {
                     stateHolder = holder,
                     playlistStateHolder = editor,
                     storage = storage,
+                    guideManager = guideManager,
                     onExitRequested = {},
                     onRoleReset = {},
                     theme = AppTheme.DARK,
