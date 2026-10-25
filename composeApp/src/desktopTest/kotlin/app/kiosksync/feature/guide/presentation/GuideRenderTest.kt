@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.Density
 import app.kiosksync.core.AppRole
 import app.kiosksync.core.AppTheme
 import app.kiosksync.core.ui.theme.KioskTheme
+import app.kiosksync.feature.guide.presentation.components.GuideOverlay
 import java.io.File
 import kotlin.test.Test
 import org.jetbrains.skia.EncodedImageFormat

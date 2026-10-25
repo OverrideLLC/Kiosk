@@ -1,9 +1,10 @@
-package app.kiosksync.feature.guide.presentation
+package app.kiosksync.feature.guide.presentation.components
 
 import androidx.compose.runtime.Composable
 import app.kiosksync.core.AppRole
-import app.kiosksync.feature.guide.presentation.components.GuideCoachCard
-import app.kiosksync.feature.guide.presentation.components.GuideRoleDialog
+import app.kiosksync.feature.guide.presentation.GuideAction
+import app.kiosksync.feature.guide.presentation.GuideStep
+import app.kiosksync.feature.guide.presentation.GuideUiState
 
 /** Shows the role dialog or the current guide step over the application. */
 @Composable
