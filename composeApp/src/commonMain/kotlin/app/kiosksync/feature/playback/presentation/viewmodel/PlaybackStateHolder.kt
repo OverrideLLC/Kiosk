@@ -1,4 +1,4 @@
-package app.kiosksync.feature.playback.presentation
+package app.kiosksync.feature.playback.presentation.viewmodel
 
 import androidx.compose.ui.graphics.ImageBitmap
 import app.kiosksync.core.AppLogger
@@ -7,6 +7,7 @@ import app.kiosksync.feature.playlist.domain.PlaylistItem
 import app.kiosksync.feature.playlist.domain.PlaylistRepository
 import app.kiosksync.feature.playback.domain.ReceiverStatusTracker
 import app.kiosksync.feature.media.domain.MediaRepository
+import app.kiosksync.feature.playback.presentation.state.PlaybackUiState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -24,14 +25,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
-data class PlaybackUiState(
-    val playlist: Playlist? = null,
-    val currentIndex: Int = 0,
-    val currentItem: PlaylistItem? = null,
-    val currentBitmap: ImageBitmap? = null,
-    val hasItems: Boolean = false
-)
 
 private data class PlaybackRestartRequest(
     val id: Long,
@@ -78,7 +71,6 @@ class PlaybackStateHolder(
                     }
                     .collect { playlist ->
                         activePlaylist.value = playlist
-                        _uiState.update { it.copy(playlist = playlist) }
                     }
             }
         }
@@ -136,7 +128,6 @@ class PlaybackStateHolder(
                     playlistRepository.loadReceiverPlaylist()
                 }
                 activePlaylist.value = loaded
-                _uiState.update { it.copy(playlist = loaded) }
                 logger.info("Playlist reloaded: ${loaded?.items?.size ?: 0} items")
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -148,7 +139,6 @@ class PlaybackStateHolder(
 
     fun updatePlaylist(newPlaylist: Playlist) {
         activePlaylist.value = newPlaylist
-        _uiState.update { it.copy(playlist = newPlaylist) }
         statusTracker?.update(
             playlistVersion = newPlaylist.version,
             mediaId = _uiState.value.currentItem?.mediaId,
@@ -165,10 +155,8 @@ class PlaybackStateHolder(
             if (playlist == null || playlist.items.isEmpty()) {
                 _uiState.update {
                     it.copy(
-                        playlist = null,
                         currentItem = null,
                         currentBitmap = null,
-                        hasItems = false
                     )
                 }
                 statusTracker?.update(playlistVersion = 0, mediaId = null, fileName = null)
@@ -214,11 +202,8 @@ class PlaybackStateHolder(
             if (loadedBitmap != null && validItem != null) {
                 _uiState.update {
                     it.copy(
-                        playlist = playlist,
-                        currentIndex = index,
                         currentItem = validItem,
                         currentBitmap = loadedBitmap,
-                        hasItems = true
                     )
                 }
                 statusTracker?.update(
@@ -242,10 +227,8 @@ class PlaybackStateHolder(
                 // All items in playlist were unreadable or damaged
                 _uiState.update {
                     it.copy(
-                        playlist = playlist,
                         currentItem = null,
                         currentBitmap = null,
-                        hasItems = false
                     )
                 }
                 statusTracker?.update(playlistVersion = playlist.version, mediaId = null, fileName = null)

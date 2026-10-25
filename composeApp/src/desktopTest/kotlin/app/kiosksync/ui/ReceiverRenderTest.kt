@@ -16,6 +16,7 @@ import app.kiosksync.feature.kiosk.presentation.KioskUnlockOverlay
 import app.kiosksync.feature.pairing.presentation.PairingCodeScreen
 import app.kiosksync.feature.pairing.presentation.PairingUiState
 import app.kiosksync.feature.pairing.domain.PairingManager
+import app.kiosksync.feature.receiver.presentation.WaitingForPasswordScreen
 import java.io.File
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test

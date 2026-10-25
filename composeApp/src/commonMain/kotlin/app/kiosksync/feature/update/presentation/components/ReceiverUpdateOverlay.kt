@@ -1,4 +1,4 @@
-package app.kiosksync.feature.update.presentation
+package app.kiosksync.feature.update.presentation.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -29,7 +29,7 @@ import app.kiosksync.core.ui.components.AppLoadingIndicator
 import app.kiosksync.core.ui.theme.KioskShape
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
-import app.kiosksync.feature.update.domain.ReceiverUpdateUi
+import app.kiosksync.feature.update.presentation.state.ReceiverUpdateUiState
 
 /**
  * Update prompt shown inside the receiver's fullscreen window. Keeping it in
@@ -37,7 +37,7 @@ import app.kiosksync.feature.update.domain.ReceiverUpdateUi
  */
 @Composable
 fun ReceiverUpdateOverlay(
-    state: ReceiverUpdateUi,
+    state: ReceiverUpdateUiState,
     onUpdate: () -> Unit,
     onDecline: () -> Unit,
     onDismissError: () -> Unit,
@@ -104,9 +104,9 @@ fun ReceiverUpdateOverlay(
                         textAlign = TextAlign.Center,
                     )
                 } else {
-                    if (state.error != null) {
+                    if (state.errorMessage != null) {
                         Text(
-                            text = state.error,
+                            text = state.errorMessage,
                             style = MaterialTheme.typography.bodyMedium,
                             color = colors.error,
                             textAlign = TextAlign.Center,

@@ -28,8 +28,8 @@ class FileReceiverUpdateManagerTest {
             val result = manager.stagePackage("1.1.0", Sha256.hex(bytes), bytes)
 
             assertFalse(result.getOrThrow())
-            assertEquals("1.1.0", manager.uiState.value.version)
-            assertFalse(manager.uiState.value.forced)
+            assertEquals("1.1.0", manager.state.value.version)
+            assertFalse(manager.state.value.forced)
             assertTrue(File(dataDir, "updates/staged-1.1.0/app/app.jar").isFile)
         }
     }
@@ -43,7 +43,7 @@ class FileReceiverUpdateManagerTest {
             val forced = manager.stagePackage("2.0.0", Sha256.hex(bytes), bytes).getOrThrow()
 
             assertTrue(forced)
-            assertTrue(manager.uiState.value.forced)
+            assertTrue(manager.state.value.forced)
         }
     }
 
@@ -56,7 +56,7 @@ class FileReceiverUpdateManagerTest {
             assertTrue(
                 manager.stagePackage("1.0.0", Sha256.hex(bytes), bytes).isFailure
             )
-            assertNull(manager.uiState.value.version)
+            assertNull(manager.state.value.version)
         }
     }
 
@@ -117,7 +117,7 @@ class FileReceiverUpdateManagerTest {
 
             manager.declineUpdate()
 
-            assertNull(manager.uiState.value.version)
+            assertNull(manager.state.value.version)
             assertEquals("1.1.0", manager.skippedVersion)
             assertTrue(File(dataDir, "skipped-update.txt").isFile)
 
@@ -151,7 +151,7 @@ class FileReceiverUpdateManagerTest {
             ).getOrThrow()
 
             assertTrue(forced)
-            assertTrue(receiver.uiState.value.forced)
+            assertTrue(receiver.state.value.forced)
             assertTrue(
                 File(dataDir, "updates/staged-${update.version}/app/app.jar").isFile
             )

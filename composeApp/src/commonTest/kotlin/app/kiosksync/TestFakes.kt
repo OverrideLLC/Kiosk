@@ -20,7 +20,7 @@ import app.kiosksync.feature.media.domain.MediaImportResult
 import app.kiosksync.feature.media.domain.MediaRepository
 import app.kiosksync.feature.receiver.domain.ReceiverDataResetter
 import app.kiosksync.feature.update.domain.ReceiverUpdateManager
-import app.kiosksync.feature.update.domain.ReceiverUpdateUi
+import app.kiosksync.feature.update.domain.ReceiverUpdateState
 import app.kiosksync.feature.media.domain.StoredMedia
 import app.kiosksync.feature.update.domain.UpdatePackage
 import app.kiosksync.feature.update.domain.UpdatePackageProvider
@@ -148,8 +148,8 @@ class FakeRepositories(
 }
 
 class FakeReceiverUpdateManager : ReceiverUpdateManager {
-    private val state = MutableStateFlow(ReceiverUpdateUi())
-    override val uiState: StateFlow<ReceiverUpdateUi> = state.asStateFlow()
+    private val mutableState = MutableStateFlow(ReceiverUpdateState())
+    override val state: StateFlow<ReceiverUpdateState> = mutableState.asStateFlow()
     override var skippedVersion: String? = null
 
     var stagedVersion: String? = null
@@ -166,7 +166,7 @@ class FakeReceiverUpdateManager : ReceiverUpdateManager {
         stagedVersion = version
         stagedBytes = bytes
         return stageResult.onSuccess { forced ->
-            state.value = ReceiverUpdateUi(
+            mutableState.value = ReceiverUpdateState(
                 version = version,
                 forced = forced
             )
@@ -175,18 +175,18 @@ class FakeReceiverUpdateManager : ReceiverUpdateManager {
 
     override fun acceptUpdate(): Boolean {
         if (acceptResult) {
-            state.value = state.value.copy(applying = true)
+            mutableState.value = mutableState.value.copy(applying = true)
         }
         return acceptResult
     }
 
     override fun declineUpdate() {
         declineCount++
-        state.value = ReceiverUpdateUi()
+        mutableState.value = ReceiverUpdateState()
     }
 
     override fun dismissError() {
-        state.value = state.value.copy(error = null)
+        mutableState.value = mutableState.value.copy(error = null)
     }
 }
 

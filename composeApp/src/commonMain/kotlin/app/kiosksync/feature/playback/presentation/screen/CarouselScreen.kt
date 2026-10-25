@@ -1,4 +1,4 @@
-package app.kiosksync.feature.playback.presentation
+package app.kiosksync.feature.playback.presentation.screen
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Image
@@ -17,6 +17,7 @@ import app.kiosksync.core.ui.theme.KioskDisplayType
 import app.kiosksync.core.ui.theme.KioskScreenColors
 import app.kiosksync.core.ui.theme.Motion
 import app.kiosksync.core.ui.theme.Space
+import app.kiosksync.feature.playback.presentation.state.PlaybackUiState
 
 private data class DisplayedImage(
     val contentKey: String,

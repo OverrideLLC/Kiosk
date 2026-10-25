@@ -13,7 +13,8 @@ import app.kiosksync.core.UpdateUrgency
 import app.kiosksync.core.isValidAppVersion
 import app.kiosksync.data.security.Sha256
 import app.kiosksync.feature.update.domain.ReceiverUpdateManager
-import app.kiosksync.feature.update.domain.ReceiverUpdateUi
+import app.kiosksync.feature.update.domain.ReceiverUpdateError
+import app.kiosksync.feature.update.domain.ReceiverUpdateState
 import java.io.File
 import java.util.zip.ZipFile
 import kotlinx.coroutines.Dispatchers
@@ -46,8 +47,8 @@ class FileReceiverUpdateManager(
     private val skippedFile = File(dataDir, "skipped-update.txt")
     private val restartMarker = File(dataDir, "update-restart.marker")
 
-    private val _uiState = MutableStateFlow(ReceiverUpdateUi(currentVersion = currentVersion))
-    override val uiState: StateFlow<ReceiverUpdateUi> = _uiState.asStateFlow()
+    private val _state = MutableStateFlow(ReceiverUpdateState(currentVersion = currentVersion))
+    override val state: StateFlow<ReceiverUpdateState> = _state.asStateFlow()
 
     @Volatile
     private var skipped: String? = loadSkippedVersion()
@@ -106,7 +107,7 @@ class FileReceiverUpdateManager(
                 pendingStageDir = stageRoot
                 pendingVersion = version
                 pendingForced = plan.urgency == UpdateUrgency.FORCED
-                _uiState.value = ReceiverUpdateUi(
+                _state.value = ReceiverUpdateState(
                     version = version,
                     currentVersion = currentVersion,
                     forced = pendingForced
@@ -127,7 +128,7 @@ class FileReceiverUpdateManager(
     }
 
     override fun acceptUpdate(): Boolean {
-        val state = _uiState.value
+        val state = _state.value
         val version = state.version ?: return false
         if (state.applying) return false
 
@@ -137,7 +138,7 @@ class FileReceiverUpdateManager(
             ?.takeIf { it.isFile }
         if (stageRoot == null || installDir == null || executable == null) {
             logger.warn("Cannot apply update $version: packaged installation not found")
-            _uiState.update { it.copy(error = Strings.UPDATE_NOT_SUPPORTED) }
+            _state.update { it.copy(error = ReceiverUpdateError.INSTALLATION_NOT_SUPPORTED) }
             return false
         }
 
@@ -173,7 +174,7 @@ class FileReceiverUpdateManager(
                 .directory(dataDir)
                 .start()
 
-            _uiState.update { it.copy(applying = true, error = null) }
+            _state.update { it.copy(applying = true, error = null) }
             logger.info(
                 "Update helper started for $version " +
                     "(powershell pid=${process.pid()}, app pid=${ProcessHandle.current().pid()})"
@@ -182,13 +183,13 @@ class FileReceiverUpdateManager(
         } catch (error: Exception) {
             logger.error("Could not start the update helper", error)
             runCatching { restartMarker.delete() }
-            _uiState.update { it.copy(error = Strings.UPDATE_INSTALL_ERROR) }
+            _state.update { it.copy(error = ReceiverUpdateError.INSTALL_FAILED) }
             false
         }
     }
 
     override fun declineUpdate() {
-        val state = _uiState.value
+        val state = _state.value
         val version = state.version ?: return
         if (state.forced) return
         skipped = version
@@ -198,12 +199,12 @@ class FileReceiverUpdateManager(
             logger.warn("Could not save the skipped update version", it)
         }
         deleteStagedFiles()
-        _uiState.value = ReceiverUpdateUi(currentVersion = currentVersion)
+        _state.value = ReceiverUpdateState(currentVersion = currentVersion)
         logger.info("User skipped optional update $version")
     }
 
     override fun dismissError() {
-        _uiState.update { if (it.error != null) it.copy(error = null) else it }
+        _state.update { if (it.error != null) it.copy(error = null) else it }
     }
 
     private fun extractPackage(

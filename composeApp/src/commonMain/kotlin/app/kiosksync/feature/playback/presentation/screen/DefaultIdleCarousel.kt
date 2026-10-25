@@ -1,4 +1,4 @@
-package app.kiosksync.feature.playback.presentation
+package app.kiosksync.feature.playback.presentation.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

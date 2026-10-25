@@ -12,8 +12,8 @@ import app.kiosksync.NoOpLogger
 import app.kiosksync.core.AppRole
 import app.kiosksync.core.AppTheme
 import app.kiosksync.core.ui.theme.KioskTheme
-import app.kiosksync.feature.playback.presentation.CarouselScreen
-import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
+import app.kiosksync.feature.playback.presentation.screen.CarouselScreen
+import app.kiosksync.feature.playback.presentation.viewmodel.PlaybackStateHolder
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.domain.PlaylistItem
 import app.kiosksync.feature.role.presentation.RoleSelectionScreen

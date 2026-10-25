@@ -1,11 +1,12 @@
 package app.kiosksync.ui
 
 import androidx.compose.runtime.Composable
+import app.kiosksync.feature.receiver.presentation.WaitingForPasswordScreen
 import app.kiosksync.feature.pairing.presentation.PairingAction
 import app.kiosksync.feature.pairing.presentation.PairingCodeScreen
-import app.kiosksync.feature.playback.presentation.CarouselScreen
-import app.kiosksync.feature.playback.presentation.PlaybackUiState
 import app.kiosksync.feature.pairing.presentation.PairingUiState
+import app.kiosksync.feature.playback.presentation.screen.CarouselScreen
+import app.kiosksync.feature.playback.presentation.state.PlaybackUiState
 
 @Composable
 fun ReceiverHomeScreen(

@@ -38,7 +38,7 @@ import app.kiosksync.feature.kiosk.presentation.KioskViewModel
 import app.kiosksync.feature.pairing.presentation.PairingAction
 import app.kiosksync.feature.pairing.presentation.PairingEffect
 import app.kiosksync.feature.pairing.presentation.PairingViewModel
-import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
+import app.kiosksync.feature.playback.presentation.viewmodel.PlaybackStateHolder
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorAction
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorDialogs
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorEffect
@@ -49,7 +49,10 @@ import app.kiosksync.feature.role.presentation.RoleAction
 import app.kiosksync.feature.role.presentation.RoleEffect
 import app.kiosksync.feature.role.presentation.RoleSelectionScreen
 import app.kiosksync.feature.role.presentation.RoleViewModel
-import app.kiosksync.feature.update.presentation.ReceiverUpdateOverlay
+import app.kiosksync.feature.update.presentation.actions.ReceiverUpdateAction
+import app.kiosksync.feature.update.presentation.actions.ReceiverUpdateEffect
+import app.kiosksync.feature.update.presentation.components.ReceiverUpdateOverlay
+import app.kiosksync.feature.update.presentation.viewmodel.ReceiverUpdateViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -58,6 +61,7 @@ import kotlinx.coroutines.withContext
 fun App(
     container: AppContainer,
     kioskViewModel: KioskViewModel,
+    receiverUpdateViewModel: ReceiverUpdateViewModel,
     onExitRequested: () -> Unit = {},
     registerEscHandler: ((() -> Unit)?) -> Unit = {},
     registerUnpairHandler: ((() -> Unit)?) -> Unit = {}
@@ -238,7 +242,7 @@ fun App(
     val pairingState by pairingViewModel.state.collectAsState()
     val lockState by kioskViewModel.state.collectAsState()
     val receiverPlaybackState by playbackStateHolder.uiState.collectAsState()
-    val receiverUpdateState by container.receiverUpdateManager.uiState.collectAsState()
+    val receiverUpdateState by receiverUpdateViewModel.state.collectAsState()
     var showReceiverOptions by remember { mutableStateOf(false) }
     var showUnpairConfirm by remember { mutableStateOf(false) }
     var showChangeRoleConfirm by remember { mutableStateOf(false) }
@@ -278,6 +282,14 @@ fun App(
                 PairingEffect.Unpaired -> {
                     showUnpairConfirm = false
                 }
+            }
+        }
+    }
+
+    LaunchedEffect(receiverUpdateViewModel) {
+        receiverUpdateViewModel.effects.collect { effect ->
+            when (effect) {
+                ReceiverUpdateEffect.ExitRequested -> onExitRequested()
             }
         }
     }
@@ -494,14 +506,14 @@ fun App(
                     ReceiverUpdateOverlay(
                         state = receiverUpdateState,
                         onUpdate = {
-                            if (container.receiverUpdateManager.acceptUpdate()) {
-                                onExitRequested()
-                            }
+                            receiverUpdateViewModel.onAction(ReceiverUpdateAction.Accept)
                         },
-                        onDecline = { container.receiverUpdateManager.declineUpdate() },
+                        onDecline = {
+                            receiverUpdateViewModel.onAction(ReceiverUpdateAction.Decline)
+                        },
                         onDismissError = {
-                            container.receiverUpdateManager.dismissError()
-                        }
+                            receiverUpdateViewModel.onAction(ReceiverUpdateAction.DismissError)
+                        },
                     )
                 }
             }

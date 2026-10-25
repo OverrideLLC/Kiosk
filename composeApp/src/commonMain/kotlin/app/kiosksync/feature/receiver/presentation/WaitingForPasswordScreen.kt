@@ -1,4 +1,4 @@
-package app.kiosksync.ui
+package app.kiosksync.feature.receiver.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

@@ -27,7 +27,8 @@ import app.kiosksync.feature.kiosk.presentation.KioskAction
 import app.kiosksync.feature.kiosk.presentation.KioskUiState
 import app.kiosksync.feature.kiosk.presentation.KioskViewModel
 import app.kiosksync.feature.playlist.domain.Playlist
-import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
+import app.kiosksync.feature.playback.presentation.viewmodel.PlaybackStateHolder
+import app.kiosksync.feature.update.presentation.viewmodel.ReceiverUpdateViewModel
 import app.kiosksync.ui.App
 import app.kiosksync.ui.ProjectionScreen
 import java.awt.Cursor
@@ -44,6 +45,9 @@ internal fun DesktopWindowHost(
     val scope = rememberCoroutineScope()
     val kioskViewModel = remember(container) {
         KioskViewModel(container.kioskLockManager, scope)
+    }
+    val receiverUpdateViewModel = remember(container, scope) {
+        ReceiverUpdateViewModel(container.receiverUpdateManager, scope)
     }
     val activeRole by container.activeRole.collectAsState()
     val appFullscreen = !args.windowed
@@ -64,7 +68,7 @@ internal fun DesktopWindowHost(
     )
     val projectionPlaylist by container.projectionController.playlist.collectAsState()
     val lockState by kioskViewModel.state.collectAsState()
-    val receiverUpdateState by container.receiverUpdateManager.uiState.collectAsState()
+    val receiverUpdateState by receiverUpdateViewModel.state.collectAsState()
     val updatePromptVisible = isReceiverWindow && receiverUpdateState.isVisible
 
     LaunchedEffect(
@@ -153,6 +157,7 @@ internal fun DesktopWindowHost(
         App(
             container = container,
             kioskViewModel = kioskViewModel,
+            receiverUpdateViewModel = receiverUpdateViewModel,
             onExitRequested = {
                 container.shutdown()
                 onExit()
