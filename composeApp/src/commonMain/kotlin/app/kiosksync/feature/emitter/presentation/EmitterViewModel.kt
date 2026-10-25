@@ -13,9 +13,6 @@ import app.kiosksync.feature.emitter.presentation.coordinators.EmitterDeliveryCo
 import app.kiosksync.feature.emitter.presentation.coordinators.EmitterManualIpCoordinator
 import app.kiosksync.feature.emitter.presentation.coordinators.EmitterPairingCoordinator
 import app.kiosksync.feature.emitter.presentation.coordinators.EmitterSecurityCoordinator
-import app.kiosksync.feature.emitter.presentation.EmitterDeviceUi
-import app.kiosksync.feature.emitter.presentation.EmitterPendingAction
-import app.kiosksync.feature.emitter.presentation.EmitterUiState
 import app.kiosksync.feature.kiosk.domain.KioskLockConfigurationUseCases
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.playlist.domain.Playlist
@@ -36,19 +33,18 @@ import kotlinx.coroutines.launch
 /** Holds Controller presentation state and delegates operational work to the Emitter service. */
 class EmitterViewModel(
     private val service: EmitterService,
-    private val kioskLockConfigurationUseCases: KioskLockConfigurationUseCases,
+    kioskLockConfigurationUseCases: KioskLockConfigurationUseCases,
     private val logger: AppLogger,
     private val emitterId: String,
     private val emitterName: String,
     private val scope: CoroutineScope,
     private val kioskLockManager: KioskLockManager,
     private val projectionController: ProjectionService,
-    private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
     private val _uiState = MutableStateFlow(EmitterUiState())
     val state: StateFlow<EmitterUiState> = _uiState.asStateFlow()
 
-    private var serviceState = EmitterServiceState()
     private val selectedIds = mutableSetOf<String>()
     private val jobs = mutableListOf<Job>()
     private var started = false
@@ -89,12 +85,12 @@ class EmitterViewModel(
         scope = scope,
         onPaired = { device ->
             selectedIds += device.deviceId
-            rebuild()
+            rebuild(service.state.value)
         },
         onUnpaired = { deviceId ->
             selectedIds -= deviceId
             _uiState.update { it.copy(syncByDevice = it.syncByDevice - deviceId) }
-            rebuild()
+            rebuild(service.state.value)
         },
         openPairLockDialog = { deviceId ->
             securityCoordinator.openPasswordDialog(
@@ -233,10 +229,9 @@ class EmitterViewModel(
         service.start(emitterId, emitterName)
         jobs += scope.launch {
             service.state.collect { newState ->
-                serviceState = newState
                 val pairedIds = newState.devices.filter { it.pairedToThisEmitter }.mapTo(mutableSetOf()) { it.deviceId }
                 selectedIds.retainAll(pairedIds)
-                rebuild()
+                rebuild(newState)
             }
         }
         jobs += scope.launch {
@@ -272,7 +267,7 @@ class EmitterViewModel(
         val device = _uiState.value.devices.firstOrNull { it.deviceId == deviceId } ?: return
         if (!device.isPairedToThisEmitter) return
         if (!selectedIds.add(deviceId)) selectedIds.remove(deviceId)
-        rebuild()
+        rebuild(service.state.value)
     }
 
     private fun sendToSelected(playlist: Playlist) {
@@ -287,16 +282,8 @@ class EmitterViewModel(
             return
         }
 
-        scope.launch {
-            service.loadKioskLock().fold(
-                onSuccess = { lock ->
-                    if (lock == null) securityCoordinator.openPasswordDialog(EmitterPendingAction.SEND, playlist)
-                    else deliveryCoordinator.send(playlist, lock)
-                },
-                onFailure = {
-                    _uiState.update { it.copy(statusMessage = Strings.SECURITY_STORAGE_ERROR, statusIsError = true) }
-                },
-            )
+        withKioskLock(EmitterPendingAction.SEND, playlist) { lock ->
+            deliveryCoordinator.send(playlist, lock)
         }
     }
 
@@ -307,11 +294,21 @@ class EmitterViewModel(
             return
         }
 
+        withKioskLock(EmitterPendingAction.PROJECT, playlist) { lock ->
+            startProjection(playlist, lock)
+        }
+    }
+
+    private fun withKioskLock(
+        action: EmitterPendingAction,
+        playlist: Playlist,
+        onLockAvailable: (KioskLockConfig) -> Unit,
+    ) {
         scope.launch {
             service.loadKioskLock().fold(
                 onSuccess = { lock ->
-                    if (lock == null) securityCoordinator.openPasswordDialog(EmitterPendingAction.PROJECT, playlist)
-                    else startProjection(playlist, lock)
+                    if (lock == null) securityCoordinator.openPasswordDialog(action, playlist)
+                    else onLockAvailable(lock)
                 },
                 onFailure = {
                     _uiState.update { it.copy(statusMessage = Strings.SECURITY_STORAGE_ERROR, statusIsError = true) }
@@ -327,13 +324,13 @@ class EmitterViewModel(
         logger.info("Projection started with playlist '${playlist.name}'")
     }
 
-    private fun rebuild() {
-        val devices = serviceState.devices.map { it.toUiDevice() }.sortedBy { it.deviceName.lowercase() }
+    private fun rebuild(newState: EmitterServiceState) {
+        val devices = newState.devices.map { it.toUiDevice() }.sortedBy { it.deviceName.lowercase() }
         _uiState.update {
             it.copy(
                 devices = devices,
-                isSearching = serviceState.isSearching,
-                updateByDevice = serviceState.updateByDevice,
+                isSearching = newState.isSearching,
+                updateByDevice = newState.updateByDevice,
             )
         }
     }
