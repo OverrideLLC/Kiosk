@@ -60,7 +60,7 @@ internal fun SecurityDialog(
     onChangePassword: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val colors = KioskColors.scheme
+    val colors = MaterialTheme.colorScheme
     val extra = KioskColors.extra
     var tab by remember { mutableStateOf(0) }
 
@@ -344,7 +344,7 @@ internal fun SectionTitle(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.titleMedium,
-        color = KioskColors.scheme.onSurface,
+        color = MaterialTheme.colorScheme.onSurface,
     )
 }
 
@@ -352,6 +352,6 @@ internal fun SectionTitle(text: String) {
 internal fun SectionDivider() {
     HorizontalDivider(
         thickness = Sizes.securityDivider,
-        color = KioskColors.scheme.outlineVariant,
+        color = MaterialTheme.colorScheme.outlineVariant,
     )
 }

@@ -36,6 +36,9 @@ import app.kiosksync.core.ui.components.AppTextField
 import app.kiosksync.core.ui.theme.KioskColors
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
+import app.kiosksync.feature.emitter.presentation.EmitterAction
+import app.kiosksync.feature.emitter.presentation.EmitterScreenAction
+import app.kiosksync.feature.emitter.presentation.EmitterUiState
 
 @Composable
 internal fun SettingsDialog(
@@ -46,7 +49,7 @@ internal fun SettingsDialog(
     onOpenGuide: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val colors = KioskColors.scheme
+    val colors = MaterialTheme.colorScheme
 
     AppDialog(
         title = Strings.SETTINGS_TITLE,
@@ -145,7 +148,7 @@ internal fun PairScreenDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val colors = KioskColors.scheme
+    val colors = MaterialTheme.colorScheme
 
     AppDialog(
         title = "${Strings.PAIR_DIALOG_TITLE}: ${device.deviceName}",
@@ -200,7 +203,7 @@ internal fun ManualIpDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val colors = KioskColors.scheme
+    val colors = MaterialTheme.colorScheme
 
     AppDialog(
         title = Strings.MANUAL_IP_DIALOG_TITLE,
@@ -251,7 +254,7 @@ internal fun KioskPasswordDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val colors = KioskColors.scheme
+    val colors = MaterialTheme.colorScheme
     val extra = KioskColors.extra
     val title = when (dialog.action) {
         EmitterPendingAction.CONFIGURE -> Strings.KIOSK_PASSWORD_CHANGE_TITLE
@@ -342,4 +345,124 @@ internal fun KioskPasswordDialog(
             )
         },
     )
+}
+
+@Composable
+fun EmitterDialogs(
+    state: EmitterUiState,
+    onAction: (EmitterScreenAction) -> Unit,
+) {
+    val emit: (EmitterAction) -> Unit = { onAction(EmitterScreenAction.Emitter(it)) }
+
+    state.passwordDialog?.let { dialog ->
+        KioskPasswordDialog(
+            dialog = dialog,
+            onDraftChange = { emit(EmitterAction.UpdatePasswordDraft(it)) },
+            onConfirmDraftChange = { emit(EmitterAction.UpdatePasswordConfirmDraft(it)) },
+            onConfirm = { emit(EmitterAction.ConfirmPassword) },
+            onDismiss = { emit(EmitterAction.DismissPasswordDialog) },
+        )
+    }
+
+    state.securityDialog?.let { dialog ->
+        SecurityDialog(
+            dialog = dialog,
+            hasPassword = state.hasKioskPassword,
+            onAddKey = { emit(EmitterAction.AppendUnlockKey(it)) },
+            onRemoveLast = { emit(EmitterAction.RemoveLastUnlockKey) },
+            onResetSequence = { emit(EmitterAction.ResetUnlockSequence) },
+            onSaveSequence = { emit(EmitterAction.SaveUnlockSequence) },
+            onToggleRecovery = { emit(EmitterAction.ToggleRecoveryEditor) },
+            onAcceptedChange = { emit(EmitterAction.SetRecoveryAccepted(it)) },
+            onRecoveryChange = { emit(EmitterAction.UpdateRecoveryDraft(it)) },
+            onRecoveryConfirmChange = { emit(EmitterAction.UpdateRecoveryConfirmDraft(it)) },
+            onSaveRecovery = { emit(EmitterAction.SaveRecoveryPhrase) },
+            onResetRecovery = { emit(EmitterAction.ResetRecoveryPhrase) },
+            onChangePassword = { emit(EmitterAction.OpenChangePasswordDialog) },
+            onDismiss = { emit(EmitterAction.DismissSecurityDialog) },
+        )
+    }
+
+    if (state.isRoleResetConfirmationOpen) {
+        AppDialog(
+            title = Strings.CHANGE_ROLE,
+            icon = AppIcon.SWAP_HORIZ,
+            onDismissRequest = { emit(EmitterAction.DismissRoleReset) },
+            content = {
+                Text(
+                    text = Strings.CHANGE_ROLE_CONFIRM,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            },
+            actions = {
+                AppButton(
+                    text = Strings.CANCEL_BUTTON,
+                    onClick = { emit(EmitterAction.DismissRoleReset) },
+                    variant = AppButtonVariant.TEXT,
+                    size = AppButtonSize.SMALL,
+                )
+                AppButton(
+                    text = Strings.CHANGE_ROLE,
+                    onClick = { onAction(EmitterScreenAction.RoleResetConfirmed) },
+                    variant = AppButtonVariant.TONAL,
+                    size = AppButtonSize.SMALL,
+                    icon = AppIcon.SWAP_HORIZ,
+                )
+            },
+        )
+    }
+
+    state.pairingDevice?.let { device ->
+        PairScreenDialog(
+            device = device,
+            code = state.pairingCode,
+            error = state.pairingError,
+            isPairing = state.isPairing,
+            onCodeChange = { emit(EmitterAction.UpdatePairingCode(it)) },
+            onConfirm = { emit(EmitterAction.ConfirmPair) },
+            onDismiss = { emit(EmitterAction.DismissPairDialog) },
+        )
+    }
+
+    state.unpairDevice?.let { device ->
+        AppDialog(
+            title = Strings.UNPAIR_DIALOG_TITLE,
+            icon = AppIcon.LINK,
+            onDismissRequest = { emit(EmitterAction.DismissUnpairDialog) },
+            content = {
+                Text(
+                    text = "${Strings.UNPAIR_DIALOG_CONFIRM}\n\n${device.deviceName}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            },
+            actions = {
+                AppButton(
+                    text = Strings.CANCEL_BUTTON,
+                    onClick = { emit(EmitterAction.DismissUnpairDialog) },
+                    variant = AppButtonVariant.TEXT,
+                    size = AppButtonSize.SMALL,
+                )
+                AppButton(
+                    text = Strings.UNPAIR_BUTTON,
+                    onClick = { emit(EmitterAction.ConfirmUnpair) },
+                    variant = AppButtonVariant.DANGER,
+                    size = AppButtonSize.SMALL,
+                    icon = AppIcon.LINK,
+                )
+            },
+        )
+    }
+
+    if (state.showManualIpDialog) {
+        ManualIpDialog(
+            value = state.manualIpInput,
+            error = state.manualIpError,
+            isLoading = state.isManualIpLoading,
+            onValueChange = { emit(EmitterAction.UpdateManualIp(it)) },
+            onConfirm = { emit(EmitterAction.ConfirmManualIp) },
+            onDismiss = { emit(EmitterAction.DismissManualIpDialog) },
+        )
+    }
 }

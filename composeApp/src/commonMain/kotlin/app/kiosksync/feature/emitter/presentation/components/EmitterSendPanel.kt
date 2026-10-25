@@ -15,31 +15,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
+import app.kiosksync.feature.emitter.presentation.EmitterAction
+import app.kiosksync.feature.emitter.presentation.EmitterUiState
 import app.kiosksync.core.Strings
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppButtonSize
 import app.kiosksync.core.ui.components.AppButtonVariant
 import app.kiosksync.core.ui.components.AppIcon
-import app.kiosksync.core.ui.theme.KioskColors
 import app.kiosksync.core.ui.theme.KioskShape
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
 
 @Composable
 internal fun SendPanel(
-    hint: String,
-    isSending: Boolean,
-    isSyncing: Boolean,
-    canSend: Boolean,
-    canProject: Boolean,
-    canSync: Boolean,
-    sendDisabledReason: String?,
-    syncDisabledReason: String?,
-    onSend: () -> Unit,
-    onProject: () -> Unit,
-    onSync: () -> Unit,
+    state: EmitterUiState,
+    onAction: (EmitterAction) -> Unit,
 ) {
-    val colors = KioskColors.scheme
+    val colors = MaterialTheme.colorScheme
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -61,7 +53,7 @@ internal fun SendPanel(
                     color = colors.onSurface,
                 )
                 Text(
-                    text = hint,
+                    text = state.sendHint,
                     style = MaterialTheme.typography.bodySmall,
                     color = colors.onSurfaceVariant,
                     maxLines = 2,
@@ -83,34 +75,34 @@ internal fun SendPanel(
             Spacer(Modifier.width(Space.sm))
             AppButton(
                 text = Strings.PROJECT_BUTTON,
-                onClick = onProject,
+                onClick = { onAction(EmitterAction.RequestProjection) },
                 variant = AppButtonVariant.OUTLINED,
                 size = AppButtonSize.MEDIUM,
                 icon = AppIcon.PRESENT_TO_ALL,
-                enabled = canProject,
-                disabledReason = if (canProject) null else Strings.PROJECT_NO_PLAYLIST,
+                enabled = state.canProject,
+                disabledReason = if (state.canProject) null else Strings.PROJECT_NO_PLAYLIST,
             )
             Spacer(Modifier.width(Space.xs))
             AppButton(
-                text = if (isSyncing) Strings.PLAYBACK_SYNCING else Strings.PLAYBACK_SYNC_BUTTON,
-                onClick = onSync,
+                text = if (state.isSyncing) Strings.PLAYBACK_SYNCING else Strings.PLAYBACK_SYNC_BUTTON,
+                onClick = { onAction(EmitterAction.SynchronizePlayback) },
                 variant = AppButtonVariant.TONAL,
                 size = AppButtonSize.MEDIUM,
                 icon = AppIcon.SYNC,
-                enabled = canSync,
-                loading = isSyncing,
-                disabledReason = syncDisabledReason,
+                enabled = state.canSync,
+                loading = state.isSyncing,
+                disabledReason = if (state.canSync) null else Strings.PLAYBACK_SYNC_NO_SCREENS,
             )
             Spacer(Modifier.width(Space.xs))
             AppButton(
-                text = if (isSending) Strings.SENDING else Strings.SEND_BUTTON,
-                onClick = onSend,
+                text = if (state.isSending) Strings.SENDING else Strings.SEND_BUTTON,
+                onClick = { onAction(EmitterAction.SendToSelected) },
                 variant = AppButtonVariant.FILLED,
                 size = AppButtonSize.MEDIUM,
                 icon = AppIcon.SEND,
-                enabled = canSend,
-                loading = isSending,
-                disabledReason = sendDisabledReason,
+                enabled = state.canSend,
+                loading = state.isSending,
+                disabledReason = if (state.canSend) null else state.sendHint,
             )
         }
     }

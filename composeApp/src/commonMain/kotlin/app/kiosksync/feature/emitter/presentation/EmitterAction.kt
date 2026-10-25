@@ -1,6 +1,5 @@
 package app.kiosksync.feature.emitter.presentation
 
-import app.kiosksync.feature.emitter.presentation.EmitterDeviceUi
 import app.kiosksync.feature.playlist.domain.Playlist
 
 sealed interface EmitterAction {
@@ -12,8 +11,15 @@ sealed interface EmitterAction {
     data class RequestUpdate(val deviceId: String) : EmitterAction
     data object OpenSecurityDialog : EmitterAction
     data object DismissStatusMessage : EmitterAction
-    data class SendToSelected(val playlist: Playlist) : EmitterAction
-    data class RequestProjection(val playlist: Playlist) : EmitterAction
+    data object OpenSettings : EmitterAction
+    data object DismissSettings : EmitterAction
+    data object RequestRoleReset : EmitterAction
+    data object DismissRoleReset : EmitterAction
+    data class SelectPanel(val panel: EmitterPanel) : EmitterAction
+    data class SetProjectionActive(val active: Boolean) : EmitterAction
+    data class PlaylistChanged(val playlist: Playlist) : EmitterAction
+    data object SendToSelected : EmitterAction
+    data object RequestProjection : EmitterAction
     data object SynchronizePlayback : EmitterAction
     data class UpdatePasswordDraft(val value: String) : EmitterAction
     data class UpdatePasswordConfirmDraft(val value: String) : EmitterAction
@@ -39,4 +45,11 @@ sealed interface EmitterAction {
     data class UpdateManualIp(val value: String) : EmitterAction
     data object ConfirmManualIp : EmitterAction
     data object DismissManualIpDialog : EmitterAction
+}
+
+/** Events routed by the application workspace rather than the feature ViewModel. */
+sealed interface EmitterScreenAction {
+    data class Emitter(val action: EmitterAction) : EmitterScreenAction
+    data object ExitRequested : EmitterScreenAction
+    data object RoleResetConfirmed : EmitterScreenAction
 }

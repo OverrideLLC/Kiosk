@@ -3,6 +3,7 @@ package app.kiosksync.feature.playlist
 import app.kiosksync.NoOpLogger
 import app.kiosksync.FakeRepositories
 import app.kiosksync.feature.playlist.domain.Playlist
+import app.kiosksync.feature.playlist.domain.PlaylistItem
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorAction
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorEffect
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorReducer
@@ -19,6 +20,26 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 
 class PlaylistEditorReducerTest {
+    @Test
+    fun removeItemDialogTargetLivesInPlaylistState() {
+        val state = PlaylistEditorUiState(
+            playlist = Playlist(
+                items = listOf(
+                    PlaylistItem("first", "one.png", "hash-1"),
+                    PlaylistItem("second", "two.png", "hash-2"),
+                ),
+            ),
+        )
+
+        val dialog = PlaylistEditorReducer.reduce(state, PlaylistEditorAction.RequestRemoveItem("second"))
+        assertEquals("second", dialog.removeItemId)
+        assertEquals(null, PlaylistEditorReducer.reduce(dialog, PlaylistEditorAction.DismissRemoveItem).removeItemId)
+        assertEquals(
+            null,
+            PlaylistEditorReducer.reduce(state, PlaylistEditorAction.RequestRemoveItem("missing")).removeItemId,
+        )
+    }
+
     @Test
     fun reducerHandlesDialogAndDeleteTransitions() {
         val onePlaylist = PlaylistEditorUiState(

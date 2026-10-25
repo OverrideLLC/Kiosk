@@ -22,11 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,16 +46,11 @@ import app.kiosksync.core.ui.components.AppMenuItem
 import app.kiosksync.core.ui.components.AppPanelHeader
 import app.kiosksync.core.ui.components.AppStepper
 import app.kiosksync.core.ui.components.AppTextField
-import app.kiosksync.core.ui.theme.KioskColors
 import app.kiosksync.core.ui.theme.KioskScreenColors
 import app.kiosksync.core.ui.theme.KioskShape
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
-import app.kiosksync.feature.playlist.presentation.PlaylistEditorAction
-import app.kiosksync.feature.playlist.presentation.PlaylistEditorStateHolder
-import app.kiosksync.feature.playlist.presentation.PlaylistEditorUiState
 import app.kiosksync.feature.playlist.domain.PlaylistItem
-import app.kiosksync.feature.media.domain.MediaRepository
 
 @Composable
 internal fun PlaylistItemRow(
@@ -68,15 +59,17 @@ internal fun PlaylistItemRow(
     lastIndex: Int,
     defaultDurationSec: Int,
     durationDraft: String?,
-    mediaRepository: MediaRepository,
+    thumbnail: ImageBitmap?,
+    thumbnailLoaded: Boolean,
+    onLoadThumbnail: () -> Unit,
     onDurationChange: (String) -> Unit,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    val colors = KioskColors.scheme
-    val bitmap by produceState<ImageBitmap?>(null, item.mediaId, item.fileName, mediaRepository) {
-        value = mediaRepository.loadBitmap(item.mediaId, item.fileName)
+    val colors = MaterialTheme.colorScheme
+    LaunchedEffect(item.mediaId, item.fileName, thumbnailLoaded) {
+        if (!thumbnailLoaded) onLoadThumbnail()
     }
 
     Row(
@@ -99,7 +92,7 @@ internal fun PlaylistItemRow(
                 .background(KioskScreenColors.background),
             contentAlignment = Alignment.Center,
         ) {
-            val loadedBitmap = bitmap
+            val loadedBitmap = thumbnail
             if (loadedBitmap != null) {
                 Image(
                     bitmap = loadedBitmap,

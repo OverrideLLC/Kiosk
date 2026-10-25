@@ -10,24 +10,20 @@ import app.kiosksync.core.ui.components.AppButtonVariant
 import app.kiosksync.core.ui.components.AppDialog
 import app.kiosksync.core.ui.components.AppIcon
 import app.kiosksync.core.ui.components.AppTextField
-import app.kiosksync.core.ui.theme.KioskColors
-import app.kiosksync.feature.playlist.domain.PlaylistItem
 
 @Composable
 fun PlaylistEditorDialogs(
-    stateHolder: PlaylistEditorStateHolder,
     state: PlaylistEditorUiState,
-    removeTarget: PlaylistItem?,
-    onDismissRemove: () -> Unit,
+    onAction: (PlaylistEditorAction) -> Unit,
 ) {
     state.nameDialogMode?.let { mode ->
         PlaylistNameDialog(
             mode = mode,
             draft = state.nameDraft,
             error = state.nameError,
-            onDraftChange = { stateHolder.dispatch(PlaylistEditorAction.UpdateNameDraft(it)) },
-            onConfirm = { stateHolder.dispatch(PlaylistEditorAction.ConfirmNameDialog) },
-            onDismiss = { stateHolder.dispatch(PlaylistEditorAction.DismissNameDialog) },
+            onDraftChange = { onAction(PlaylistEditorAction.UpdateNameDraft(it)) },
+            onConfirm = { onAction(PlaylistEditorAction.ConfirmNameDialog) },
+            onDismiss = { onAction(PlaylistEditorAction.DismissNameDialog) },
         )
     }
 
@@ -35,24 +31,24 @@ fun PlaylistEditorDialogs(
         AppDialog(
             title = Strings.PLAYLIST_DELETE_TITLE,
             icon = AppIcon.DELETE,
-            onDismissRequest = { stateHolder.dispatch(PlaylistEditorAction.DismissDeleteDialog) },
+            onDismissRequest = { onAction(PlaylistEditorAction.DismissDeleteDialog) },
             content = {
                 Text(
                     text = "${Strings.PLAYLIST_DELETE_CONFIRM}\n\n${state.playlist.name}",
                     style = MaterialTheme.typography.bodyLarge,
-                    color = KioskColors.scheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             },
             actions = {
                 AppButton(
                     text = Strings.CANCEL_BUTTON,
-                    onClick = { stateHolder.dispatch(PlaylistEditorAction.DismissDeleteDialog) },
+                    onClick = { onAction(PlaylistEditorAction.DismissDeleteDialog) },
                     variant = AppButtonVariant.TEXT,
                     size = AppButtonSize.SMALL,
                 )
                 AppButton(
                     text = Strings.PLAYLIST_DELETE,
-                    onClick = { stateHolder.dispatch(PlaylistEditorAction.ConfirmDeletePlaylist) },
+                    onClick = { onAction(PlaylistEditorAction.ConfirmDeletePlaylist) },
                     variant = AppButtonVariant.DANGER,
                     size = AppButtonSize.SMALL,
                     icon = AppIcon.DELETE,
@@ -61,38 +57,37 @@ fun PlaylistEditorDialogs(
         )
     }
 
-    removeTarget?.let { item ->
-        AppDialog(
-            title = Strings.REMOVE_ITEM_TITLE,
-            icon = AppIcon.DELETE,
-            onDismissRequest = onDismissRemove,
-            content = {
-                Text(
-                    text = "${Strings.REMOVE_ITEM_CONFIRM}\n\n${item.fileName}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = KioskColors.scheme.onSurfaceVariant,
-                )
-            },
-            actions = {
-                AppButton(
-                    text = Strings.CANCEL_BUTTON,
-                    onClick = onDismissRemove,
-                    variant = AppButtonVariant.TEXT,
-                    size = AppButtonSize.SMALL,
-                )
-                AppButton(
-                    text = Strings.REMOVE_ITEM,
-                    onClick = {
-                        val index = state.playlist.items.indexOfFirst { it.mediaId == item.mediaId }
-                        if (index >= 0) stateHolder.dispatch(PlaylistEditorAction.RemoveItem(index))
-                        onDismissRemove()
-                    },
-                    variant = AppButtonVariant.DANGER,
-                    size = AppButtonSize.SMALL,
-                    icon = AppIcon.DELETE,
-                )
-            },
-        )
+    state.removeItemId?.let { mediaId ->
+        val item = state.playlist.items.firstOrNull { it.mediaId == mediaId }
+        if (item != null) {
+            AppDialog(
+                title = Strings.REMOVE_ITEM_TITLE,
+                icon = AppIcon.DELETE,
+                onDismissRequest = { onAction(PlaylistEditorAction.DismissRemoveItem) },
+                content = {
+                    Text(
+                        text = "${Strings.REMOVE_ITEM_CONFIRM}\n\n${item.fileName}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
+                actions = {
+                    AppButton(
+                        text = Strings.CANCEL_BUTTON,
+                        onClick = { onAction(PlaylistEditorAction.DismissRemoveItem) },
+                        variant = AppButtonVariant.TEXT,
+                        size = AppButtonSize.SMALL,
+                    )
+                    AppButton(
+                        text = Strings.REMOVE_ITEM,
+                        onClick = { onAction(PlaylistEditorAction.ConfirmRemoveItem) },
+                        variant = AppButtonVariant.DANGER,
+                        size = AppButtonSize.SMALL,
+                        icon = AppIcon.DELETE,
+                    )
+                },
+            )
+        }
     }
 }
 

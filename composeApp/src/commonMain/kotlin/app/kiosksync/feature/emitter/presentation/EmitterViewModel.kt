@@ -1,10 +1,7 @@
 package app.kiosksync.feature.emitter.presentation
 
 import app.kiosksync.core.AppLogger
-import app.kiosksync.core.DEFAULT_UNLOCK_SEQUENCE
 import app.kiosksync.core.KioskLockConfig
-import app.kiosksync.core.MAX_RECOVERY_PHRASE_LENGTH
-import app.kiosksync.core.MAX_UNLOCK_SEQUENCE_LENGTH
 import app.kiosksync.core.Strings
 import app.kiosksync.feature.emitter.domain.EmitterService
 import app.kiosksync.feature.emitter.domain.EmitterServiceDevice
@@ -13,6 +10,9 @@ import app.kiosksync.feature.emitter.presentation.coordinators.EmitterDeliveryCo
 import app.kiosksync.feature.emitter.presentation.coordinators.EmitterManualIpCoordinator
 import app.kiosksync.feature.emitter.presentation.coordinators.EmitterPairingCoordinator
 import app.kiosksync.feature.emitter.presentation.coordinators.EmitterSecurityCoordinator
+import app.kiosksync.core.DEFAULT_UNLOCK_SEQUENCE
+import app.kiosksync.core.MAX_RECOVERY_PHRASE_LENGTH
+import app.kiosksync.core.MAX_UNLOCK_SEQUENCE_LENGTH
 import app.kiosksync.feature.kiosk.domain.KioskLockConfigurationUseCases
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.playlist.domain.Playlist
@@ -123,6 +123,13 @@ class EmitterViewModel(
             EmitterAction.DismissStatusMessage -> _uiState.update {
                 it.copy(statusMessage = null, statusIsError = false)
             }
+            EmitterAction.OpenSettings -> _uiState.update { it.copy(isSettingsOpen = true) }
+            EmitterAction.DismissSettings -> _uiState.update { it.copy(isSettingsOpen = false) }
+            EmitterAction.RequestRoleReset -> _uiState.update { it.copy(isRoleResetConfirmationOpen = true) }
+            EmitterAction.DismissRoleReset -> _uiState.update { it.copy(isRoleResetConfirmationOpen = false) }
+            is EmitterAction.SelectPanel -> _uiState.update { it.copy(selectedPanel = action.panel) }
+            is EmitterAction.SetProjectionActive -> _uiState.update { it.copy(isProjecting = action.active) }
+            is EmitterAction.PlaylistChanged -> _uiState.update { it.copy(playlist = action.playlist) }
             is EmitterAction.OpenPairDialog -> _uiState.update {
                 it.copy(pairingDevice = action.device, pairingCode = "", pairingError = null)
             }
@@ -208,8 +215,8 @@ class EmitterViewModel(
                 )
             }
 
-            is EmitterAction.SendToSelected -> sendToSelected(action.playlist)
-            is EmitterAction.RequestProjection -> requestProjection(action.playlist)
+            EmitterAction.SendToSelected -> sendToSelected(_uiState.value.playlist)
+            EmitterAction.RequestProjection -> requestProjection(_uiState.value.playlist)
             EmitterAction.SynchronizePlayback -> deliveryCoordinator.synchronizePlayback()
             EmitterAction.ConfirmPassword -> securityCoordinator.confirmPassword()
             EmitterAction.SaveUnlockSequence -> securityCoordinator.saveUnlockSequence()

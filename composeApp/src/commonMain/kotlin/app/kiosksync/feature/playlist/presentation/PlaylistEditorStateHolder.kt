@@ -34,6 +34,7 @@ class PlaylistEditorStateHolder(
 ) {
     private val _uiState = MutableStateFlow(PlaylistEditorUiState())
     val uiState: StateFlow<PlaylistEditorUiState> = _uiState.asStateFlow()
+    private val loadingThumbnails = mutableSetOf<String>()
     private val effectChannel = Channel<PlaylistEditorEffect>(Channel.BUFFERED)
     val effects: Flow<PlaylistEditorEffect> = effectChannel.receiveAsFlow()
 
@@ -70,8 +71,6 @@ class PlaylistEditorStateHolder(
         }
     }
 
-    fun currentPlaylist(): Playlist = _uiState.value.playlist
-
     fun dispatch(action: PlaylistEditorAction) {
         when (action) {
             is PlaylistEditorAction.SelectPlaylist -> selectPlaylist(action.playlistId)
@@ -81,7 +80,9 @@ class PlaylistEditorStateHolder(
             PlaylistEditorAction.DismissNameDialog,
             PlaylistEditorAction.RequestDeletePlaylist,
             PlaylistEditorAction.DismissDeleteDialog,
-            PlaylistEditorAction.DismissMessage -> _uiState.update {
+            PlaylistEditorAction.DismissRemoveItem,
+            PlaylistEditorAction.DismissMessage,
+            is PlaylistEditorAction.RequestRemoveItem -> _uiState.update {
                 PlaylistEditorReducer.reduce(it, action)
             }
             PlaylistEditorAction.AddImages -> {
@@ -92,6 +93,7 @@ class PlaylistEditorStateHolder(
                     effectChannel.trySend(PlaylistEditorEffect.SelectImageFiles)
                 }
             }
+            is PlaylistEditorAction.LoadThumbnail -> loadThumbnail(action.mediaId, action.fileName)
             is PlaylistEditorAction.ImagesSelected -> importImages(action.paths)
             is PlaylistEditorAction.ImagePickerFailed -> {
                 logger.error("Error opening the image picker", action.error)
@@ -99,6 +101,7 @@ class PlaylistEditorStateHolder(
             }
             PlaylistEditorAction.ConfirmNameDialog -> confirmNameDialog()
             PlaylistEditorAction.ConfirmDeletePlaylist -> confirmDeletePlaylist()
+            PlaylistEditorAction.ConfirmRemoveItem -> confirmRemoveItem()
             is PlaylistEditorAction.UpdateDefaultDuration -> updateDefaultDuration(action.value)
             is PlaylistEditorAction.UpdateItemDuration -> updateItemDuration(action.mediaId, action.value)
             is PlaylistEditorAction.MoveItemUp -> moveUp(action.index)
@@ -117,6 +120,7 @@ class PlaylistEditorStateHolder(
                 activePlaylistId = playlistId,
                 defaultDurationDraft = selected.defaultDurationSec.toString(),
                 durationDrafts = emptyMap(),
+                thumbnailByMediaId = emptyMap(),
                 message = null,
             )
         }
@@ -184,6 +188,7 @@ class PlaylistEditorStateHolder(
                         activePlaylistId = created.id,
                         defaultDurationDraft = created.defaultDurationSec.toString(),
                         durationDrafts = emptyMap(),
+                        thumbnailByMediaId = emptyMap(),
                         nameDialogMode = null,
                         nameDraft = "",
                         nameError = null,
@@ -238,6 +243,7 @@ class PlaylistEditorStateHolder(
                 activePlaylistId = active.id,
                 defaultDurationDraft = active.defaultDurationSec.toString(),
                 durationDrafts = emptyMap(),
+                thumbnailByMediaId = emptyMap(),
                 showDeleteDialog = false,
                 message = null,
             )
@@ -365,10 +371,56 @@ class PlaylistEditorStateHolder(
         )
         _uiState.value = state.copy(
             playlist = updated,
-            durationDrafts = state.durationDrafts - item.mediaId
+            durationDrafts = state.durationDrafts - item.mediaId,
+            thumbnailByMediaId = state.thumbnailByMediaId - item.mediaId,
         )
         saveActivePlaylist(updated)
         logger.info("Removed '${item.fileName}' from playlist '${updated.name}'")
+    }
+
+    private fun confirmRemoveItem() {
+        val state = _uiState.value
+        val mediaId = state.removeItemId ?: return
+        _uiState.value = state.copy(removeItemId = null)
+        val index = state.playlist.items.indexOfFirst { it.mediaId == mediaId }
+        if (index >= 0) removeItem(index)
+    }
+
+    private fun loadThumbnail(mediaId: String, fileName: String) {
+        val state = _uiState.value
+        if (mediaId in state.thumbnailByMediaId || !loadingThumbnails.add(mediaId)) return
+        if (state.playlist.items.none { it.mediaId == mediaId && it.fileName == fileName }) {
+            loadingThumbnails.remove(mediaId)
+            return
+        }
+
+        scope.launch {
+            try {
+                val bitmap = withContext(ioDispatcher) {
+                    mediaRepository.loadBitmap(mediaId, fileName)
+                }
+                _uiState.update { current ->
+                    if (current.playlist.items.any { it.mediaId == mediaId && it.fileName == fileName }) {
+                        current.copy(thumbnailByMediaId = current.thumbnailByMediaId + (mediaId to bitmap))
+                    } else {
+                        current
+                    }
+                }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                logger.warn("Could not load playlist thumbnail for '$fileName': ${error.message}")
+                _uiState.update { current ->
+                    if (current.playlist.items.any { it.mediaId == mediaId && it.fileName == fileName }) {
+                        current.copy(thumbnailByMediaId = current.thumbnailByMediaId + (mediaId to null))
+                    } else {
+                        current
+                    }
+                }
+            } finally {
+                loadingThumbnails.remove(mediaId)
+            }
+        }
     }
 
     fun dismissMessage() {

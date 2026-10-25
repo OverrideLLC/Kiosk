@@ -1,23 +1,14 @@
 package app.kiosksync.feature.playlist.presentation
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -28,42 +19,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
-import app.kiosksync.core.MAX_DURATION_SEC
-import app.kiosksync.core.MIN_DURATION_SEC
 import app.kiosksync.core.Strings
-import app.kiosksync.core.ui.components.AppButton
-import app.kiosksync.core.ui.components.AppButtonSize
-import app.kiosksync.core.ui.components.AppButtonVariant
 import app.kiosksync.core.ui.components.AppDropdownMenu
-import app.kiosksync.core.ui.components.AppEmptyState
 import app.kiosksync.core.ui.components.AppIcon
 import app.kiosksync.core.ui.components.AppIconButton
 import app.kiosksync.core.ui.components.AppIconButtonSize
 import app.kiosksync.core.ui.components.AppMenuItem
-import app.kiosksync.core.ui.components.AppPanelHeader
-import app.kiosksync.core.ui.components.AppStepper
-import app.kiosksync.core.ui.components.AppTextField
-import app.kiosksync.core.ui.theme.KioskColors
-import app.kiosksync.core.ui.theme.KioskScreenColors
 import app.kiosksync.core.ui.theme.KioskShape
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
-import app.kiosksync.feature.playlist.presentation.PlaylistEditorAction
-import app.kiosksync.feature.playlist.presentation.PlaylistEditorStateHolder
-import app.kiosksync.feature.playlist.presentation.PlaylistEditorUiState
-import app.kiosksync.feature.playlist.domain.PlaylistItem
 
 @Composable
 internal fun PlaylistSelectorRow(
     state: PlaylistEditorUiState,
-    stateHolder: PlaylistEditorStateHolder,
+    onAction: (PlaylistEditorAction) -> Unit,
 ) {
-    val colors = KioskColors.scheme
+    val colors = MaterialTheme.colorScheme
     var expanded by remember { mutableStateOf(false) }
 
     Row(
@@ -124,7 +96,7 @@ internal fun PlaylistSelectorRow(
                         AppMenuItem(
                             label = playlist.name,
                             icon = if (active) AppIcon.CHECK else null,
-                            onClick = { stateHolder.dispatch(PlaylistEditorAction.SelectPlaylist(playlist.id)) },
+                            onClick = { onAction(PlaylistEditorAction.SelectPlaylist(playlist.id)) },
                         )
                     },
                 )
@@ -134,21 +106,21 @@ internal fun PlaylistSelectorRow(
         AppIconButton(
             icon = AppIcon.ADD,
             contentDescription = Strings.PLAYLIST_NEW,
-            onClick = { stateHolder.dispatch(PlaylistEditorAction.OpenCreateDialog) },
+            onClick = { onAction(PlaylistEditorAction.OpenCreateDialog) },
             size = AppIconButtonSize.SMALL,
             tooltip = Strings.PLAYLIST_NEW,
         )
         AppIconButton(
             icon = AppIcon.EDIT,
             contentDescription = Strings.PLAYLIST_RENAME,
-            onClick = { stateHolder.dispatch(PlaylistEditorAction.OpenRenameDialog) },
+            onClick = { onAction(PlaylistEditorAction.OpenRenameDialog) },
             size = AppIconButtonSize.SMALL,
             tooltip = Strings.PLAYLIST_RENAME,
         )
         AppIconButton(
             icon = AppIcon.DELETE,
             contentDescription = Strings.PLAYLIST_DELETE,
-            onClick = { stateHolder.dispatch(PlaylistEditorAction.RequestDeletePlaylist) },
+            onClick = { onAction(PlaylistEditorAction.RequestDeletePlaylist) },
             size = AppIconButtonSize.SMALL,
             tooltip = Strings.PLAYLIST_DELETE,
             tint = colors.error,

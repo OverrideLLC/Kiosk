@@ -3,6 +3,7 @@ package app.kiosksync.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -17,14 +18,19 @@ import app.kiosksync.AppContainer
 import app.kiosksync.core.AppRole
 import app.kiosksync.core.AppTheme
 import app.kiosksync.core.DEFAULT_PORT
-import app.kiosksync.core.ui.theme.KioskColors
 import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.feature.emitter.presentation.EmitterAction
+import app.kiosksync.feature.emitter.presentation.EmitterPanel
 import app.kiosksync.feature.emitter.presentation.EmitterScreen
+import app.kiosksync.feature.emitter.presentation.EmitterScreenAction
+import app.kiosksync.feature.emitter.presentation.components.EmitterDialogs
+import app.kiosksync.feature.emitter.presentation.components.SettingsDialog
 import app.kiosksync.feature.guide.domain.GuideManager
+import app.kiosksync.feature.guide.domain.GuideAction
 import app.kiosksync.feature.guide.domain.GuideStep
 import app.kiosksync.feature.guide.presentation.GuideOverlay
 import app.kiosksync.feature.emitter.presentation.EmitterViewModel
+import app.kiosksync.feature.emitter.presentation.SyncUiStatus
 import app.kiosksync.feature.kiosk.presentation.KioskUnlockOverlay
 import app.kiosksync.feature.pairing.domain.PairingManager
 import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
@@ -327,7 +333,7 @@ fun App(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(KioskColors.scheme.surface),
+                .background(MaterialTheme.colorScheme.surface),
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 when (val screen = currentScreen) {
@@ -543,6 +549,14 @@ private fun EmitterWorkspace(
         )
     }
     val playlistEditorState by playlistStateHolder.uiState.collectAsState()
+    val guideState by guideManager.uiState.collectAsState()
+    val pairedCount = emitterState.devices.count { it.isPairedToThisEmitter }
+    val selectedIds = emitterState.devices
+        .filter { it.isSelected && it.isPairedToThisEmitter }
+        .mapTo(mutableSetOf()) { it.deviceId }
+    val selectedSendSucceeded = selectedIds.isNotEmpty() && selectedIds.all { deviceId ->
+        emitterState.syncByDevice[deviceId]?.status == SyncUiStatus.SUCCESS
+    }
 
     DisposableEffect(viewModel) {
         viewModel.start()
@@ -564,41 +578,101 @@ private fun EmitterWorkspace(
             }
         }
     }
+    LaunchedEffect(playlistEditorState.playlist) {
+        viewModel.onAction(EmitterAction.PlaylistChanged(playlistEditorState.playlist))
+    }
+
+    LaunchedEffect(
+        playlistEditorState.playlist.items.size,
+        pairedCount,
+        selectedIds.size,
+        emitterState.hasKioskPassword,
+        selectedSendSucceeded,
+    ) {
+        guideManager.updateEmitter(
+            playlistItems = playlistEditorState.playlist.items.size,
+            pairedScreens = pairedCount,
+            selectedScreens = selectedIds.size,
+            hasPassword = emitterState.hasKioskPassword,
+            sendSucceeded = selectedSendSucceeded,
+        )
+    }
+    LaunchedEffect(guideState.step) {
+        when (guideState.step) {
+            GuideStep.EMITTER_PLAYLIST -> viewModel.onAction(EmitterAction.SelectPanel(EmitterPanel.PLAYLIST))
+            GuideStep.EMITTER_SCREENS,
+            GuideStep.EMITTER_PASSWORD,
+            GuideStep.EMITTER_SEND -> viewModel.onAction(EmitterAction.SelectPanel(EmitterPanel.SCREENS))
+            else -> Unit
+        }
+    }
+    LaunchedEffect(guideState.step, guideState.isActive, guideState.role, pairedCount, selectedIds.size) {
+        if (
+            guideState.isActive &&
+            guideState.role == AppRole.EMITTER &&
+            guideState.step == GuideStep.EMITTER_SEND &&
+            selectedIds.isEmpty()
+        ) {
+            emitterState.devices
+                .firstOrNull { it.isPairedToThisEmitter && !it.isSelected }
+                ?.let { viewModel.onAction(EmitterAction.ToggleSelection(it.deviceId)) }
+        }
+    }
+    LaunchedEffect(guideManager, viewModel, playlistStateHolder) {
+        guideManager.actions.collect { action ->
+            when (action) {
+                GuideAction.ADD_IMAGES -> playlistStateHolder.addImages()
+                GuideAction.REFRESH_DEVICES -> viewModel.onAction(EmitterAction.RefreshDevices)
+                GuideAction.SEND -> viewModel.onAction(EmitterAction.SendToSelected)
+            }
+        }
+    }
     LaunchedEffect(viewModel, playlistStateHolder) {
         container.projectionController.toggleRequests.collect {
-            viewModel.onAction(EmitterAction.RequestProjection(playlistStateHolder.currentPlaylist()))
+            viewModel.onAction(EmitterAction.RequestProjection)
+        }
+    }
+    LaunchedEffect(viewModel, container.projectionController) {
+        container.projectionController.playlist.collect { playlist ->
+            viewModel.onAction(EmitterAction.SetProjectionActive(playlist != null))
+        }
+    }
+
+    val dispatch: (EmitterScreenAction) -> Unit = { action ->
+        when (action) {
+            is EmitterScreenAction.Emitter -> viewModel.onAction(action.action)
+            EmitterScreenAction.ExitRequested -> onExitRequested()
+            EmitterScreenAction.RoleResetConfirmed -> {
+                viewModel.onAction(EmitterAction.DismissRoleReset)
+                onRoleReset()
+            }
         }
     }
 
     EmitterScreen(
         state = emitterState,
-        onAction = viewModel::onAction,
-        playlist = playlistEditorState.playlist,
-        onAddImages = playlistStateHolder::addImages,
-        playlistPanel = { modifier, fillHeight, onRequestRemove ->
+        onAction = dispatch,
+        playlistPanel = { modifier ->
             PlaylistPanel(
-                stateHolder = playlistStateHolder,
                 state = playlistEditorState,
-                mediaRepository = container.mediaRepository,
-                fillHeight = fillHeight,
-                onRequestRemove = onRequestRemove,
+                onAction = playlistStateHolder::dispatch,
                 modifier = modifier,
             )
         },
-        playlistDialogs = { removeTarget, onDismissRemove ->
-            PlaylistEditorDialogs(
-                stateHolder = playlistStateHolder,
-                state = playlistEditorState,
-                removeTarget = removeTarget,
-                onDismissRemove = onDismissRemove,
-            )
-        },
-        guideManager = guideManager,
-        onExitRequested = onExitRequested,
-        onRoleReset = onRoleReset,
-        theme = theme,
-        reduceMotion = reduceMotion,
-        onThemeChange = onThemeChange,
-        onReduceMotionChange = onReduceMotionChange,
     )
+    EmitterDialogs(state = emitterState, onAction = dispatch)
+    PlaylistEditorDialogs(state = playlistEditorState, onAction = playlistStateHolder::dispatch)
+    if (emitterState.isSettingsOpen) {
+        SettingsDialog(
+            theme = theme,
+            reduceMotion = reduceMotion,
+            onThemeChange = onThemeChange,
+            onReduceMotionChange = onReduceMotionChange,
+            onOpenGuide = {
+                viewModel.onAction(EmitterAction.DismissSettings)
+                guideManager.start(AppRole.EMITTER)
+            },
+            onDismiss = { viewModel.onAction(EmitterAction.DismissSettings) },
+        )
+    }
 }

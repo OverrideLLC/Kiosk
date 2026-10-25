@@ -10,9 +10,9 @@ import app.kiosksync.FakeUpdatePackageProvider
 import app.kiosksync.NoOpLogger
 import app.kiosksync.feature.emitter.presentation.EmitterAction
 import app.kiosksync.feature.emitter.presentation.EmitterScreen
+import app.kiosksync.feature.emitter.presentation.EmitterScreenAction
 import app.kiosksync.feature.emitter.presentation.EmitterViewModel
 import app.kiosksync.feature.emitter.data.EmitterServiceImpl
-import app.kiosksync.feature.guide.domain.GuideManager
 import app.kiosksync.core.AppTheme
 import app.kiosksync.core.DiscoveredDevice
 import app.kiosksync.core.EmitterPairedDevice
@@ -141,34 +141,32 @@ class ControllerRenderTest {
                 scope = scope,
                 newPlaylistId = { "new" },
             )
-            val guideManager = GuideManager(NoOpLogger())
-
             render(output, "controller-dark", AppTheme.DARK, 1280, 800) {
-                renderEmitterScreen(holder, editor, storage, guideManager, AppTheme.DARK)
+                renderEmitterScreen(holder, editor)
             }
 
             render(output, "controller-light", AppTheme.LIGHT, 1280, 800) {
-                renderEmitterScreen(holder, editor, storage, guideManager, AppTheme.LIGHT)
+                renderEmitterScreen(holder, editor)
             }
 
             render(output, "controller-compact", AppTheme.DARK, 900, 650) {
-                renderEmitterScreen(holder, editor, storage, guideManager, AppTheme.DARK)
+                renderEmitterScreen(holder, editor)
             }
 
             render(output, "controller-fullhd", AppTheme.DARK, 1920, 1080) {
-                renderEmitterScreen(holder, editor, storage, guideManager, AppTheme.DARK)
+                renderEmitterScreen(holder, editor)
             }
 
             holder.onAction(EmitterAction.OpenSecurityDialog)
             render(output, "controller-security", AppTheme.DARK, 1280, 800) {
-                renderEmitterScreen(holder, editor, storage, guideManager, AppTheme.DARK)
+                renderEmitterScreen(holder, editor)
             }
             holder.onAction(EmitterAction.DismissSecurityDialog)
 
             val unpaired = holder.state.value.devices.first { !it.isPairedToThisEmitter }
             holder.onAction(EmitterAction.OpenPairDialog(unpaired))
             render(output, "controller-pair", AppTheme.DARK, 1280, 800) {
-                renderEmitterScreen(holder, editor, storage, guideManager, AppTheme.DARK)
+                renderEmitterScreen(holder, editor)
             }
 
             holder.stop()
@@ -215,39 +213,27 @@ class ControllerRenderTest {
 private fun renderEmitterScreen(
     viewModel: EmitterViewModel,
     editor: PlaylistEditorStateHolder,
-    storage: FakeRepositories,
-    guideManager: GuideManager,
-    theme: AppTheme,
 ) {
     val editorState = editor.uiState.collectAsState().value
+    viewModel.onAction(EmitterAction.PlaylistChanged(editorState.playlist))
     EmitterScreen(
         state = viewModel.state.value,
-        onAction = viewModel::onAction,
-        playlist = editorState.playlist,
-        onAddImages = editor::addImages,
-        playlistPanel = { modifier, fillHeight, onRequestRemove ->
+        onAction = { action ->
+            when (action) {
+                is EmitterScreenAction.Emitter -> viewModel.onAction(action.action)
+                EmitterScreenAction.ExitRequested,
+                EmitterScreenAction.RoleResetConfirmed -> Unit
+            }
+        },
+        playlistPanel = { modifier ->
             PlaylistPanel(
-                stateHolder = editor,
                 state = editorState,
-                mediaRepository = storage,
-                fillHeight = fillHeight,
-                onRequestRemove = onRequestRemove,
+                onAction = editor::dispatch,
                 modifier = modifier,
             )
         },
-        playlistDialogs = { removeTarget, onDismissRemove ->
-            PlaylistEditorDialogs(
-                stateHolder = editor,
-                state = editorState,
-                removeTarget = removeTarget,
-                onDismissRemove = onDismissRemove,
-            )
-        },
-        guideManager = guideManager,
-        onExitRequested = {},
-        onRoleReset = {},
-        theme = theme,
     )
+    PlaylistEditorDialogs(state = editorState, onAction = editor::dispatch)
 }
 
 private class FakeDiscovery(devices: List<DiscoveredDevice>) : DeviceDiscovery {

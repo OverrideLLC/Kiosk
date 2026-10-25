@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -53,22 +52,16 @@ import app.kiosksync.core.ui.theme.KioskScreenColors
 import app.kiosksync.core.ui.theme.KioskShape
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
-import app.kiosksync.feature.playlist.presentation.PlaylistEditorAction
-import app.kiosksync.feature.playlist.presentation.PlaylistEditorStateHolder
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorUiState
-import app.kiosksync.feature.playlist.domain.PlaylistItem
-import app.kiosksync.feature.media.domain.MediaRepository
+import app.kiosksync.feature.playlist.presentation.PlaylistEditorAction
 
 @Composable
 fun PlaylistPanel(
-    stateHolder: PlaylistEditorStateHolder,
     state: PlaylistEditorUiState,
-    mediaRepository: MediaRepository,
-    fillHeight: Boolean,
-    onRequestRemove: (PlaylistItem) -> Unit,
+    onAction: (PlaylistEditorAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colors = KioskColors.scheme
+    val colors = MaterialTheme.colorScheme
     val extra = KioskColors.extra
 
     Column(modifier = modifier) {
@@ -78,7 +71,7 @@ fun PlaylistPanel(
             actions = {
                 AppButton(
                     text = if (state.isImporting) Strings.ADDING_IMAGES else Strings.ADD_IMAGES,
-                    onClick = { stateHolder.dispatch(PlaylistEditorAction.AddImages) },
+                    onClick = { onAction(PlaylistEditorAction.AddImages) },
                     variant = AppButtonVariant.TONAL,
                     size = AppButtonSize.SMALL,
                     icon = AppIcon.ADD_PHOTO_ALTERNATE,
@@ -90,7 +83,7 @@ fun PlaylistPanel(
 
         Spacer(Modifier.height(Space.sm))
 
-        PlaylistSelectorRow(state = state, stateHolder = stateHolder)
+        PlaylistSelectorRow(state = state, onAction = onAction)
 
         Spacer(Modifier.height(Space.sm))
 
@@ -114,7 +107,7 @@ fun PlaylistPanel(
             AppStepper(
                 value = state.defaultDurationDraft.toIntOrNull()
                     ?: state.playlist.defaultDurationSec,
-                onValueChange = { stateHolder.dispatch(PlaylistEditorAction.UpdateDefaultDuration(it.toString())) },
+                onValueChange = { onAction(PlaylistEditorAction.UpdateDefaultDuration(it.toString())) },
                 range = MIN_DURATION_SEC..MAX_DURATION_SEC,
                 unit = Strings.SECONDS_SUFFIX,
                 modifier = Modifier.width(Sizes.stepperWidth),
@@ -159,7 +152,7 @@ fun PlaylistPanel(
                     AppIconButton(
                         icon = AppIcon.CLOSE,
                         contentDescription = Strings.CLOSE_BUTTON,
-                        onClick = { stateHolder.dispatch(PlaylistEditorAction.DismissMessage) },
+                        onClick = { onAction(PlaylistEditorAction.DismissMessage) },
                         size = AppIconButtonSize.SMALL,
                         tint = if (state.messageIsError) {
                             colors.onErrorContainer
@@ -174,13 +167,8 @@ fun PlaylistPanel(
         Spacer(Modifier.height(Space.xs))
 
         if (state.playlist.items.isEmpty()) {
-            val listModifier = if (fillHeight) {
-                Modifier.fillMaxWidth().weight(1f)
-            } else {
-                Modifier.fillMaxWidth().heightIn(min = Sizes.emptyStateMinHeight)
-            }
             Box(
-                modifier = listModifier,
+                modifier = Modifier.fillMaxWidth().weight(1f),
                 contentAlignment = Alignment.Center,
             ) {
                 AppEmptyState(
@@ -190,7 +178,7 @@ fun PlaylistPanel(
                     action = {
                         AppButton(
                             text = Strings.ADD_IMAGES,
-                            onClick = { stateHolder.dispatch(PlaylistEditorAction.AddImages) },
+                            onClick = { onAction(PlaylistEditorAction.AddImages) },
                             variant = AppButtonVariant.TONAL,
                             size = AppButtonSize.SMALL,
                             icon = AppIcon.ADD_PHOTO_ALTERNATE,
@@ -200,14 +188,9 @@ fun PlaylistPanel(
                 )
             }
         } else {
-            val listModifier = if (fillHeight) {
-                Modifier.fillMaxWidth().weight(1f)
-            } else {
-                Modifier.fillMaxWidth().heightIn(max = Sizes.stackedListMaxHeight)
-            }
             val lastIndex = state.playlist.items.lastIndex
             LazyColumn(
-                modifier = listModifier,
+                modifier = Modifier.fillMaxWidth().weight(1f),
                 verticalArrangement = Arrangement.spacedBy(Space.xs),
             ) {
                 itemsIndexed(
@@ -220,13 +203,15 @@ fun PlaylistPanel(
                         lastIndex = lastIndex,
                         defaultDurationSec = state.playlist.defaultDurationSec,
                         durationDraft = state.durationDrafts[item.mediaId],
-                        mediaRepository = mediaRepository,
-                        onDurationChange = {
-                            stateHolder.dispatch(PlaylistEditorAction.UpdateItemDuration(item.mediaId, it))
+                        thumbnail = state.thumbnailByMediaId[item.mediaId],
+                        thumbnailLoaded = item.mediaId in state.thumbnailByMediaId,
+                        onLoadThumbnail = {
+                            onAction(PlaylistEditorAction.LoadThumbnail(item.mediaId, item.fileName))
                         },
-                        onMoveUp = { stateHolder.dispatch(PlaylistEditorAction.MoveItemUp(index)) },
-                        onMoveDown = { stateHolder.dispatch(PlaylistEditorAction.MoveItemDown(index)) },
-                        onRemove = { onRequestRemove(item) },
+                        onDurationChange = { onAction(PlaylistEditorAction.UpdateItemDuration(item.mediaId, it)) },
+                        onMoveUp = { onAction(PlaylistEditorAction.MoveItemUp(index)) },
+                        onMoveDown = { onAction(PlaylistEditorAction.MoveItemDown(index)) },
+                        onRemove = { onAction(PlaylistEditorAction.RequestRemoveItem(item.mediaId)) },
                     )
                 }
             }

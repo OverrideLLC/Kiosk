@@ -3,6 +3,7 @@ package app.kiosksync.feature.playlist.presentation
 import app.kiosksync.core.DEFAULT_DURATION_SEC
 import app.kiosksync.core.Strings
 import app.kiosksync.feature.playlist.domain.Playlist
+import androidx.compose.ui.graphics.ImageBitmap
 
 enum class PlaylistNameDialogMode {
     CREATE,
@@ -23,7 +24,9 @@ data class PlaylistEditorUiState(
     val nameDialogMode: PlaylistNameDialogMode? = null,
     val nameDraft: String = "",
     val nameError: String? = null,
-    val showDeleteDialog: Boolean = false
+    val showDeleteDialog: Boolean = false,
+    val removeItemId: String? = null,
+    val thumbnailByMediaId: Map<String, ImageBitmap?> = emptyMap(),
 )
 
 sealed interface PlaylistEditorAction {
@@ -35,11 +38,15 @@ sealed interface PlaylistEditorAction {
     data object DismissDeleteDialog : PlaylistEditorAction
     data object DismissMessage : PlaylistEditorAction
     data object AddImages : PlaylistEditorAction
+    data class LoadThumbnail(val mediaId: String, val fileName: String) : PlaylistEditorAction
     data class ImagesSelected(val paths: List<String>) : PlaylistEditorAction
     data class ImagePickerFailed(val error: Throwable) : PlaylistEditorAction
     data class SelectPlaylist(val playlistId: String) : PlaylistEditorAction
     data object ConfirmNameDialog : PlaylistEditorAction
     data object ConfirmDeletePlaylist : PlaylistEditorAction
+    data class RequestRemoveItem(val mediaId: String) : PlaylistEditorAction
+    data object DismissRemoveItem : PlaylistEditorAction
+    data object ConfirmRemoveItem : PlaylistEditorAction
     data class UpdateDefaultDuration(val value: String) : PlaylistEditorAction
     data class UpdateItemDuration(val mediaId: String, val value: String) : PlaylistEditorAction
     data class MoveItemUp(val index: Int) : PlaylistEditorAction
@@ -75,12 +82,17 @@ object PlaylistEditorReducer {
             state.copy(showDeleteDialog = true)
         }
         PlaylistEditorAction.DismissDeleteDialog -> state.copy(showDeleteDialog = false)
+        is PlaylistEditorAction.RequestRemoveItem -> state.copy(
+            removeItemId = action.mediaId.takeIf { id -> state.playlist.items.any { it.mediaId == id } }
+        )
+        PlaylistEditorAction.DismissRemoveItem -> state.copy(removeItemId = null)
         PlaylistEditorAction.DismissMessage -> state.copy(message = null, messageIsError = false)
         PlaylistEditorAction.AddImages -> if (state.isImporting) state else state.copy(
             isImporting = true,
             message = null,
             messageIsError = false
         )
+        is PlaylistEditorAction.LoadThumbnail -> state
         is PlaylistEditorAction.ImagePickerFailed -> state.copy(
             isImporting = false,
             message = Strings.PLAYLIST_IMPORT_ERROR,
@@ -90,6 +102,7 @@ object PlaylistEditorReducer {
         is PlaylistEditorAction.ImagesSelected,
         PlaylistEditorAction.ConfirmNameDialog,
         PlaylistEditorAction.ConfirmDeletePlaylist,
+        PlaylistEditorAction.ConfirmRemoveItem,
         is PlaylistEditorAction.UpdateDefaultDuration,
         is PlaylistEditorAction.UpdateItemDuration,
         is PlaylistEditorAction.MoveItemUp,

@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -64,7 +63,6 @@ import app.kiosksync.core.ui.theme.Space
 internal fun ScreensPanel(
     onAction: (EmitterAction) -> Unit,
     state: EmitterUiState,
-    fillHeight: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
@@ -95,11 +93,7 @@ internal fun ScreensPanel(
 
         Spacer(Modifier.height(Space.xs))
 
-        val listModifier = if (fillHeight) {
-            Modifier.fillMaxWidth().weight(1f)
-        } else {
-            Modifier.fillMaxWidth().heightIn(min = Sizes.emptyStateMinHeight)
-        }
+        val listModifier = Modifier.fillMaxWidth().weight(1f)
         if (state.devices.isEmpty()) {
             Box(modifier = listModifier, contentAlignment = Alignment.Center) {
                 AppEmptyState(

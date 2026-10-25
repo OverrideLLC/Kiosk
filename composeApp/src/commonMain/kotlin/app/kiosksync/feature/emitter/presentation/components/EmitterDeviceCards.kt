@@ -73,7 +73,7 @@ internal fun DeviceCard(
     onUnpair: () -> Unit,
     onUpdate: () -> Unit,
 ) {
-    val colors = KioskColors.scheme
+    val colors = MaterialTheme.colorScheme
     val extra = KioskColors.extra
     val selected = device.isSelected && device.isPairedToThisEmitter
     val versionPlan = device.appVersion?.let { screenVersion ->
@@ -238,7 +238,7 @@ internal fun DeviceCard(
 
 @Composable
 internal fun UpdateStatusRow(update: EmitterUpdateState, deviceVersion: String?) {
-    val colors = KioskColors.scheme
+    val colors = MaterialTheme.colorScheme
     val extra = KioskColors.extra
 
     when (update.status) {
@@ -324,7 +324,7 @@ internal fun UpdateStatusRow(update: EmitterUpdateState, deviceVersion: String?)
 
 @Composable
 internal fun SyncStatusRow(sync: DeviceSyncUi) {
-    val colors = KioskColors.scheme
+    val colors = MaterialTheme.colorScheme
     val extra = KioskColors.extra
 
     when (sync.status) {

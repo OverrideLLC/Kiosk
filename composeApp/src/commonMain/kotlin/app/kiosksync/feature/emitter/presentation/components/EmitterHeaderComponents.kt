@@ -65,7 +65,7 @@ internal fun ControllerHeader(
     onChangeRole: () -> Unit,
     onExit: () -> Unit,
 ) {
-    val colors = KioskColors.scheme
+    val colors = MaterialTheme.colorScheme
     var menuExpanded by remember { mutableStateOf(false) }
 
     Row(
@@ -162,7 +162,7 @@ internal fun StatusBanner(
     isError: Boolean,
     onDismiss: () -> Unit,
 ) {
-    val colors = KioskColors.scheme
+    val colors = MaterialTheme.colorScheme
     val extra = KioskColors.extra
     val container = if (isError) colors.errorContainer else extra.successContainer
     val content = if (isError) colors.onErrorContainer else extra.onSuccessContainer

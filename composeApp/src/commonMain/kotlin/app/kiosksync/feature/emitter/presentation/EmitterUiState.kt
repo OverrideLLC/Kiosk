@@ -1,8 +1,14 @@
 package app.kiosksync.feature.emitter.presentation
 
 import app.kiosksync.core.DEFAULT_UNLOCK_SEQUENCE
+import app.kiosksync.core.Strings
 import app.kiosksync.feature.emitter.domain.EmitterUpdateState
 import app.kiosksync.feature.playlist.domain.Playlist
+
+enum class EmitterPanel {
+    SCREENS,
+    PLAYLIST,
+}
 
 data class EmitterDeviceUi(
     val deviceId: String,
@@ -60,6 +66,7 @@ data class SecurityDialogUi(
 )
 
 data class EmitterUiState(
+    val playlist: Playlist = Playlist(),
     val devices: List<EmitterDeviceUi> = emptyList(),
     val isSearching: Boolean = true,
     val pairingDevice: EmitterDeviceUi? = null,
@@ -80,5 +87,31 @@ data class EmitterUiState(
     val passwordDialog: KioskPasswordDialogUi? = null,
     val securityDialog: SecurityDialogUi? = null,
     val hasKioskPassword: Boolean = false,
-    val isRefreshing: Boolean = false
-)
+    val isRefreshing: Boolean = false,
+    val isProjecting: Boolean = false,
+    val selectedPanel: EmitterPanel = EmitterPanel.SCREENS,
+    val isSettingsOpen: Boolean = false,
+    val isRoleResetConfirmationOpen: Boolean = false,
+) {
+    val selectedCount: Int
+        get() = devices.count { it.isSelected && it.isPairedToThisEmitter }
+
+    val pairedCount: Int
+        get() = devices.count { it.isPairedToThisEmitter }
+
+    val sendHint: String
+        get() = when {
+            playlist.items.isEmpty() -> Strings.SEND_EMPTY_PLAYLIST
+            selectedCount == 0 -> Strings.SEND_NO_SCREENS
+            else -> Strings.selectedScreens(selectedCount)
+        }
+
+    val canSend: Boolean
+        get() = !isSending && !isSyncing && selectedCount > 0 && playlist.items.isNotEmpty()
+
+    val canProject: Boolean
+        get() = !isSending && !isSyncing && !isProjecting && playlist.items.isNotEmpty()
+
+    val canSync: Boolean
+        get() = !isSending && !isSyncing && pairedCount > 0
+}
