@@ -5,11 +5,6 @@ import app.kiosksync.core.Strings
 import app.kiosksync.feature.emitter.domain.EmitterUpdateState
 import app.kiosksync.feature.playlist.domain.Playlist
 
-enum class EmitterPanel {
-    SCREENS,
-    PLAYLIST,
-}
-
 data class EmitterDeviceUi(
     val deviceId: String,
     val deviceName: String,
@@ -22,14 +17,6 @@ data class EmitterDeviceUi(
     val appVersion: String? = null
 )
 
-enum class SyncUiStatus {
-    PENDING,
-    UPLOADING,
-    APPLYING,
-    SUCCESS,
-    FAILED
-}
-
 data class DeviceSyncUi(
     val status: SyncUiStatus,
     val uploaded: Int = 0,
@@ -37,13 +24,6 @@ data class DeviceSyncUi(
     val version: Int = 0,
     val message: String? = null
 )
-
-enum class EmitterPendingAction {
-    SEND,
-    PROJECT,
-    CONFIGURE,
-    PAIR_LOCK
-}
 
 data class KioskPasswordDialogUi(
     val action: EmitterPendingAction,

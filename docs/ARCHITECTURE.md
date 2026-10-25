@@ -308,7 +308,8 @@ cuando afectan a una acción del usuario.
   reales en varias features; componentes específicos permanecen junto a su feature.
 - Todos los textos visibles están en `core/Strings.kt`.
 - La guía interactiva vive en `feature/guide/presentation`: `GuideViewModel`
-  mantiene la máquina de estados y emite efectos tipados. Su carpeta
+  mantiene la máquina de estados y emite efectos tipados; `GuideStep`, el modelo
+  del flujo, vive en `feature/guide/domain`. Su carpeta
   `components` contiene `GuideOverlay`, el diálogo de rol, la tarjeta y el
   contenido de los pasos. Las pantallas reportan playlist, vinculación,
   contraseña y contenido para que avance al completar cada paso. Ver

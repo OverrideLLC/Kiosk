@@ -1,19 +1,7 @@
 package app.kiosksync.feature.guide.presentation
 
 import app.kiosksync.core.AppRole
-
-enum class GuideStep {
-    ROLE,
-    EMITTER_PLAYLIST,
-    EMITTER_SCREENS,
-    EMITTER_PASSWORD,
-    EMITTER_SEND,
-    EMITTER_DONE,
-    RECEIVER_CODE,
-    RECEIVER_PASSWORD,
-    RECEIVER_CONTENT,
-    RECEIVER_DONE,
-}
+import app.kiosksync.feature.guide.domain.GuideStep
 
 data class GuideUiState(
     val isActive: Boolean = false,

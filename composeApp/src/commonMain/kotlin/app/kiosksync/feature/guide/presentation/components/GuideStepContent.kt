@@ -3,8 +3,8 @@ package app.kiosksync.feature.guide.presentation.components
 import app.kiosksync.core.AppRole
 import app.kiosksync.core.Strings
 import app.kiosksync.core.ui.components.AppIcon
-import app.kiosksync.feature.guide.presentation.GuideStep
 import app.kiosksync.feature.guide.presentation.GuideUiState
+import app.kiosksync.feature.guide.domain.GuideStep
 
 internal data class GuideStepContent(
     val title: String,

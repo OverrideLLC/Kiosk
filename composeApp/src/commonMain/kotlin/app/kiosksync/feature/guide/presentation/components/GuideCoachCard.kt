@@ -37,8 +37,8 @@ import app.kiosksync.core.ui.theme.KioskShape
 import app.kiosksync.core.ui.theme.Space
 import app.kiosksync.feature.guide.presentation.GuideAction
 import app.kiosksync.feature.guide.presentation.GuideEffect
-import app.kiosksync.feature.guide.presentation.GuideStep
 import app.kiosksync.feature.guide.presentation.GuideUiState
+import app.kiosksync.feature.guide.domain.GuideStep
 
 @Composable
 internal fun GuideCoachCard(

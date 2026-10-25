@@ -4,11 +4,6 @@ import androidx.compose.ui.graphics.ImageBitmap
 import app.kiosksync.core.DEFAULT_DURATION_SEC
 import app.kiosksync.feature.playlist.domain.Playlist
 
-enum class PlaylistNameDialogMode {
-    CREATE,
-    RENAME,
-}
-
 data class PlaylistEditorUiState(
     val playlist: Playlist = Playlist(),
     val playlists: List<Playlist> = emptyList(),

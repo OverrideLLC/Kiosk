@@ -2,6 +2,7 @@ package app.kiosksync.feature.guide.presentation
 
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.AppRole
+import app.kiosksync.feature.guide.domain.GuideStep
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow

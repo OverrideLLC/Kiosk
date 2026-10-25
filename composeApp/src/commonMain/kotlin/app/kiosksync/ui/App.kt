@@ -28,8 +28,8 @@ import app.kiosksync.feature.emitter.presentation.components.SettingsDialog
 import app.kiosksync.feature.guide.presentation.GuideAction
 import app.kiosksync.feature.guide.presentation.GuideEffect
 import app.kiosksync.feature.guide.presentation.components.GuideOverlay
-import app.kiosksync.feature.guide.presentation.GuideStep
 import app.kiosksync.feature.guide.presentation.GuideViewModel
+import app.kiosksync.feature.guide.domain.GuideStep
 import app.kiosksync.feature.emitter.presentation.EmitterViewModel
 import app.kiosksync.feature.emitter.presentation.SyncUiStatus
 import app.kiosksync.feature.kiosk.presentation.KioskUnlockOverlay
