@@ -6,18 +6,13 @@ import app.kiosksync.core.AppTheme
 import app.kiosksync.feature.role.domain.AppConfig
 import app.kiosksync.feature.role.presentation.RoleAction
 import app.kiosksync.feature.role.presentation.RoleEffect
-import app.kiosksync.feature.role.presentation.RoleReducer
-import app.kiosksync.feature.role.presentation.RoleStateHolder
-import app.kiosksync.feature.role.presentation.RoleUiState
+import app.kiosksync.feature.role.presentation.RoleViewModel
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.first
-import kotlin.test.assertTrue
 
 class RoleConfigTest {
 
@@ -71,66 +66,18 @@ class RoleConfigTest {
     }
 
     @Test
-    fun testRoleStateHolderFlow() {
-        val logger = NoOpLogger()
-        val stateHolder = RoleStateHolder(logger)
+    fun roleViewModelEmitsConfirmedRoleAndResetsSelection() = runBlocking {
+        val viewModel = RoleViewModel(NoOpLogger())
 
-        // Initial state
-        assertNull(stateHolder.uiState.value.selectedRole)
-        assertFalse(stateHolder.uiState.value.showChangeRoleDialog)
+        assertNull(viewModel.state.value.selectedRole)
 
-        // Select Role
-        stateHolder.selectRole(AppRole.RECEIVER)
-        assertEquals(AppRole.RECEIVER, stateHolder.uiState.value.selectedRole)
+        viewModel.onAction(RoleAction.SelectRole(AppRole.RECEIVER))
+        assertEquals(AppRole.RECEIVER, viewModel.state.value.selectedRole)
 
-        // Confirm Role
-        val config = stateHolder.confirmRole("dev-1", "Screen1", 8765)
-        assertNotNull(config)
-        assertEquals(AppRole.RECEIVER, config.role)
+        viewModel.onAction(RoleAction.ConfirmRole)
+        assertEquals(RoleEffect.RoleConfirmed(AppRole.RECEIVER), viewModel.effects.first())
 
-        // Request Change Role
-        stateHolder.requestChangeRole()
-        assertTrue(stateHolder.uiState.value.showChangeRoleDialog)
-
-        // Dismiss dialog
-        stateHolder.dismissChangeRoleDialog()
-        assertFalse(stateHolder.uiState.value.showChangeRoleDialog)
-
-        // Confirm change role
-        stateHolder.confirmChangeRole()
-        assertNull(stateHolder.uiState.value.selectedRole)
-    }
-
-    @Test
-    fun roleReducerChangesSelectionAndChangeDialogState() {
-        val selected = RoleReducer.reduce(RoleUiState(), RoleAction.SelectRole(AppRole.EMITTER))
-        assertEquals(AppRole.EMITTER, selected.selectedRole)
-
-        val opened = RoleReducer.reduce(selected, RoleAction.RequestChangeRole)
-        assertTrue(opened.showChangeRoleDialog)
-
-        val dismissed = RoleReducer.reduce(opened, RoleAction.DismissChangeRoleDialog)
-        assertFalse(dismissed.showChangeRoleDialog)
-
-        assertEquals(RoleUiState(), RoleReducer.reduce(dismissed, RoleAction.ConfirmChangeRole))
-    }
-
-    @Test
-    fun confirmingRoleEmitsSingleOneShotEffect() = runBlocking {
-        val holder = RoleStateHolder(NoOpLogger(), initialRole = AppRole.RECEIVER)
-        holder.dispatch(
-            RoleAction.ConfirmRole(
-                deviceId = "device-1",
-                deviceName = "Pantalla",
-                port = 8765,
-                theme = AppTheme.DARK,
-                reduceMotion = false
-            )
-        )
-
-        assertEquals(
-            RoleEffect.RoleConfirmed(AppConfig(AppRole.RECEIVER, "device-1", "Pantalla", 8765)),
-            holder.effects.first()
-        )
+        viewModel.onAction(RoleAction.ResetSelection)
+        assertNull(viewModel.state.value.selectedRole)
     }
 }

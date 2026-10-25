@@ -3,13 +3,7 @@ package app.kiosksync.feature.kiosk.domain
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.core.MAX_UNLOCK_ATTEMPTS
-import app.kiosksync.core.Strings
 import app.kiosksync.core.UNLOCK_LOCKOUT_SECONDS
-import app.kiosksync.feature.kiosk.domain.KioskKeyEvent
-import app.kiosksync.feature.kiosk.domain.KioskKeyKind
-import app.kiosksync.feature.kiosk.domain.KioskUnlockDetector
-import app.kiosksync.feature.kiosk.domain.KioskUnlockResult
-import app.kiosksync.feature.kiosk.domain.unlockSequenceKinds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -24,12 +18,15 @@ data class KioskLockUiState(
     val hasPassword: Boolean = false,
     val showUnlockHint: Boolean = false,
     val typedLength: Int = 0,
-    val chordStage: Int = 0,
-    val lastKey: String? = null,
-    val message: String? = null,
+    val feedback: KioskLockFeedback? = null,
     val failedAttempts: Int = 0,
     val lockoutRemainingSec: Int = 0
 )
+
+sealed interface KioskLockFeedback {
+    data class IncorrectPassword(val attemptsRemaining: Int) : KioskLockFeedback
+    data object LockedOut : KioskLockFeedback
+}
 
 /**
  * Owns the kiosk lock state and the unlock attempts. The platform keyboard
@@ -46,7 +43,7 @@ class KioskLockManager(
 
     private var config: KioskLockConfig? = null
     private var detector: KioskUnlockDetector? = null
-    private var messageJob: Job? = null
+    private var feedbackJob: Job? = null
     private var hintJob: Job? = null
     private var lockoutJob: Job? = null
 
@@ -56,7 +53,7 @@ class KioskLockManager(
         if (_uiState.value.isLocked) {
             detector = newDetector()
             _uiState.update {
-                it.copy(typedLength = 0, chordStage = 0, lastKey = null)
+                it.copy(typedLength = 0)
             }
         }
     }
@@ -71,9 +68,7 @@ class KioskLockManager(
                 hasPassword = hasPassword(),
                 showUnlockHint = false,
                 typedLength = 0,
-                chordStage = 0,
-                lastKey = null,
-                message = null,
+                feedback = null,
                 failedAttempts = 0,
                 lockoutRemainingSec = 0
             )
@@ -98,7 +93,6 @@ class KioskLockManager(
 
         val activeDetector = detector ?: newDetector().also { detector = it }
         val result = activeDetector.feed(event)
-        val lastKey = keyLabel(event)
 
         when (result) {
             KioskUnlockResult.Accepted ->
@@ -110,17 +104,15 @@ class KioskLockManager(
             KioskUnlockResult.UniversalAccepted ->
                 unlock("Kiosk unlocked with the recovery phrase")
 
-            KioskUnlockResult.Rejected -> registerFailure(lastKey)
+            KioskUnlockResult.Rejected -> registerFailure()
 
             KioskUnlockResult.ChordProgress, KioskUnlockResult.Typing -> {
                 scheduleHintHide()
                 _uiState.update {
                     it.copy(
                         showUnlockHint = true,
-                        chordStage = activeDetector.chordStage,
                         typedLength = activeDetector.typedLength,
-                        lastKey = lastKey ?: it.lastKey,
-                        message = null
+                        feedback = null
                     )
                 }
             }
@@ -128,28 +120,15 @@ class KioskLockManager(
             // Any unrelated key (Esc, arrows, letters before the chord...) must
             // do absolutely nothing while locked. The unlock card only appears
             // once the Shift+Shift+Ctrl sequence starts. If the card is already
-            // visible, keep the chord progress in sync with the detector.
+            // visible, keep the typed-length indicator in sync with the detector.
             KioskUnlockResult.Ignored -> {
                 if (_uiState.value.showUnlockHint) {
                     _uiState.update {
-                        it.copy(
-                            chordStage = activeDetector.chordStage,
-                            typedLength = activeDetector.typedLength
-                        )
+                        it.copy(typedLength = activeDetector.typedLength)
                     }
                 }
             }
         }
-    }
-
-    private fun keyLabel(event: KioskKeyEvent): String? = when (event.kind) {
-        KioskKeyKind.SHIFT -> "Shift"
-        KioskKeyKind.CTRL -> "Ctrl"
-        KioskKeyKind.ALT -> "Alt"
-        KioskKeyKind.ENTER -> "Enter"
-        KioskKeyKind.BACKSPACE -> Strings.KIOSK_KEY_BACKSPACE
-        KioskKeyKind.CHARACTER -> Strings.KIOSK_KEY_CHAR
-        KioskKeyKind.OTHER -> null
     }
 
     private fun unlock(logMessage: String) {
@@ -160,9 +139,7 @@ class KioskLockManager(
                 isLocked = false,
                 showUnlockHint = false,
                 typedLength = 0,
-                chordStage = 0,
-                lastKey = null,
-                message = null,
+                feedback = null,
                 failedAttempts = 0,
                 lockoutRemainingSec = 0
             )
@@ -170,7 +147,7 @@ class KioskLockManager(
         logger.info(logMessage)
     }
 
-    private fun registerFailure(lastKey: String?) {
+    private fun registerFailure() {
         val failed = _uiState.value.failedAttempts + 1
         detector?.reset()
 
@@ -183,15 +160,14 @@ class KioskLockManager(
             it.copy(
                 showUnlockHint = true,
                 typedLength = 0,
-                chordStage = 0,
-                lastKey = lastKey ?: it.lastKey,
                 failedAttempts = failed,
-                message = "${Strings.KIOSK_WRONG_PASSWORD} " +
-                    "${Strings.KIOSK_ATTEMPTS_LEFT} ${MAX_UNLOCK_ATTEMPTS - failed}"
+                feedback = KioskLockFeedback.IncorrectPassword(
+                    attemptsRemaining = MAX_UNLOCK_ATTEMPTS - failed,
+                )
             )
         }
         logger.warn("Failed kiosk unlock attempt $failed/$MAX_UNLOCK_ATTEMPTS")
-        scheduleMessageClear()
+        scheduleFeedbackClear()
     }
 
     private fun startLockout() {
@@ -200,10 +176,8 @@ class KioskLockManager(
             it.copy(
                 showUnlockHint = true,
                 typedLength = 0,
-                chordStage = 0,
-                lastKey = null,
                 failedAttempts = MAX_UNLOCK_ATTEMPTS,
-                message = Strings.KIOSK_LOCKED_OUT,
+                feedback = KioskLockFeedback.LockedOut,
                 lockoutRemainingSec = UNLOCK_LOCKOUT_SECONDS
             )
         }
@@ -220,22 +194,20 @@ class KioskLockManager(
                 it.copy(
                     lockoutRemainingSec = 0,
                     failedAttempts = 0,
-                    message = null,
+                    feedback = null,
                     showUnlockHint = false,
                     typedLength = 0,
-                    chordStage = 0,
-                    lastKey = null
                 )
             }
         }
     }
 
-    private fun scheduleMessageClear() {
-        messageJob?.cancel()
-        messageJob = scope.launch {
+    private fun scheduleFeedbackClear() {
+        feedbackJob?.cancel()
+        feedbackJob = scope.launch {
             delay(4000)
             _uiState.update {
-                if (it.lockoutRemainingSec > 0) it else it.copy(message = null)
+                if (it.lockoutRemainingSec > 0) it else it.copy(feedback = null)
             }
         }
     }
@@ -255,8 +227,8 @@ class KioskLockManager(
     }
 
     private fun cancelJobs() {
-        messageJob?.cancel()
-        messageJob = null
+        feedbackJob?.cancel()
+        feedbackJob = null
         hintJob?.cancel()
         hintJob = null
         lockoutJob?.cancel()

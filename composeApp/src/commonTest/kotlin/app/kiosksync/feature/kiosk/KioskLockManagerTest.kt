@@ -4,6 +4,7 @@ import app.kiosksync.NoOpLogger
 import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.feature.kiosk.domain.KioskKeyEvent
 import app.kiosksync.feature.kiosk.domain.KioskKeyKind
+import app.kiosksync.feature.kiosk.domain.KioskLockFeedback
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.kiosk.domain.UNLOCK_SEQUENCE
 import kotlinx.coroutines.CoroutineScope
@@ -66,34 +67,21 @@ class KioskLockManagerTest {
 
         manager.onKey(KioskKeyEvent(KioskKeyKind.OTHER))
         assertFalse(manager.uiState.value.showUnlockHint)
-        assertEquals(0, manager.uiState.value.chordStage)
 
         // The card only appears once the Shift+Shift+Ctrl chord begins.
         manager.onKey(KioskKeyEvent(KioskKeyKind.SHIFT))
         assertTrue(manager.uiState.value.showUnlockHint)
-        assertEquals(1, manager.uiState.value.chordStage)
     }
 
     @Test
-    fun `key feedback tracks the chord and the typed password`() {
+    fun `unlock hint tracks the chord and the typed password`() {
         val manager = lockedManager()
 
-        manager.onKey(KioskKeyEvent(KioskKeyKind.SHIFT))
-        assertEquals(1, manager.uiState.value.chordStage)
-        manager.onKey(KioskKeyEvent(KioskKeyKind.SHIFT))
-        assertEquals(2, manager.uiState.value.chordStage)
-        manager.onKey(KioskKeyEvent(KioskKeyKind.CTRL))
-        assertEquals(3, manager.uiState.value.chordStage)
-        manager.onKey(KioskKeyEvent(KioskKeyKind.CTRL))
-        assertEquals(4, manager.uiState.value.chordStage)
-        manager.onKey(KioskKeyEvent(KioskKeyKind.ALT))
-        assertEquals(5, manager.uiState.value.chordStage)
-        manager.onKey(KioskKeyEvent(KioskKeyKind.SHIFT))
-        assertEquals(6, manager.uiState.value.chordStage)
+        manager.pressSequence()
+        assertTrue(manager.uiState.value.showUnlockHint)
 
         manager.onKey(KioskKeyEvent(KioskKeyKind.CHARACTER, 'a'))
         assertEquals(1, manager.uiState.value.typedLength)
-        assertEquals("•", manager.uiState.value.lastKey)
 
         manager.onKey(KioskKeyEvent(KioskKeyKind.BACKSPACE))
         assertEquals(0, manager.uiState.value.typedLength)
@@ -126,5 +114,34 @@ class KioskLockManagerTest {
         manager.pressSequence()
 
         assertFalse(manager.uiState.value.isLocked)
+    }
+
+    @Test
+    fun `incorrect password exposes typed feedback with attempts remaining`() {
+        val manager = lockedManager("abcd")
+        manager.pressSequence()
+        "wxyz".forEach { character ->
+            manager.onKey(KioskKeyEvent(KioskKeyKind.CHARACTER, character))
+        }
+
+        assertEquals(
+            KioskLockFeedback.IncorrectPassword(attemptsRemaining = 4),
+            manager.uiState.value.feedback,
+        )
+    }
+
+    @Test
+    fun `lockout exposes typed feedback while its countdown runs`() {
+        val manager = lockedManager("abcd")
+
+        repeat(5) {
+            manager.pressSequence()
+            "wxyz".forEach { character ->
+                manager.onKey(KioskKeyEvent(KioskKeyKind.CHARACTER, character))
+            }
+        }
+
+        assertEquals(KioskLockFeedback.LockedOut, manager.uiState.value.feedback)
+        assertTrue(manager.uiState.value.lockoutRemainingSec > 0)
     }
 }

@@ -17,7 +17,7 @@ import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.domain.PlaylistItem
 import app.kiosksync.feature.role.presentation.RoleSelectionScreen
-import app.kiosksync.feature.role.presentation.RoleStateHolder
+import app.kiosksync.feature.role.presentation.RoleViewModel
 import java.io.File
 import kotlin.test.Test
 import kotlinx.coroutines.CoroutineScope
@@ -35,7 +35,7 @@ class ScreenRenderTest {
     @Test
     fun rendersRoleSelection() {
         val output = File("build/reports/ui").apply { mkdirs() }
-        val holder = RoleStateHolder(
+        val viewModel = RoleViewModel(
             logger = NoOpLogger(),
             initialRole = AppRole.RECEIVER,
         )
@@ -48,12 +48,8 @@ class ScreenRenderTest {
                 height = 650,
             ) {
                 RoleSelectionScreen(
-                    stateHolder = holder,
-                    onRoleConfirmed = {},
-                    deviceId = "device",
-                    deviceName = "PC",
-                    port = 8765,
-                    theme = theme,
+                    state = viewModel.state.value,
+                    onAction = viewModel::onAction,
                 )
             }
         }
@@ -95,7 +91,7 @@ class ScreenRenderTest {
                 width = 1280,
                 height = 720,
             ) {
-                CarouselScreen(stateHolder = holder)
+                CarouselScreen(state = holder.uiState.value)
             }
             holder.stop()
         } finally {

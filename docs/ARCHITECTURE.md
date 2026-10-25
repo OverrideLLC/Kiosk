@@ -116,7 +116,8 @@ heredados antes de abrir la UI y entrega contratos pequeños a `AppContainer`.
 - `JmDnsDiscovery`.
 - `KtorEmitterClient` (Controlador) o `KtorReceiverServer` (Pantalla).
 - `PairingManager`, `KioskLockManager`, `ReceiverStatusTracker`,
-  `ReceiverPlaylistBridge`, `ReceiverPlaybackSyncBridge`, `ProjectionController`.
+  `ReceiverPlaylistBridge`, `ReceiverPlaybackSyncBridge`, `ProjectionController`
+  (estado compartido de proyección en `feature/projection/domain`).
 - `LocalUpdatePackageProvider` (Controlador) y `FileReceiverUpdateManager`
   (Pantalla) para las actualizaciones; ver [UPDATES.md](UPDATES.md).
 - `LocalNetwork.detectLocalIpv4Address()` para mostrar la IP de la Pantalla en la
@@ -151,8 +152,8 @@ mDNS la vuelve a ubicar.
 
 ### 2. Sincronización
 
-`EmitterSyncRepositoryImpl` en `feature/sync/data` ejecuta el plan para cada
-pantalla seleccionada. El contrato y los tipos de progreso/resumen viven en
+`EmitterSyncRepositoryImpl` en `desktopMain/feature/sync/data` ejecuta el plan
+para cada pantalla seleccionada. El contrato y los tipos de progreso/resumen viven en
 `feature/sync/domain`; el plan de comparación sigue siendo lógica pura allí:
 
 1. `GET /sync/state` → versión actual y lista de `mediaId` + SHA-256.
@@ -274,6 +275,11 @@ cuando afectan a una acción del usuario.
   (confirmar rol o abrir el selector de imágenes); las operaciones de red y
   almacenamiento mantienen su progreso y error en el estado. No hay ViewModels
   de AndroidX ni framework MVI.
+- Rol, guía y editor de playlist mantienen `Action`, `UiState` y `ViewModel` en
+  la raíz de su paquete `presentation`, sin subcarpetas MVI ni reducers
+  mecánicos. Las pantallas reciben una instantánea de estado y callbacks; los
+  managers de pairing, playback y kiosco conservan su estado especializado
+  porque coordinan temporizadores, recursos o eventos externos.
 - `feature/emitter/presentation` contiene en el paquete raíz `EmitterUiState`,
   `EmitterAction`, `EmitterViewModel` y `EmitterScreen`. El ViewModel aplica las
   transiciones locales y delega efectos en coordinadores. `App.kt` crea el
@@ -290,10 +296,10 @@ cuando afectan a una acción del usuario.
   `EmitterServiceImpl`, `EmitterUpdateRunner`, Ktor, Room y la transferencia de
   medios viven en `data`. Botones, diálogos e iconos reutilizados por otras features
   viven en `core/ui`.
-- Pairing, playback y kiosk conservan managers/state holders especializados para
-  reglas con temporizadores, reproducción o eventos externos. Solo se introduce
-  un reducer cuando aclara transiciones de UI; no se fuerza el mismo patrón a toda
-  clase con `StateFlow`.
+- `ProjectionController` vive en `feature/projection/domain` porque comparte el
+  estado de proyección entre la UI y el host de ventanas sin depender de Compose.
+- `EmitterSyncRepositoryImpl` es una implementación Desktop en `desktopMain`; el
+  contrato y `SyncPlanner` puro permanecen en `feature/sync/domain`.
 - Navegación con `sealed interface Screen` y un `when` en `App.kt`.
 - El sistema de diseño compartido está en `core/ui/`: tema claro/oscuro, tipografía
   Sora/Inter, iconos Material Symbols y componentes propios. Ver
@@ -301,11 +307,11 @@ cuando afectan a una acción del usuario.
 - Los componentes compartidos se promueven a `core.ui` cuando tienen consumidores
   reales en varias features; componentes específicos permanecen junto a su feature.
 - Todos los textos visibles están en `core/Strings.kt`.
-- La guía interactiva vive en `feature/guide/`: `GuideManager` mantiene la
-  máquina de estados en `domain`, `GuideOverlay` la presenta en `presentation`,
-  y las pantallas reportan playlist, vinculación, contraseña y contenido para
-  que avance al completar cada paso. Sus pruebas están junto al source set
-  correspondiente. Ver [GUIDE.md](GUIDE.md).
+- La guía interactiva vive en `feature/guide/presentation`: `GuideViewModel`
+  mantiene la máquina de estados y emite efectos tipados; `GuideOverlay` solo
+  presenta estado y envía acciones. Las pantallas reportan playlist, vinculación,
+  contraseña y contenido para que avance al completar cada paso. Ver
+  [GUIDE.md](GUIDE.md).
 - El Controlador usa un layout de dos paneles en anchos ≥1100 dp y pestañas
   Pantallas/Playlist en anchos menores.
 

@@ -1,77 +1,49 @@
-package app.kiosksync.feature.guide.domain
+package app.kiosksync.feature.guide.presentation
 
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.AppRole
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 
-/**
- * Steps of the guided demo. The step only says what the person should do next;
- * the real screens report their state and [GuideManager] moves forward on its
- * own as soon as that state proves the step is complete.
- */
-enum class GuideStep {
-    ROLE,
-    EMITTER_PLAYLIST,
-    EMITTER_SCREENS,
-    EMITTER_PASSWORD,
-    EMITTER_SEND,
-    EMITTER_DONE,
-    RECEIVER_CODE,
-    RECEIVER_PASSWORD,
-    RECEIVER_CONTENT,
-    RECEIVER_DONE,
-}
-
-/** Actions the guide can trigger on the real Controller screen. */
-enum class GuideAction {
-    ADD_IMAGES,
-    REFRESH_DEVICES,
-    SEND,
-}
-
-data class GuideUiState(
-    val isActive: Boolean = false,
-    val role: AppRole? = null,
-    val step: GuideStep = GuideStep.ROLE,
-    /**
-     * Auto-advance stays on for a normal run. It turns off when the person uses
-     * "Repetir", so a demo that is already configured does not jump to the end
-     * as soon as an old successful send is observed.
-     */
-    val autoAdvanceEnabled: Boolean = true,
-    // Snapshot reported by the Controller.
-    val playlistItems: Int = 0,
-    val pairedScreens: Int = 0,
-    val selectedScreens: Int = 0,
-    val hasPassword: Boolean = false,
-    val sendSucceeded: Boolean = false,
-    // Snapshot reported by the Screen.
-    val receiverPaired: Boolean = false,
-    val receiverHasPassword: Boolean = false,
-    val receiverHasContent: Boolean = false,
-)
-
-/**
- * Small state machine for the interactive guide. It intentionally lives in
- * commonMain: it has no UI and no platform dependencies, so it can be covered
- * by plain tests. The screens render it and feed it the same state they already
- * use for their normal work.
- */
-class GuideManager(private val logger: AppLogger) {
+/** Owns the guide's multi-step UI flow and adapts progress reports to its state. */
+class GuideViewModel(private val logger: AppLogger) {
     private val _uiState = MutableStateFlow(GuideUiState())
-    val uiState: StateFlow<GuideUiState> = _uiState.asStateFlow()
+    val state: StateFlow<GuideUiState> = _uiState.asStateFlow()
 
-    private val _actions = MutableSharedFlow<GuideAction>(extraBufferCapacity = 1)
-    val actions: SharedFlow<GuideAction> = _actions.asSharedFlow()
+    private val effectChannel = Channel<GuideEffect>(Channel.BUFFERED)
+    val effects: Flow<GuideEffect> = effectChannel.receiveAsFlow()
+
+    fun onAction(action: GuideAction) {
+        when (action) {
+            is GuideAction.Start -> if (action.role == null) start() else start(action.role)
+            GuideAction.Stop -> stop()
+            is GuideAction.RoleConfirmed -> onRoleConfirmed(action.role)
+            is GuideAction.ReportEmitterProgress -> updateEmitter(
+                action.playlistItems,
+                action.pairedScreens,
+                action.selectedScreens,
+                action.hasPassword,
+                action.sendSucceeded,
+            )
+            is GuideAction.ReportReceiverProgress -> updateReceiver(
+                action.paired,
+                action.hasPassword,
+                action.hasContent,
+            )
+            GuideAction.Next -> next()
+            GuideAction.Back -> back()
+            GuideAction.Restart -> restart()
+            is GuideAction.RequestEffect -> requestEffect(action.effect)
+        }
+    }
 
     /** Starts at the role question. Used on the role screen and from its button. */
-    fun start() {
+    private fun start() {
         _uiState.update {
             it.copy(
                 isActive = true,
@@ -88,7 +60,7 @@ class GuideManager(private val logger: AppLogger) {
      * current snapshot, so opening the guide from Settings takes the person to
      * what still needs attention instead of always starting at the beginning.
      */
-    fun start(role: AppRole) {
+    private fun start(role: AppRole) {
         _uiState.update { state ->
             state.copy(
                 isActive = true,
@@ -100,7 +72,7 @@ class GuideManager(private val logger: AppLogger) {
         logger.info("Interactive guide opened for role $role")
     }
 
-    fun stop() {
+    private fun stop() {
         if (!_uiState.value.isActive) return
         _uiState.update { it.copy(isActive = false) }
         logger.info("Interactive guide closed")
@@ -111,7 +83,7 @@ class GuideManager(private val logger: AppLogger) {
      * role is reset deliberately: this is a new demo, so the guide starts at
      * the first step and lets the real screen report what is already done.
      */
-    fun onRoleConfirmed(role: AppRole) {
+    private fun onRoleConfirmed(role: AppRole) {
         _uiState.update { state ->
             if (!state.isActive) return@update state
             val fresh = when (role) {
@@ -145,7 +117,7 @@ class GuideManager(private val logger: AppLogger) {
         }
     }
 
-    fun updateEmitter(
+    private fun updateEmitter(
         playlistItems: Int,
         pairedScreens: Int,
         selectedScreens: Int,
@@ -172,7 +144,7 @@ class GuideManager(private val logger: AppLogger) {
         }
     }
 
-    fun updateReceiver(
+    private fun updateReceiver(
         paired: Boolean,
         hasPassword: Boolean,
         hasContent: Boolean,
@@ -195,14 +167,14 @@ class GuideManager(private val logger: AppLogger) {
         }
     }
 
-    fun next() {
+    private fun next() {
         _uiState.update { state ->
             if (!state.isActive) return@update state
             state.copy(step = nextStep(state))
         }
     }
 
-    fun back() {
+    private fun back() {
         _uiState.update { state ->
             if (!state.isActive) return@update state
             // Going back is a manual review. Do not let the next state report
@@ -215,7 +187,7 @@ class GuideManager(private val logger: AppLogger) {
     }
 
     /** Replays the guide for the current role from its first step. */
-    fun restart() {
+    private fun restart() {
         _uiState.update { state ->
             val role = state.role ?: return@update state
             state.copy(
@@ -226,9 +198,9 @@ class GuideManager(private val logger: AppLogger) {
         }
     }
 
-    fun requestAction(action: GuideAction) {
+    private fun requestEffect(effect: GuideEffect) {
         if (!_uiState.value.isActive) return
-        _actions.tryEmit(action)
+        effectChannel.trySend(effect)
     }
 
     private fun initialStep(role: AppRole, state: GuideUiState): GuideStep = when (role) {

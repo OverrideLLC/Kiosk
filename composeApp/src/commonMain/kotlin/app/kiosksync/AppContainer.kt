@@ -11,7 +11,7 @@ import app.kiosksync.feature.pairing.domain.PairingManager
 import app.kiosksync.feature.playback.domain.ReceiverPlaybackSyncBridge
 import app.kiosksync.feature.playback.domain.ReceiverPlaylistBridge
 import app.kiosksync.feature.playback.domain.ReceiverStatusTracker
-import app.kiosksync.feature.projection.presentation.ProjectionController
+import app.kiosksync.feature.projection.domain.ProjectionController
 import app.kiosksync.feature.role.domain.AppConfig
 import app.kiosksync.feature.role.domain.AppConfigStore
 import app.kiosksync.feature.playlist.domain.PlaylistRepository

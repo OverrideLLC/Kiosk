@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
@@ -34,11 +32,9 @@ private const val CROSSFADE_DURATION_MS = 500
  * a discreet caption explains that content is pending.
  */
 @Composable
-fun CarouselScreen(stateHolder: PlaybackStateHolder) {
-    val uiState by stateHolder.uiState.collectAsState()
-
-    val displayedImage = uiState.currentItem?.let { item ->
-        uiState.currentBitmap?.let { bitmap -> DisplayedImage(item.sha256, bitmap) }
+fun CarouselScreen(state: PlaybackUiState) {
+    val displayedImage = state.currentItem?.let { item ->
+        state.currentBitmap?.let { bitmap -> DisplayedImage(item.sha256, bitmap) }
     }
 
     Box(
@@ -47,7 +43,7 @@ fun CarouselScreen(stateHolder: PlaybackStateHolder) {
             .background(KioskScreenColors.background),
         contentAlignment = Alignment.Center,
     ) {
-        if (uiState.hasItems && displayedImage != null) {
+        if (state.hasItems && displayedImage != null) {
             Crossfade(
                 targetState = displayedImage,
                 animationSpec = Motion.fade(CROSSFADE_DURATION_MS),

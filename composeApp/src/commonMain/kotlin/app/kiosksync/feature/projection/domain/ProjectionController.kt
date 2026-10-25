@@ -1,7 +1,6 @@
-package app.kiosksync.feature.projection.presentation
+package app.kiosksync.feature.projection.domain
 
 import app.kiosksync.feature.playlist.domain.Playlist
-import app.kiosksync.feature.projection.domain.ProjectionService
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow

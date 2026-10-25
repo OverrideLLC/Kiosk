@@ -35,13 +35,8 @@ import app.kiosksync.core.ui.components.AppDialog
 import app.kiosksync.core.ui.components.AppIcon
 import app.kiosksync.core.ui.components.AppIconButton
 import app.kiosksync.core.ui.components.AppIconButtonSize
-import app.kiosksync.core.ui.theme.KioskColors
 import app.kiosksync.core.ui.theme.KioskShape
 import app.kiosksync.core.ui.theme.Space
-import app.kiosksync.feature.guide.domain.GuideAction
-import app.kiosksync.feature.guide.domain.GuideStep
-import app.kiosksync.feature.guide.domain.GuideUiState
-
 private data class GuideStepContent(
     val title: String,
     val body: String,
@@ -57,31 +52,21 @@ private data class GuideStepContent(
 fun GuideOverlay(
     state: GuideUiState,
     onChooseRole: (AppRole) -> Unit,
-    onNext: () -> Unit,
-    onBack: () -> Unit,
-    onSkip: () -> Unit,
     onAction: (GuideAction) -> Unit,
-    onFinish: () -> Unit,
-    onRestart: () -> Unit,
 ) {
     if (!state.isActive) return
 
     if (state.step == GuideStep.ROLE) {
         GuideRoleDialog(
             onChooseRole = onChooseRole,
-            onSkip = onSkip,
+            onSkip = { onAction(GuideAction.Stop) },
         )
         return
     }
 
     GuideCoachCard(
         state = state,
-        onNext = onNext,
-        onBack = onBack,
-        onSkip = onSkip,
         onAction = onAction,
-        onFinish = onFinish,
-        onRestart = onRestart,
     )
 }
 
@@ -90,7 +75,7 @@ private fun GuideRoleDialog(
     onChooseRole: (AppRole) -> Unit,
     onSkip: () -> Unit,
 ) {
-    val colors = KioskColors.scheme
+    val colors = MaterialTheme.colorScheme
 
     AppDialog(
         title = Strings.GUIDE_TITLE,
@@ -150,14 +135,9 @@ private fun GuideRoleDialog(
 @Composable
 private fun GuideCoachCard(
     state: GuideUiState,
-    onNext: () -> Unit,
-    onBack: () -> Unit,
-    onSkip: () -> Unit,
     onAction: (GuideAction) -> Unit,
-    onFinish: () -> Unit,
-    onRestart: () -> Unit,
 ) {
-    val colors = KioskColors.scheme
+    val colors = MaterialTheme.colorScheme
     val content = guideContent(state)
     val progress = guideProgress(state)
     val isDone = state.step == GuideStep.EMITTER_DONE || state.step == GuideStep.RECEIVER_DONE
@@ -224,7 +204,7 @@ private fun GuideCoachCard(
                     AppIconButton(
                         icon = AppIcon.CLOSE,
                         contentDescription = Strings.GUIDE_SKIP,
-                        onClick = onSkip,
+                        onClick = { onAction(GuideAction.Stop) },
                         size = AppIconButtonSize.SMALL,
                     )
                 }
@@ -245,14 +225,14 @@ private fun GuideCoachCard(
                     ) {
                         AppButton(
                             text = Strings.GUIDE_RESTART,
-                            onClick = onRestart,
+                            onClick = { onAction(GuideAction.Restart) },
                             variant = AppButtonVariant.OUTLINED,
                             size = AppButtonSize.SMALL,
                             icon = AppIcon.REFRESH,
                         )
                         AppButton(
                             text = Strings.GUIDE_FINISH,
-                            onClick = onFinish,
+                            onClick = { onAction(GuideAction.Stop) },
                             size = AppButtonSize.SMALL,
                             icon = AppIcon.CHECK,
                         )
@@ -266,7 +246,7 @@ private fun GuideCoachCard(
                         if (canGoBack(state.step)) {
                             AppButton(
                                 text = Strings.GUIDE_BACK,
-                                onClick = onBack,
+                                onClick = { onAction(GuideAction.Back) },
                                 variant = AppButtonVariant.TEXT,
                                 size = AppButtonSize.SMALL,
                             )
@@ -274,14 +254,14 @@ private fun GuideCoachCard(
                         Spacer(Modifier.weight(1f))
                         AppButton(
                             text = Strings.GUIDE_SKIP,
-                            onClick = onSkip,
+                            onClick = { onAction(GuideAction.Stop) },
                             variant = AppButtonVariant.TEXT,
                             size = AppButtonSize.SMALL,
                         )
                         guideActionButton(state, onAction)
                         AppButton(
                             text = Strings.GUIDE_NEXT,
-                            onClick = onNext,
+                            onClick = { onAction(GuideAction.Next) },
                             variant = if (hasGuideAction(state.step)) {
                                 AppButtonVariant.OUTLINED
                             } else {
@@ -308,7 +288,7 @@ private fun guideActionButton(
     when (state.step) {
         GuideStep.EMITTER_PLAYLIST -> AppButton(
             text = Strings.GUIDE_ACTION_ADD_IMAGES,
-            onClick = { onAction(GuideAction.ADD_IMAGES) },
+            onClick = { onAction(GuideAction.RequestEffect(GuideEffect.AddImages)) },
             variant = AppButtonVariant.TONAL,
             size = AppButtonSize.SMALL,
             icon = AppIcon.ADD_PHOTO_ALTERNATE,
@@ -316,7 +296,7 @@ private fun guideActionButton(
 
         GuideStep.EMITTER_SCREENS -> AppButton(
             text = Strings.GUIDE_ACTION_REFRESH,
-            onClick = { onAction(GuideAction.REFRESH_DEVICES) },
+            onClick = { onAction(GuideAction.RequestEffect(GuideEffect.RefreshDevices)) },
             variant = AppButtonVariant.TONAL,
             size = AppButtonSize.SMALL,
             icon = AppIcon.REFRESH,
@@ -324,7 +304,7 @@ private fun guideActionButton(
 
         GuideStep.EMITTER_SEND -> AppButton(
             text = Strings.GUIDE_ACTION_SEND,
-            onClick = { onAction(GuideAction.SEND) },
+            onClick = { onAction(GuideAction.RequestEffect(GuideEffect.Send)) },
             variant = AppButtonVariant.FILLED,
             size = AppButtonSize.SMALL,
             icon = AppIcon.SEND,

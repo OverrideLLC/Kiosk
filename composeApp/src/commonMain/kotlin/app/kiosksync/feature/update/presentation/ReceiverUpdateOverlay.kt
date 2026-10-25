@@ -26,7 +26,6 @@ import app.kiosksync.core.ui.components.AppButtonSize
 import app.kiosksync.core.ui.components.AppButtonVariant
 import app.kiosksync.core.ui.components.AppIcon
 import app.kiosksync.core.ui.components.AppLoadingIndicator
-import app.kiosksync.core.ui.theme.KioskColors
 import app.kiosksync.core.ui.theme.KioskShape
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
@@ -44,7 +43,7 @@ fun ReceiverUpdateOverlay(
     onDismissError: () -> Unit,
 ) {
     val version = state.version ?: return
-    val colors = KioskColors.scheme
+    val colors = MaterialTheme.colorScheme
 
     Box(
         modifier = Modifier

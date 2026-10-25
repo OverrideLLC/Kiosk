@@ -177,9 +177,6 @@ object Strings {
     const val KIOSK_WRONG_PASSWORD = "Contraseña incorrecta."
     const val KIOSK_ATTEMPTS_LEFT = "Intentos restantes:"
     const val KIOSK_LOCKED_OUT = "Demasiados intentos fallidos. Espera antes de volver a intentarlo."
-    const val KIOSK_KEY_CHAR = "•"
-    const val KIOSK_KEY_BACKSPACE = "Retroceso"
-
     fun kioskTypedCharacters(count: Int): String = "$count caracteres escritos."
 
     /**

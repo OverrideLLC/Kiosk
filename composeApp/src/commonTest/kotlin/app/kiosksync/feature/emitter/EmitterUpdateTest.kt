@@ -20,7 +20,7 @@ import app.kiosksync.feature.emitter.domain.UpdateUploadResult
 import app.kiosksync.feature.kiosk.domain.KioskLockConfigurationUseCases
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.playlist.domain.Playlist
-import app.kiosksync.feature.projection.presentation.ProjectionController
+import app.kiosksync.feature.projection.domain.ProjectionController
 import app.kiosksync.feature.pairing.domain.DeviceDiscovery
 import app.kiosksync.feature.update.domain.UpdatePackage
 import kotlin.test.Test

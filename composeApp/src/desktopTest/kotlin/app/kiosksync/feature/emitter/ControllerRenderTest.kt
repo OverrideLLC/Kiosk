@@ -21,12 +21,12 @@ import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.feature.kiosk.domain.KioskLockConfigurationUseCases
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.playlist.domain.Playlist
-import app.kiosksync.feature.playlist.presentation.PlaylistEditorStateHolder
+import app.kiosksync.feature.playlist.presentation.PlaylistEditorViewModel
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorDialogs
 import app.kiosksync.feature.playlist.presentation.PlaylistPanel
 import app.kiosksync.feature.playlist.domain.PlaylistItem
 import app.kiosksync.feature.playlist.domain.PlaylistLibrary
-import app.kiosksync.feature.projection.presentation.ProjectionController
+import app.kiosksync.feature.projection.domain.ProjectionController
 import app.kiosksync.feature.pairing.domain.DeviceDiscovery
 import app.kiosksync.feature.emitter.domain.EmitterClient
 import app.kiosksync.feature.emitter.domain.ReceiverInfo
@@ -134,7 +134,7 @@ class ControllerRenderTest {
             holder.onAction(EmitterAction.ToggleSelection("rx-sala"))
             holder.onAction(EmitterAction.ToggleSelection("rx-mostrador"))
 
-            val editor = PlaylistEditorStateHolder(
+            val editor = PlaylistEditorViewModel(
                 playlistRepository = storage,
                 mediaRepository = storage,
                 logger = NoOpLogger(),
@@ -212,9 +212,9 @@ class ControllerRenderTest {
 @Composable
 private fun renderEmitterScreen(
     viewModel: EmitterViewModel,
-    editor: PlaylistEditorStateHolder,
+    editor: PlaylistEditorViewModel,
 ) {
-    val editorState = editor.uiState.collectAsState().value
+    val editorState = editor.state.collectAsState().value
     viewModel.onAction(EmitterAction.PlaylistChanged(editorState.playlist))
     EmitterScreen(
         state = viewModel.state.value,
@@ -228,12 +228,12 @@ private fun renderEmitterScreen(
         playlistPanel = { modifier ->
             PlaylistPanel(
                 state = editorState,
-                onAction = editor::dispatch,
+                onAction = editor::onAction,
                 modifier = modifier,
             )
         },
     )
-    PlaylistEditorDialogs(state = editorState, onAction = editor::dispatch)
+    PlaylistEditorDialogs(state = editorState, onAction = editor::onAction)
 }
 
 private class FakeDiscovery(devices: List<DiscoveredDevice>) : DeviceDiscovery {

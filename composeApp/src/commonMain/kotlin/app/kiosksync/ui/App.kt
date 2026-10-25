@@ -25,10 +25,11 @@ import app.kiosksync.feature.emitter.presentation.EmitterScreen
 import app.kiosksync.feature.emitter.presentation.EmitterScreenAction
 import app.kiosksync.feature.emitter.presentation.components.EmitterDialogs
 import app.kiosksync.feature.emitter.presentation.components.SettingsDialog
-import app.kiosksync.feature.guide.domain.GuideManager
-import app.kiosksync.feature.guide.domain.GuideAction
-import app.kiosksync.feature.guide.domain.GuideStep
+import app.kiosksync.feature.guide.presentation.GuideAction
+import app.kiosksync.feature.guide.presentation.GuideEffect
 import app.kiosksync.feature.guide.presentation.GuideOverlay
+import app.kiosksync.feature.guide.presentation.GuideStep
+import app.kiosksync.feature.guide.presentation.GuideViewModel
 import app.kiosksync.feature.emitter.presentation.EmitterViewModel
 import app.kiosksync.feature.emitter.presentation.SyncUiStatus
 import app.kiosksync.feature.kiosk.presentation.KioskUnlockOverlay
@@ -37,11 +38,13 @@ import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorAction
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorDialogs
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorEffect
-import app.kiosksync.feature.playlist.presentation.PlaylistEditorStateHolder
+import app.kiosksync.feature.playlist.presentation.PlaylistEditorViewModel
 import app.kiosksync.feature.playlist.presentation.PlaylistPanel
 import app.kiosksync.feature.role.domain.AppConfig
+import app.kiosksync.feature.role.presentation.RoleAction
+import app.kiosksync.feature.role.presentation.RoleEffect
 import app.kiosksync.feature.role.presentation.RoleSelectionScreen
-import app.kiosksync.feature.role.presentation.RoleStateHolder
+import app.kiosksync.feature.role.presentation.RoleViewModel
 import app.kiosksync.feature.update.presentation.ReceiverUpdateOverlay
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -59,8 +62,8 @@ fun App(
     val initialDeviceId = remember { existingConfig?.deviceId ?: container.newDeviceId() }
     val effectivePort = container.args.port ?: existingConfig?.port ?: DEFAULT_PORT
     val pairingManager: PairingManager = container.pairingManager
-    val guideManager = remember { GuideManager(container.logger) }
-    val guideState by guideManager.uiState.collectAsState()
+    val guideViewModel = remember { GuideViewModel(container.logger) }
+    val guideState by guideViewModel.state.collectAsState()
 
     // Determine initial screen based on CLI args and saved config
     val initialScreen = remember {
@@ -139,11 +142,35 @@ fun App(
         }
     }
 
-    val roleStateHolder = remember {
-        RoleStateHolder(
+    val roleViewModel = remember {
+        RoleViewModel(
             logger = container.logger,
             initialRole = container.args.role ?: existingConfig?.role
         )
+    }
+    val roleUiState by roleViewModel.state.collectAsState()
+
+    LaunchedEffect(roleViewModel) {
+        roleViewModel.effects.collect { effect ->
+            when (effect) {
+                is RoleEffect.RoleConfirmed -> {
+                    val config = AppConfig(
+                        role = effect.role,
+                        deviceId = initialDeviceId,
+                        deviceName = container.deviceName,
+                        port = effectivePort,
+                        theme = appTheme,
+                        reduceMotion = reduceMotion,
+                    )
+                    persistConfig(config)
+                    currentScreen = when (config.role) {
+                        AppRole.EMITTER -> Screen.EmitterHome(config)
+                        AppRole.RECEIVER -> Screen.ReceiverHome(config)
+                    }
+                    guideViewModel.onAction(GuideAction.RoleConfirmed(config.role))
+                }
+            }
+        }
     }
 
     val playbackStateHolder = remember {
@@ -191,7 +218,7 @@ fun App(
 
     LaunchedEffect(Unit) {
         if (existingConfig == null && container.args.role == null) {
-            guideManager.start()
+            guideViewModel.onAction(GuideAction.Start())
         }
     }
 
@@ -232,8 +259,8 @@ fun App(
                 container.pairingManager.unpair()
                 container.kioskLockRepository.clearLock()
                 container.configStore.clear()
-                guideManager.stop()
-                roleStateHolder.confirmChangeRole()
+                guideViewModel.onAction(GuideAction.Stop)
+                roleViewModel.onAction(RoleAction.ResetSelection)
                 currentConfig = null
                 container.kioskLockManager.release()
                 container.projectionController.stop()
@@ -293,7 +320,7 @@ fun App(
         if (lockState.isLocked) {
             showReceiverOptions = false
             showUnpairConfirm = false
-            if (currentScreen is Screen.ReceiverHome) guideManager.stop()
+            if (currentScreen is Screen.ReceiverHome) guideViewModel.onAction(GuideAction.Stop)
         } else if (previous && currentScreen is Screen.ReceiverHome) {
             showReceiverOptions = true
         }
@@ -339,22 +366,10 @@ fun App(
                 when (val screen = currentScreen) {
                     is Screen.RoleSelection -> {
                         RoleSelectionScreen(
-                            stateHolder = roleStateHolder,
-                            onRoleConfirmed = { confirmedConfig ->
-                                persistConfig(confirmedConfig)
-                                currentScreen = when (confirmedConfig.role) {
-                                    AppRole.EMITTER -> Screen.EmitterHome(confirmedConfig)
-                                    AppRole.RECEIVER -> Screen.ReceiverHome(confirmedConfig)
-                                }
-                                guideManager.onRoleConfirmed(confirmedConfig.role)
-                            },
-                            deviceId = initialDeviceId,
-                            deviceName = container.deviceName,
-                            port = effectivePort,
+                            state = roleUiState,
+                            onAction = roleViewModel::onAction,
                             onExitRequested = onExitRequested,
-                            theme = appTheme,
-                            reduceMotion = reduceMotion,
-                            onOpenGuide = { guideManager.start() }
+                            onOpenGuide = { guideViewModel.onAction(GuideAction.Start()) }
                         )
                     }
 
@@ -362,7 +377,7 @@ fun App(
                         EmitterWorkspace(
                             config = screen.config,
                             container = container,
-                            guideManager = guideManager,
+                            guideViewModel = guideViewModel,
                             onExitRequested = onExitRequested,
                             onRoleReset = { resetRole() },
                             theme = appTheme,
@@ -378,8 +393,10 @@ fun App(
                             container = container,
                             pairingManager = pairingManager,
                             playbackStateHolder = playbackStateHolder,
-                            guideManager = guideManager,
-                            onOpenGuide = { guideManager.start(AppRole.RECEIVER) },
+                            guideViewModel = guideViewModel,
+                            onOpenGuide = {
+                                guideViewModel.onAction(GuideAction.Start(AppRole.RECEIVER))
+                            },
                             onExitRequested = onExitRequested,
                             onChangeRoleRequested = { showChangeRoleConfirm = true }
                         )
@@ -405,35 +422,13 @@ fun App(
                     GuideOverlay(
                         state = guideState,
                         onChooseRole = { role ->
-                            roleStateHolder.selectRole(role)
-                            val config = roleStateHolder.confirmRole(
-                                deviceId = initialDeviceId,
-                                deviceName = container.deviceName,
-                                port = effectivePort,
-                                theme = appTheme,
-                                reduceMotion = reduceMotion,
-                            )
-                            config?.let { confirmed ->
-                                persistConfig(confirmed)
-                                currentScreen = when (confirmed.role) {
-                                    AppRole.EMITTER -> Screen.EmitterHome(confirmed)
-                                    AppRole.RECEIVER -> Screen.ReceiverHome(confirmed)
-                                }
-                                guideManager.onRoleConfirmed(confirmed.role)
-                            }
+                            roleViewModel.onAction(RoleAction.SelectRole(role))
+                            roleViewModel.onAction(RoleAction.ConfirmRole)
                         },
-                        onNext = { guideManager.next() },
-                        onBack = { guideManager.back() },
-                        onSkip = {
-                            guideManager.stop()
-                            relockReceiverIfNeeded()
+                        onAction = { action ->
+                            guideViewModel.onAction(action)
+                            if (action == GuideAction.Stop) relockReceiverIfNeeded()
                         },
-                        onAction = { guideManager.requestAction(it) },
-                        onFinish = {
-                            guideManager.stop()
-                            relockReceiverIfNeeded()
-                        },
-                        onRestart = { guideManager.restart() },
                     )
                 }
 
@@ -459,7 +454,7 @@ fun App(
                 isReceiver = currentScreen is Screen.ReceiverHome,
                 onOpenGuide = {
                     showReceiverOptions = false
-                    guideManager.start(AppRole.RECEIVER)
+                    guideViewModel.onAction(GuideAction.Start(AppRole.RECEIVER))
                 },
                 onDismiss = { closeReceiverOptions() },
                 onChangeRole = {
@@ -516,7 +511,7 @@ fun App(
 private fun EmitterWorkspace(
     config: AppConfig,
     container: AppContainer,
-    guideManager: GuideManager,
+    guideViewModel: GuideViewModel,
     onExitRequested: () -> Unit,
     onRoleReset: () -> Unit,
     theme: AppTheme,
@@ -539,8 +534,8 @@ private fun EmitterWorkspace(
         )
     }
     val emitterState by viewModel.state.collectAsState()
-    val playlistStateHolder = remember(config.deviceId, container) {
-        PlaylistEditorStateHolder(
+    val playlistViewModel = remember(config.deviceId, container) {
+        PlaylistEditorViewModel(
             playlistRepository = container.playlistRepository,
             mediaRepository = container.mediaRepository,
             logger = container.logger,
@@ -548,8 +543,8 @@ private fun EmitterWorkspace(
             newPlaylistId = container.newDeviceId,
         )
     }
-    val playlistEditorState by playlistStateHolder.uiState.collectAsState()
-    val guideState by guideManager.uiState.collectAsState()
+    val playlistEditorState by playlistViewModel.state.collectAsState()
+    val guideState by guideViewModel.state.collectAsState()
     val pairedCount = emitterState.devices.count { it.isPairedToThisEmitter }
     val selectedIds = emitterState.devices
         .filter { it.isSelected && it.isPairedToThisEmitter }
@@ -563,17 +558,17 @@ private fun EmitterWorkspace(
         onDispose { viewModel.stop() }
     }
 
-    LaunchedEffect(playlistStateHolder) {
-        playlistStateHolder.effects.collect { effect ->
+    LaunchedEffect(playlistViewModel) {
+        playlistViewModel.effects.collect { effect ->
             when (effect) {
                 PlaylistEditorEffect.SelectImageFiles -> try {
-                    playlistStateHolder.dispatch(
+                    playlistViewModel.onAction(
                         PlaylistEditorAction.ImagesSelected(container.pickImageFiles())
                     )
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (error: Exception) {
-                    playlistStateHolder.dispatch(PlaylistEditorAction.ImagePickerFailed(error))
+                    playlistViewModel.onAction(PlaylistEditorAction.ImagePickerFailed(error))
                 }
             }
         }
@@ -589,12 +584,14 @@ private fun EmitterWorkspace(
         emitterState.hasKioskPassword,
         selectedSendSucceeded,
     ) {
-        guideManager.updateEmitter(
-            playlistItems = playlistEditorState.playlist.items.size,
-            pairedScreens = pairedCount,
-            selectedScreens = selectedIds.size,
-            hasPassword = emitterState.hasKioskPassword,
-            sendSucceeded = selectedSendSucceeded,
+        guideViewModel.onAction(
+            GuideAction.ReportEmitterProgress(
+                playlistItems = playlistEditorState.playlist.items.size,
+                pairedScreens = pairedCount,
+                selectedScreens = selectedIds.size,
+                hasPassword = emitterState.hasKioskPassword,
+                sendSucceeded = selectedSendSucceeded,
+            ),
         )
     }
     LaunchedEffect(guideState.step) {
@@ -618,16 +615,16 @@ private fun EmitterWorkspace(
                 ?.let { viewModel.onAction(EmitterAction.ToggleSelection(it.deviceId)) }
         }
     }
-    LaunchedEffect(guideManager, viewModel, playlistStateHolder) {
-        guideManager.actions.collect { action ->
-            when (action) {
-                GuideAction.ADD_IMAGES -> playlistStateHolder.addImages()
-                GuideAction.REFRESH_DEVICES -> viewModel.onAction(EmitterAction.RefreshDevices)
-                GuideAction.SEND -> viewModel.onAction(EmitterAction.SendToSelected)
+    LaunchedEffect(guideViewModel, viewModel, playlistViewModel) {
+        guideViewModel.effects.collect { effect ->
+            when (effect) {
+                GuideEffect.AddImages -> playlistViewModel.onAction(PlaylistEditorAction.AddImages)
+                GuideEffect.RefreshDevices -> viewModel.onAction(EmitterAction.RefreshDevices)
+                GuideEffect.Send -> viewModel.onAction(EmitterAction.SendToSelected)
             }
         }
     }
-    LaunchedEffect(viewModel, playlistStateHolder) {
+    LaunchedEffect(viewModel, playlistViewModel) {
         container.projectionController.toggleRequests.collect {
             viewModel.onAction(EmitterAction.RequestProjection)
         }
@@ -655,13 +652,13 @@ private fun EmitterWorkspace(
         playlistPanel = { modifier ->
             PlaylistPanel(
                 state = playlistEditorState,
-                onAction = playlistStateHolder::dispatch,
+                onAction = playlistViewModel::onAction,
                 modifier = modifier,
             )
         },
     )
     EmitterDialogs(state = emitterState, onAction = dispatch)
-    PlaylistEditorDialogs(state = playlistEditorState, onAction = playlistStateHolder::dispatch)
+    PlaylistEditorDialogs(state = playlistEditorState, onAction = playlistViewModel::onAction)
     if (emitterState.isSettingsOpen) {
         SettingsDialog(
             theme = theme,
@@ -670,7 +667,7 @@ private fun EmitterWorkspace(
             onReduceMotionChange = onReduceMotionChange,
             onOpenGuide = {
                 viewModel.onAction(EmitterAction.DismissSettings)
-                guideManager.start(AppRole.EMITTER)
+                guideViewModel.onAction(GuideAction.Start(AppRole.EMITTER))
             },
             onDismiss = { viewModel.onAction(EmitterAction.DismissSettings) },
         )

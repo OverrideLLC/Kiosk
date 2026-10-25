@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,9 +24,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import app.kiosksync.core.Strings
+import app.kiosksync.feature.kiosk.domain.KioskLockFeedback
 import app.kiosksync.feature.kiosk.domain.KioskLockUiState
 import app.kiosksync.core.ui.components.AppIcon
-import app.kiosksync.core.ui.theme.KioskColors
 import app.kiosksync.core.ui.theme.KioskDisplayType
 import app.kiosksync.core.ui.theme.KioskShape
 import app.kiosksync.core.ui.theme.KioskScreenColors
@@ -44,9 +45,9 @@ import app.kiosksync.core.ui.theme.Space
 @Composable
 fun KioskUnlockOverlay(state: KioskLockUiState) {
     if (!state.isLocked) return
-    if (!state.showUnlockHint && state.message == null && state.lockoutRemainingSec == 0) return
+    if (!state.showUnlockHint && state.feedback == null && state.lockoutRemainingSec == 0) return
 
-    val colors = KioskColors.scheme
+    val colors = MaterialTheme.colorScheme
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -101,9 +102,9 @@ fun KioskUnlockOverlay(state: KioskLockUiState) {
                     )
                 }
 
-                state.message?.let { message ->
+                state.feedback?.let { feedback ->
                     Text(
-                        text = message,
+                        text = feedbackText(feedback),
                         style = KioskDisplayType.screenCaption(),
                         color = colors.error,
                     )
@@ -118,6 +119,13 @@ fun KioskUnlockOverlay(state: KioskLockUiState) {
             }
         }
     }
+}
+
+private fun feedbackText(feedback: KioskLockFeedback): String = when (feedback) {
+    is KioskLockFeedback.IncorrectPassword ->
+        "${Strings.KIOSK_WRONG_PASSWORD} ${Strings.KIOSK_ATTEMPTS_LEFT} ${feedback.attemptsRemaining}"
+
+    KioskLockFeedback.LockedOut -> Strings.KIOSK_LOCKED_OUT
 }
 
 @Composable

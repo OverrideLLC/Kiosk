@@ -8,12 +8,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import app.kiosksync.AppContainer
 import app.kiosksync.core.Strings
-import app.kiosksync.feature.guide.domain.GuideManager
+import app.kiosksync.feature.guide.presentation.GuideAction
+import app.kiosksync.feature.guide.presentation.GuideViewModel
 import app.kiosksync.feature.pairing.domain.PairingManager
 import app.kiosksync.feature.pairing.presentation.PairingCodeScreen
 import app.kiosksync.feature.playback.presentation.CarouselScreen
 import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
 import app.kiosksync.feature.role.domain.AppConfig
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -30,7 +32,7 @@ fun ReceiverHomeScreen(
     container: AppContainer,
     pairingManager: PairingManager,
     playbackStateHolder: PlaybackStateHolder,
-    guideManager: GuideManager,
+    guideViewModel: GuideViewModel,
     onOpenGuide: () -> Unit,
     onExitRequested: () -> Unit,
     onChangeRoleRequested: () -> Unit
@@ -42,6 +44,15 @@ fun ReceiverHomeScreen(
         MutableStateFlow(ReceiverRuntimeUi(port = config.port))
     }
     val runtime by runtimeState.collectAsState()
+
+    LaunchedEffect(pairingManager, pairingState.isPaired) {
+        if (!pairingState.isPaired) {
+            while (true) {
+                pairingManager.tick()
+                delay(1000)
+            }
+        }
+    }
 
     // Starting Ktor and mDNS can block for a while. Keep both operations on the
     // serial service worker so the UI appears instantly and start/stop never race.
@@ -85,16 +96,18 @@ fun ReceiverHomeScreen(
     }
 
     LaunchedEffect(pairingState.isPaired, lockState.hasPassword, playbackState.hasItems) {
-        guideManager.updateReceiver(
-            paired = pairingState.isPaired,
-            hasPassword = lockState.hasPassword,
-            hasContent = playbackState.hasItems,
+        guideViewModel.onAction(
+            GuideAction.ReportReceiverProgress(
+                paired = pairingState.isPaired,
+                hasPassword = lockState.hasPassword,
+                hasContent = playbackState.hasItems,
+            ),
         )
     }
 
     when {
         !pairingState.isPaired -> PairingCodeScreen(
-            pairingManager = pairingManager,
+            state = pairingState,
             serviceError = runtime.error,
             onOpenGuide = onOpenGuide,
             onExitRequested = onExitRequested,
@@ -109,7 +122,7 @@ fun ReceiverHomeScreen(
         !lockState.hasPassword -> WaitingForPasswordScreen()
 
         else -> CarouselScreen(
-            stateHolder = playbackStateHolder
+            state = playbackState
         )
     }
 }

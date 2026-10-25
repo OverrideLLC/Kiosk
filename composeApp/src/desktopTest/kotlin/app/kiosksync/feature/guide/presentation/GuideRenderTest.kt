@@ -3,14 +3,12 @@ package app.kiosksync.feature.guide.presentation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Density
 import app.kiosksync.core.AppRole
-import app.kiosksync.feature.guide.domain.GuideStep
-import app.kiosksync.feature.guide.domain.GuideUiState
 import app.kiosksync.core.AppTheme
-import app.kiosksync.core.ui.theme.KioskColors
 import app.kiosksync.core.ui.theme.KioskTheme
 import java.io.File
 import kotlin.test.Test
@@ -85,17 +83,12 @@ class GuideRenderTest {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(KioskColors.scheme.surface),
+                        .background(MaterialTheme.colorScheme.surface),
                 ) {
                     GuideOverlay(
                         state = state,
                         onChooseRole = {},
-                        onNext = {},
-                        onBack = {},
-                        onSkip = {},
                         onAction = {},
-                        onFinish = {},
-                        onRestart = {},
                     )
                 }
             }

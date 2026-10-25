@@ -19,10 +19,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,15 +28,12 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import app.kiosksync.core.AppRole
-import app.kiosksync.core.AppTheme
 import app.kiosksync.core.Strings
-import app.kiosksync.feature.role.domain.AppConfig
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppButtonSize
 import app.kiosksync.core.ui.components.AppButtonVariant
 import app.kiosksync.core.ui.components.AppIcon
 import app.kiosksync.core.ui.components.AppSelectableCard
-import app.kiosksync.core.ui.theme.KioskColors
 import app.kiosksync.core.ui.theme.KioskShape
 import app.kiosksync.core.ui.components.OverrideFooter
 import app.kiosksync.core.ui.components.OverrideLogo
@@ -53,27 +46,13 @@ import app.kiosksync.core.ui.theme.Space
  */
 @Composable
 fun RoleSelectionScreen(
-    stateHolder: RoleStateHolder,
-    onRoleConfirmed: (AppConfig) -> Unit,
-    deviceId: String,
-    deviceName: String,
-    port: Int,
+    state: RoleUiState,
+    onAction: (RoleAction) -> Unit,
     onExitRequested: () -> Unit = {},
-    theme: AppTheme = AppTheme.DARK,
-    reduceMotion: Boolean = false,
     onOpenGuide: () -> Unit = {}
 ) {
-    val uiState by stateHolder.uiState.collectAsState()
-    val currentOnRoleConfirmed by rememberUpdatedState(onRoleConfirmed)
-    LaunchedEffect(stateHolder) {
-        stateHolder.effects.collect { effect ->
-            when (effect) {
-                is RoleEffect.RoleConfirmed -> currentOnRoleConfirmed(effect.config)
-            }
-        }
-    }
-    val colors = KioskColors.scheme
-    val selectedRole = uiState.selectedRole
+    val colors = MaterialTheme.colorScheme
+    val selectedRole = state.selectedRole
 
     Column(
         modifier = Modifier
@@ -118,12 +97,12 @@ fun RoleSelectionScreen(
                             if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                             when (event.key) {
                                 Key.DirectionLeft -> {
-                                    stateHolder.dispatch(RoleAction.SelectRole(AppRole.EMITTER))
+                                    onAction(RoleAction.SelectRole(AppRole.EMITTER))
                                     true
                                 }
 
                                 Key.DirectionRight -> {
-                                    stateHolder.dispatch(RoleAction.SelectRole(AppRole.RECEIVER))
+                                    onAction(RoleAction.SelectRole(AppRole.RECEIVER))
                                     true
                                 }
 
@@ -137,7 +116,7 @@ fun RoleSelectionScreen(
                         description = Strings.ROLE_EMITTER_DESC,
                         icon = AppIcon.CAST,
                         selected = selectedRole == AppRole.EMITTER,
-                        onClick = { stateHolder.dispatch(RoleAction.SelectRole(AppRole.EMITTER)) },
+                        onClick = { onAction(RoleAction.SelectRole(AppRole.EMITTER)) },
                         modifier = Modifier.weight(1f).height(Sizes.roleCardHeight),
                     )
                     AppSelectableCard(
@@ -145,7 +124,7 @@ fun RoleSelectionScreen(
                         description = Strings.ROLE_RECEIVER_DESC,
                         icon = AppIcon.TV,
                         selected = selectedRole == AppRole.RECEIVER,
-                        onClick = { stateHolder.dispatch(RoleAction.SelectRole(AppRole.RECEIVER)) },
+                        onClick = { onAction(RoleAction.SelectRole(AppRole.RECEIVER)) },
                         modifier = Modifier.weight(1f).height(Sizes.roleCardHeight),
                     )
                 }
@@ -154,15 +133,7 @@ fun RoleSelectionScreen(
 
                 AppButton(
                     text = Strings.ROLE_CONFIRM_BUTTON,
-                    onClick = {
-                        stateHolder.dispatch(RoleAction.ConfirmRole(
-                            deviceId = deviceId,
-                            deviceName = deviceName,
-                            port = port,
-                            theme = theme,
-                            reduceMotion = reduceMotion,
-                        ))
-                    },
+                    onClick = { onAction(RoleAction.ConfirmRole) },
                     enabled = selectedRole != null,
                     disabledReason = Strings.ROLE_SELECT_FIRST,
                     size = AppButtonSize.LARGE,
@@ -193,7 +164,7 @@ private fun BrandHeader(
     onExitRequested: () -> Unit,
     onOpenGuide: () -> Unit
 ) {
-    val colors = KioskColors.scheme
+    val colors = MaterialTheme.colorScheme
 
     Row(
         modifier = Modifier.fillMaxWidth(),

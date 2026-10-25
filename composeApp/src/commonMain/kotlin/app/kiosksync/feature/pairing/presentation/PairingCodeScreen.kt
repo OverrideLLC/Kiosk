@@ -17,9 +17,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,7 +24,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import app.kiosksync.core.Strings
-import app.kiosksync.feature.pairing.domain.PairingManager
+import app.kiosksync.feature.pairing.domain.PairingUiState
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppButtonSize
 import app.kiosksync.core.ui.components.AppButtonVariant
@@ -39,7 +36,6 @@ import app.kiosksync.core.ui.theme.KioskShape
 import app.kiosksync.core.ui.components.OverrideLogo
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
-import kotlinx.coroutines.delay
 
 /**
  * Receiver pairing screen, designed to be read from several metres: a huge
@@ -48,7 +44,7 @@ import kotlinx.coroutines.delay
  */
 @Composable
 fun PairingCodeScreen(
-    pairingManager: PairingManager,
+    state: PairingUiState,
     serviceError: String?,
     onOpenGuide: () -> Unit = {},
     onExitRequested: () -> Unit,
@@ -57,15 +53,6 @@ fun PairingCodeScreen(
     receiverIp: String? = null,
     receiverPort: Int? = null,
 ) {
-    val state by pairingManager.uiState.collectAsState()
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            pairingManager.tick()
-            delay(1000)
-        }
-    }
-
     Box(
         modifier = Modifier
             .fillMaxSize()

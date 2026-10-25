@@ -9,7 +9,6 @@ import app.kiosksync.core.ui.components.AppButtonSize
 import app.kiosksync.core.ui.components.AppButtonVariant
 import app.kiosksync.core.ui.components.AppDialog
 import app.kiosksync.core.ui.components.AppIcon
-import app.kiosksync.core.ui.theme.KioskColors
 
 @Composable
 internal fun ReceiverOptionsDialog(
@@ -28,7 +27,7 @@ internal fun ReceiverOptionsDialog(
             Text(
                 text = if (isReceiver) Strings.RECEIVER_UNLOCKED_MESSAGE else Strings.OPTIONS_MESSAGE,
                 style = MaterialTheme.typography.bodyLarge,
-                color = KioskColors.scheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
         actions = {
@@ -76,7 +75,7 @@ internal fun ReceiverUnpairDialog(
             Text(
                 text = Strings.UNPAIR_RECEIVER_CONFIRM,
                 style = MaterialTheme.typography.bodyLarge,
-                color = KioskColors.scheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
         actions = {
@@ -116,7 +115,7 @@ internal fun ChangeRoleDialog(
                     else -> Strings.CHANGE_ROLE_CONFIRM
                 },
                 style = MaterialTheme.typography.bodyLarge,
-                color = KioskColors.scheme.onSurfaceVariant,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
         actions = {

@@ -38,7 +38,7 @@ class ReceiverRenderTest {
 
         render(output, "receiver-pairing") {
             PairingCodeScreen(
-                pairingManager = pairingManager,
+                state = pairingManager.uiState.value,
                 serviceError = null,
                 onExitRequested = {},
                 onChangeRoleRequested = {},

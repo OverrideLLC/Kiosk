@@ -107,7 +107,7 @@ class PairingManager(
 
     /**
      * Updates countdowns and renews the code when it expires. Meant to be called
-     * once per second by the receiver UI.
+     * once per second while the receiver is unpaired.
      */
     suspend fun tick() = pairingMutex.withLock {
         if (_uiState.value.isPaired) {
