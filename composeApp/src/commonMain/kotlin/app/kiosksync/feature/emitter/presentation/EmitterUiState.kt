@@ -1,6 +1,7 @@
 package app.kiosksync.feature.emitter.presentation
 
 import app.kiosksync.core.DEFAULT_UNLOCK_SEQUENCE
+import app.kiosksync.feature.emitter.domain.EmitterUpdateState
 import app.kiosksync.feature.playlist.domain.Playlist
 
 data class EmitterDeviceUi(
@@ -13,23 +14,6 @@ data class EmitterDeviceUi(
     val isOnline: Boolean,
     val isSelected: Boolean,
     val appVersion: String? = null
-)
-
-enum class DeviceUpdateStatus {
-    PREPARING,
-    UPLOADING,
-    AWAITING_CONFIRMATION,
-    APPLYING,
-    SKIPPED,
-    FAILED,
-    UNAVAILABLE
-}
-
-data class DeviceUpdateUi(
-    val status: DeviceUpdateStatus,
-    val version: String,
-    val forced: Boolean = false,
-    val message: String? = null
 )
 
 enum class SyncUiStatus {
@@ -90,7 +74,7 @@ data class EmitterUiState(
     val statusMessage: String? = null,
     val statusIsError: Boolean = false,
     val syncByDevice: Map<String, DeviceSyncUi> = emptyMap(),
-    val updateByDevice: Map<String, DeviceUpdateUi> = emptyMap(),
+    val updateByDevice: Map<String, EmitterUpdateState> = emptyMap(),
     val isSending: Boolean = false,
     val isSyncing: Boolean = false,
     val passwordDialog: KioskPasswordDialogUi? = null,

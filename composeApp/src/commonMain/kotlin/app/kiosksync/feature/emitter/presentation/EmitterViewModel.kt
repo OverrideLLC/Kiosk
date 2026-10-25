@@ -1,21 +1,18 @@
 package app.kiosksync.feature.emitter.presentation
 
 import app.kiosksync.core.AppLogger
+import app.kiosksync.core.DEFAULT_UNLOCK_SEQUENCE
 import app.kiosksync.core.KioskLockConfig
+import app.kiosksync.core.MAX_RECOVERY_PHRASE_LENGTH
+import app.kiosksync.core.MAX_UNLOCK_SEQUENCE_LENGTH
 import app.kiosksync.core.Strings
 import app.kiosksync.feature.emitter.domain.EmitterService
 import app.kiosksync.feature.emitter.domain.EmitterServiceDevice
 import app.kiosksync.feature.emitter.domain.EmitterServiceState
-import app.kiosksync.feature.emitter.domain.EmitterUpdateStatus
 import app.kiosksync.feature.emitter.presentation.coordinators.EmitterDeliveryCoordinator
 import app.kiosksync.feature.emitter.presentation.coordinators.EmitterManualIpCoordinator
 import app.kiosksync.feature.emitter.presentation.coordinators.EmitterPairingCoordinator
 import app.kiosksync.feature.emitter.presentation.coordinators.EmitterSecurityCoordinator
-import app.kiosksync.core.DEFAULT_UNLOCK_SEQUENCE
-import app.kiosksync.core.MAX_RECOVERY_PHRASE_LENGTH
-import app.kiosksync.core.MAX_UNLOCK_SEQUENCE_LENGTH
-import app.kiosksync.feature.emitter.presentation.DeviceUpdateStatus
-import app.kiosksync.feature.emitter.presentation.DeviceUpdateUi
 import app.kiosksync.feature.emitter.presentation.EmitterDeviceUi
 import app.kiosksync.feature.emitter.presentation.EmitterPendingAction
 import app.kiosksync.feature.emitter.presentation.EmitterUiState
@@ -55,30 +52,6 @@ class EmitterViewModel(
     private val selectedIds = mutableSetOf<String>()
     private val jobs = mutableListOf<Job>()
     private var started = false
-
-    private val updateByDevice: Map<String, DeviceUpdateUi>
-        get() = serviceState.updateByDevice.mapValues { (deviceId, update) ->
-            val deviceVersion = serviceState.devices.firstOrNull { it.deviceId == deviceId }?.appVersion
-            DeviceUpdateUi(
-                status = when (update.status) {
-                    EmitterUpdateStatus.PREPARING -> DeviceUpdateStatus.PREPARING
-                    EmitterUpdateStatus.UPLOADING -> DeviceUpdateStatus.UPLOADING
-                    EmitterUpdateStatus.AWAITING_CONFIRMATION -> DeviceUpdateStatus.AWAITING_CONFIRMATION
-                    EmitterUpdateStatus.APPLYING -> DeviceUpdateStatus.APPLYING
-                    EmitterUpdateStatus.SKIPPED -> DeviceUpdateStatus.SKIPPED
-                    EmitterUpdateStatus.FAILED -> DeviceUpdateStatus.FAILED
-                    EmitterUpdateStatus.UNAVAILABLE -> DeviceUpdateStatus.UNAVAILABLE
-                },
-                version = update.version,
-                forced = update.forced,
-                message = when (update.status) {
-                    EmitterUpdateStatus.SKIPPED -> deviceVersion?.let(Strings::updateSkipped)
-                    EmitterUpdateStatus.FAILED -> Strings.UPDATE_SEND_FAILED
-                    EmitterUpdateStatus.UNAVAILABLE -> Strings.UPDATE_SEND_UNAVAILABLE
-                    else -> null
-                },
-            )
-        }
 
     private val deliveryCoordinator = EmitterDeliveryCoordinator(
         uiState = _uiState,
@@ -360,7 +333,7 @@ class EmitterViewModel(
             it.copy(
                 devices = devices,
                 isSearching = serviceState.isSearching,
-                updateByDevice = updateByDevice,
+                updateByDevice = serviceState.updateByDevice,
             )
         }
     }

@@ -3,25 +3,25 @@ package app.kiosksync.feature.emitter
 import app.kiosksync.FakeRepositories
 import app.kiosksync.FakeUpdatePackageProvider
 import app.kiosksync.NoOpLogger
-import app.kiosksync.feature.emitter.presentation.DeviceUpdateStatus
 import app.kiosksync.feature.emitter.presentation.EmitterViewModel
 import app.kiosksync.core.APP_VERSION
 import app.kiosksync.core.DiscoveredDevice
 import app.kiosksync.core.EmitterPairedDevice
 import app.kiosksync.core.KioskLockConfig
+import app.kiosksync.feature.emitter.data.EmitterServiceImpl
+import app.kiosksync.feature.emitter.domain.EmitterClient
+import app.kiosksync.feature.emitter.domain.EmitterUpdateStatus
+import app.kiosksync.feature.emitter.domain.PlaylistApplyResult
+import app.kiosksync.feature.emitter.domain.ReceiverInfo
+import app.kiosksync.feature.emitter.domain.ReceiverPairingCredential
+import app.kiosksync.feature.emitter.domain.ReceiverStatus
+import app.kiosksync.feature.emitter.domain.RemoteSyncState
+import app.kiosksync.feature.emitter.domain.UpdateUploadResult
 import app.kiosksync.feature.kiosk.domain.KioskLockConfigurationUseCases
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.projection.presentation.ProjectionController
 import app.kiosksync.feature.pairing.domain.DeviceDiscovery
-import app.kiosksync.feature.emitter.domain.EmitterClient
-import app.kiosksync.feature.emitter.domain.ReceiverInfo
-import app.kiosksync.feature.emitter.domain.ReceiverPairingCredential
-import app.kiosksync.feature.emitter.domain.ReceiverStatus
-import app.kiosksync.feature.emitter.domain.PlaylistApplyResult
-import app.kiosksync.feature.emitter.domain.RemoteSyncState
-import app.kiosksync.feature.emitter.domain.UpdateUploadResult
-import app.kiosksync.feature.emitter.data.EmitterServiceImpl
 import app.kiosksync.feature.update.domain.UpdatePackage
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -106,7 +106,7 @@ class EmitterUpdateTest {
 
             assertEquals(listOf(APP_VERSION), client.uploadedVersions)
             assertEquals(
-                DeviceUpdateStatus.AWAITING_CONFIRMATION,
+                EmitterUpdateStatus.AWAITING_CONFIRMATION,
                 holder.state.value.updateByDevice["rx-1"]?.status
             )
             assertTrue(holder.state.value.devices.single().appVersion == "0.9.0")

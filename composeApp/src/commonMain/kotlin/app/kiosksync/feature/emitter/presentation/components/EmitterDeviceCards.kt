@@ -1,8 +1,8 @@
 package app.kiosksync.feature.emitter.presentation.components
 
+import app.kiosksync.feature.emitter.domain.EmitterUpdateStatus
+import app.kiosksync.feature.emitter.domain.EmitterUpdateState
 import app.kiosksync.feature.emitter.presentation.DeviceSyncUi
-import app.kiosksync.feature.emitter.presentation.DeviceUpdateStatus
-import app.kiosksync.feature.emitter.presentation.DeviceUpdateUi
 import app.kiosksync.feature.emitter.presentation.EmitterDeviceUi
 import app.kiosksync.feature.emitter.presentation.SyncUiStatus
 
@@ -67,7 +67,7 @@ import app.kiosksync.core.ui.theme.Space
 internal fun DeviceCard(
     device: EmitterDeviceUi,
     sync: DeviceSyncUi?,
-    update: DeviceUpdateUi?,
+    update: EmitterUpdateState?,
     onToggleSelection: () -> Unit,
     onPair: () -> Unit,
     onUnpair: () -> Unit,
@@ -83,10 +83,10 @@ internal fun DeviceCard(
         versionPlan != null &&
         versionPlan.urgency != UpdateUrgency.NONE &&
         update?.status in setOf(
-            DeviceUpdateStatus.FAILED,
-            DeviceUpdateStatus.SKIPPED,
-            DeviceUpdateStatus.UNAVAILABLE,
-            DeviceUpdateStatus.AWAITING_CONFIRMATION
+            EmitterUpdateStatus.FAILED,
+            EmitterUpdateStatus.SKIPPED,
+            EmitterUpdateStatus.UNAVAILABLE,
+            EmitterUpdateStatus.AWAITING_CONFIRMATION
         )
 
     val statusLabel: String
@@ -230,21 +230,21 @@ internal fun DeviceCard(
 
             update?.let {
                 Spacer(Modifier.height(Space.xs))
-                UpdateStatusRow(it)
+                UpdateStatusRow(it, device.appVersion)
             }
         }
     }
 }
 
 @Composable
-internal fun UpdateStatusRow(update: DeviceUpdateUi) {
+internal fun UpdateStatusRow(update: EmitterUpdateState, deviceVersion: String?) {
     val colors = KioskColors.scheme
     val extra = KioskColors.extra
 
     when (update.status) {
-        DeviceUpdateStatus.PREPARING,
-        DeviceUpdateStatus.UPLOADING,
-        DeviceUpdateStatus.APPLYING -> Row(
+        EmitterUpdateStatus.PREPARING,
+        EmitterUpdateStatus.UPLOADING,
+        EmitterUpdateStatus.APPLYING -> Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Space.xs),
         ) {
@@ -254,8 +254,8 @@ internal fun UpdateStatusRow(update: DeviceUpdateUi) {
             )
             Text(
                 text = when (update.status) {
-                    DeviceUpdateStatus.PREPARING -> Strings.UPDATE_SEND_PREPARING
-                    DeviceUpdateStatus.UPLOADING -> Strings.UPDATE_SEND_UPLOADING
+                    EmitterUpdateStatus.PREPARING -> Strings.UPDATE_SEND_PREPARING
+                    EmitterUpdateStatus.UPLOADING -> Strings.UPDATE_SEND_UPLOADING
                     else -> Strings.UPDATE_SEND_APPLYING
                 },
                 style = MaterialTheme.typography.bodySmall,
@@ -263,7 +263,7 @@ internal fun UpdateStatusRow(update: DeviceUpdateUi) {
             )
         }
 
-        DeviceUpdateStatus.AWAITING_CONFIRMATION -> Row(
+        EmitterUpdateStatus.AWAITING_CONFIRMATION -> Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Space.xs),
         ) {
@@ -280,13 +280,13 @@ internal fun UpdateStatusRow(update: DeviceUpdateUi) {
             )
         }
 
-        DeviceUpdateStatus.SKIPPED -> Text(
-            text = update.message ?: Strings.updateSkipped(update.version),
+        EmitterUpdateStatus.SKIPPED -> Text(
+            text = deviceVersion?.let(Strings::updateSkipped) ?: Strings.updateSkipped(update.version),
             style = MaterialTheme.typography.bodySmall,
             color = colors.onSurfaceVariant,
         )
 
-        DeviceUpdateStatus.FAILED -> Row(
+        EmitterUpdateStatus.FAILED -> Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Space.xs),
         ) {
@@ -297,13 +297,13 @@ internal fun UpdateStatusRow(update: DeviceUpdateUi) {
                 tint = colors.error,
             )
             Text(
-                text = update.message ?: Strings.UPDATE_SEND_FAILED,
+                text = Strings.UPDATE_SEND_FAILED,
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.error,
             )
         }
 
-        DeviceUpdateStatus.UNAVAILABLE -> Row(
+        EmitterUpdateStatus.UNAVAILABLE -> Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(Space.xs),
         ) {
@@ -314,7 +314,7 @@ internal fun UpdateStatusRow(update: DeviceUpdateUi) {
                 tint = extra.warning,
             )
             Text(
-                text = update.message ?: Strings.UPDATE_SEND_UNAVAILABLE,
+                text = Strings.UPDATE_SEND_UNAVAILABLE,
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.onSurfaceVariant,
             )
