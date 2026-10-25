@@ -25,7 +25,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import app.kiosksync.core.Strings
 import app.kiosksync.feature.kiosk.domain.KioskLockFeedback
-import app.kiosksync.feature.kiosk.domain.KioskLockUiState
 import app.kiosksync.core.ui.components.AppIcon
 import app.kiosksync.core.ui.theme.KioskDisplayType
 import app.kiosksync.core.ui.theme.KioskShape
@@ -43,7 +42,7 @@ import app.kiosksync.core.ui.theme.Space
  * the project manual and shown in the controller's "Seguridad" dialog.
  */
 @Composable
-fun KioskUnlockOverlay(state: KioskLockUiState) {
+fun KioskUnlockOverlay(state: KioskUiState) {
     if (!state.isLocked) return
     if (!state.showUnlockHint && state.feedback == null && state.lockoutRemainingSec == 0) return
 

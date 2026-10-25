@@ -52,13 +52,13 @@ class KioskLockManagerTest {
         )
 
         manager.lock()
-        assertFalse(manager.uiState.value.isLocked)
+        assertFalse(manager.state.value.isLocked)
 
         manager.lock(force = true)
-        assertTrue(manager.uiState.value.isLocked)
+        assertTrue(manager.state.value.isLocked)
         // A freshly locked screen must not show anything until the user starts
         // the unlock sequence.
-        assertFalse(manager.uiState.value.showUnlockHint)
+        assertFalse(manager.state.value.showUnlockHint)
     }
 
     @Test
@@ -66,11 +66,11 @@ class KioskLockManagerTest {
         val manager = lockedManager()
 
         manager.onKey(KioskKeyEvent(KioskKeyKind.OTHER))
-        assertFalse(manager.uiState.value.showUnlockHint)
+        assertFalse(manager.state.value.showUnlockHint)
 
         // The card only appears once the Shift+Shift+Ctrl chord begins.
         manager.onKey(KioskKeyEvent(KioskKeyKind.SHIFT))
-        assertTrue(manager.uiState.value.showUnlockHint)
+        assertTrue(manager.state.value.showUnlockHint)
     }
 
     @Test
@@ -78,13 +78,13 @@ class KioskLockManagerTest {
         val manager = lockedManager()
 
         manager.pressSequence()
-        assertTrue(manager.uiState.value.showUnlockHint)
+        assertTrue(manager.state.value.showUnlockHint)
 
         manager.onKey(KioskKeyEvent(KioskKeyKind.CHARACTER, 'a'))
-        assertEquals(1, manager.uiState.value.typedLength)
+        assertEquals(1, manager.state.value.typedLength)
 
         manager.onKey(KioskKeyEvent(KioskKeyKind.BACKSPACE))
-        assertEquals(0, manager.uiState.value.typedLength)
+        assertEquals(0, manager.state.value.typedLength)
     }
 
     @Test
@@ -97,7 +97,7 @@ class KioskLockManagerTest {
         manager.onKey(KioskKeyEvent(KioskKeyKind.CHARACTER, 'c'))
         manager.onKey(KioskKeyEvent(KioskKeyKind.CHARACTER, 'd'))
 
-        assertFalse(manager.uiState.value.isLocked)
+        assertFalse(manager.state.value.isLocked)
     }
 
     @Test
@@ -109,11 +109,11 @@ class KioskLockManagerTest {
             platformLockAvailable = false
         )
         manager.lock(force = true)
-        assertTrue(manager.uiState.value.isLocked)
+        assertTrue(manager.state.value.isLocked)
 
         manager.pressSequence()
 
-        assertFalse(manager.uiState.value.isLocked)
+        assertFalse(manager.state.value.isLocked)
     }
 
     @Test
@@ -126,7 +126,7 @@ class KioskLockManagerTest {
 
         assertEquals(
             KioskLockFeedback.IncorrectPassword(attemptsRemaining = 4),
-            manager.uiState.value.feedback,
+            manager.state.value.feedback,
         )
     }
 
@@ -141,7 +141,7 @@ class KioskLockManagerTest {
             }
         }
 
-        assertEquals(KioskLockFeedback.LockedOut, manager.uiState.value.feedback)
-        assertTrue(manager.uiState.value.lockoutRemainingSec > 0)
+        assertEquals(KioskLockFeedback.LockedOut, manager.state.value.feedback)
+        assertTrue(manager.state.value.lockoutRemainingSec > 0)
     }
 }

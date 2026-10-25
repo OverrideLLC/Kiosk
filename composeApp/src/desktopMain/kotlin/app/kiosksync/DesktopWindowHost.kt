@@ -5,6 +5,8 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -21,6 +23,11 @@ import app.kiosksync.core.APP_NAME
 import app.kiosksync.core.AppRole
 import app.kiosksync.feature.kiosk.domain.KioskKeyEvent
 import app.kiosksync.feature.kiosk.domain.KioskKeyKind
+import app.kiosksync.feature.kiosk.presentation.KioskAction
+import app.kiosksync.feature.kiosk.presentation.KioskUiState
+import app.kiosksync.feature.kiosk.presentation.KioskViewModel
+import app.kiosksync.feature.playlist.domain.Playlist
+import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
 import app.kiosksync.ui.App
 import app.kiosksync.ui.ProjectionScreen
 import java.awt.Cursor
@@ -34,6 +41,10 @@ internal fun DesktopWindowHost(
     onExit: () -> Unit,
 ) {
     val args = container.args
+    val scope = rememberCoroutineScope()
+    val kioskViewModel = remember(container) {
+        KioskViewModel(container.kioskLockManager, scope)
+    }
     val activeRole by container.activeRole.collectAsState()
     val appFullscreen = !args.windowed
     val isReceiverWindow = activeRole == AppRole.RECEIVER
@@ -52,7 +63,7 @@ internal fun DesktopWindowHost(
         height = 650.dp,
     )
     val projectionPlaylist by container.projectionController.playlist.collectAsState()
-    val lockState by container.kioskLockManager.uiState.collectAsState()
+    val lockState by kioskViewModel.state.collectAsState()
     val receiverUpdateState by container.receiverUpdateManager.uiState.collectAsState()
     val updatePromptVisible = isReceiverWindow && receiverUpdateState.isVisible
 
@@ -78,7 +89,7 @@ internal fun DesktopWindowHost(
         val isProjecting = projectionPlaylist != null
         windowState.isMinimized = isProjecting
         if (isProjecting) {
-            container.kioskLockManager.lock(force = true)
+            kioskViewModel.onAction(KioskAction.Lock(force = true))
             container.logger.info("Projection active: controller locked")
         }
     }
@@ -95,7 +106,7 @@ internal fun DesktopWindowHost(
     var unpairHandler: (() -> Unit)? = null
     val feedLockFromCompose: (KeyEvent) -> Unit = { event ->
         if (!kioskLockAvailable && event.type == KeyEventType.KeyDown) {
-            composeKeyToKioskEvent(event)?.let(container.kioskLockManager::onKey)
+            composeKeyToKioskEvent(event)?.let { kioskViewModel.onAction(KioskAction.KeyPressed(it)) }
         }
     }
 
@@ -112,7 +123,7 @@ internal fun DesktopWindowHost(
         resizable = !appFullscreen,
         onKeyEvent = { keyEvent ->
             when {
-                container.kioskLockManager.uiState.value.isLocked -> {
+                kioskViewModel.state.value.isLocked -> {
                     feedLockFromCompose(keyEvent)
                     true
                 }
@@ -141,6 +152,7 @@ internal fun DesktopWindowHost(
         }
         App(
             container = container,
+            kioskViewModel = kioskViewModel,
             onExitRequested = {
                 container.shutdown()
                 onExit()
@@ -159,7 +171,7 @@ internal fun DesktopWindowHost(
             alwaysOnTop = true,
             resizable = false,
             onKeyEvent = { event ->
-                if (container.kioskLockManager.uiState.value.isLocked) {
+                if (kioskViewModel.state.value.isLocked) {
                     feedLockFromCompose(event)
                     true
                 } else if (event.type == KeyEventType.KeyDown && event.key == Key.Escape) {
@@ -171,9 +183,44 @@ internal fun DesktopWindowHost(
             },
         ) {
             window.cursor = blankCursor()
-            ProjectionScreen(playlist, container, lockState)
+            ProjectionPlayback(
+                playlist = playlist,
+                container = container,
+                lockState = lockState,
+            )
         }
     }
+}
+
+@Composable
+private fun ProjectionPlayback(
+    playlist: Playlist,
+    container: AppContainer,
+    lockState: KioskUiState,
+) {
+    val scope = rememberCoroutineScope()
+    val playbackStateHolder = remember(playlist.id, playlist.version, container) {
+        PlaybackStateHolder(
+            playlistRepository = container.playlistRepository,
+            mediaRepository = container.mediaRepository,
+            logger = container.logger,
+            scope = scope,
+            statusTracker = null,
+            backgroundDispatcher = container.backgroundDispatcher,
+            loadFromStorage = false,
+        )
+    }
+    val playbackState by playbackStateHolder.uiState.collectAsState()
+
+    LaunchedEffect(playbackStateHolder, playlist) {
+        playbackStateHolder.updatePlaylist(playlist)
+        playbackStateHolder.start()
+    }
+    DisposableEffect(playbackStateHolder) {
+        onDispose { playbackStateHolder.stop() }
+    }
+
+    ProjectionScreen(state = playbackState, lockState = lockState)
 }
 
 private fun blankCursor() = Toolkit.getDefaultToolkit().createCustomCursor(

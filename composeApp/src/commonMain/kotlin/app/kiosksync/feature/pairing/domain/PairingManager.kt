@@ -2,7 +2,6 @@ package app.kiosksync.feature.pairing.domain
 
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.ReceiverPairedInfo
-import app.kiosksync.feature.pairing.domain.PairingRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,7 +17,7 @@ sealed interface PairResult {
     data object AlreadyPaired : PairResult
 }
 
-data class PairingUiState(
+data class PairingState(
     val isPaired: Boolean = false,
     val pairedInfo: ReceiverPairedInfo? = null,
     val currentCode: String = "",
@@ -61,8 +60,8 @@ class PairingManager(
         }
     }
 
-    private val _uiState = MutableStateFlow(PairingUiState())
-    val uiState: StateFlow<PairingUiState> = _uiState.asStateFlow()
+    private val _state = MutableStateFlow(PairingState())
+    val state: StateFlow<PairingState> = _state.asStateFlow()
 
     private var activeCode: String = ""
     private var codeCreatedAtMs: Long = 0
@@ -76,7 +75,7 @@ class PairingManager(
         if (isInitialized) return@withLock
         val pairedInfo = repository.loadPairedEmitter()
         if (pairedInfo != null) {
-            _uiState.update {
+            _state.update {
                 it.copy(
                     isPaired = true,
                     pairedInfo = pairedInfo,
@@ -95,7 +94,7 @@ class PairingManager(
     }
 
     suspend fun getOrRefreshCode(): String = pairingMutex.withLock {
-        if (_uiState.value.isPaired) {
+        if (_state.value.isPaired) {
             return@withLock ""
         }
         val now = timeProvider()
@@ -110,28 +109,28 @@ class PairingManager(
      * once per second while the receiver is unpaired.
      */
     suspend fun tick() = pairingMutex.withLock {
-        if (_uiState.value.isPaired) {
+        if (_state.value.isPaired) {
             return@withLock
         }
 
         val now = timeProvider()
         if (now < lockedUntilMs) {
             val remainingSec = ((lockedUntilMs - now) + 999L) / 1000L
-            _uiState.update {
+            _state.update {
                 it.copy(isLocked = true, lockRemainingSeconds = remainingSec)
             }
             return@withLock
         }
 
-        if (_uiState.value.isLocked) {
-            _uiState.update { it.copy(isLocked = false, lockRemainingSeconds = 0) }
+        if (_state.value.isLocked) {
+            _state.update { it.copy(isLocked = false, lockRemainingSeconds = 0) }
         }
 
         if (activeCode.isEmpty() || now - codeCreatedAtMs >= CODE_VALIDITY_MS) {
             generateNewCode()
         } else {
             val expiresInSec = (CODE_VALIDITY_MS - (now - codeCreatedAtMs)) / 1000L
-            _uiState.update {
+            _state.update {
                 it.copy(
                     codeExpiresInSeconds = expiresInSec.coerceAtLeast(0),
                     isLocked = false,
@@ -142,7 +141,7 @@ class PairingManager(
     }
 
     suspend fun attemptPair(emitterId: String, emitterName: String, code: String): PairResult = pairingMutex.withLock {
-        if (_uiState.value.isPaired) {
+        if (_state.value.isPaired) {
             return@withLock PairResult.AlreadyPaired
         }
 
@@ -173,7 +172,7 @@ class PairingManager(
             failedAttempts = 0
             activeCode = ""
 
-            _uiState.update {
+            _state.update {
                 it.copy(
                     isPaired = true,
                     pairedInfo = pairedInfo,
@@ -194,7 +193,7 @@ class PairingManager(
                 failedAttempts = 0
                 generateNewCode()
                 val remainingSec = (LOCKOUT_DURATION_MS / 1000L)
-                _uiState.update {
+                _state.update {
                     it.copy(
                         isLocked = true,
                         lockRemainingSeconds = remainingSec
@@ -220,7 +219,7 @@ class PairingManager(
 
     fun isAuthorized(emitterId: String?, token: String?): Boolean {
         if (emitterId == null || token == null) return false
-        val paired = _uiState.value.pairedInfo ?: return false
+        val paired = _state.value.pairedInfo ?: return false
         return constantTimeEquals(paired.emitterId, emitterId) && constantTimeEquals(paired.token, token)
     }
 
@@ -229,7 +228,7 @@ class PairingManager(
         codeCreatedAtMs = timeProvider()
         val expiresInSec = CODE_VALIDITY_MS / 1000L
 
-        _uiState.update {
+        _state.update {
             it.copy(
                 isPaired = false,
                 pairedInfo = null,

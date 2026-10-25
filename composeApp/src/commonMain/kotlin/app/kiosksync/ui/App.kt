@@ -33,7 +33,11 @@ import app.kiosksync.feature.guide.domain.GuideStep
 import app.kiosksync.feature.emitter.presentation.EmitterViewModel
 import app.kiosksync.feature.emitter.presentation.SyncUiStatus
 import app.kiosksync.feature.kiosk.presentation.KioskUnlockOverlay
-import app.kiosksync.feature.pairing.domain.PairingManager
+import app.kiosksync.feature.kiosk.presentation.KioskAction
+import app.kiosksync.feature.kiosk.presentation.KioskViewModel
+import app.kiosksync.feature.pairing.presentation.PairingAction
+import app.kiosksync.feature.pairing.presentation.PairingEffect
+import app.kiosksync.feature.pairing.presentation.PairingViewModel
 import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorAction
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorDialogs
@@ -53,6 +57,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun App(
     container: AppContainer,
+    kioskViewModel: KioskViewModel,
     onExitRequested: () -> Unit = {},
     registerEscHandler: ((() -> Unit)?) -> Unit = {},
     registerUnpairHandler: ((() -> Unit)?) -> Unit = {}
@@ -61,7 +66,19 @@ fun App(
     val existingConfig = container.initialConfig
     val initialDeviceId = remember { existingConfig?.deviceId ?: container.newDeviceId() }
     val effectivePort = container.args.port ?: existingConfig?.port ?: DEFAULT_PORT
-    val pairingManager: PairingManager = container.pairingManager
+    val pairingManager = container.pairingManager
+    val pairingViewModel = remember(container, coroutineScope) {
+        PairingViewModel(
+            pairingManager = pairingManager,
+            receiverServer = container.receiverServer,
+            discovery = container.discovery,
+            logger = container.logger,
+            scope = coroutineScope,
+            serviceDispatcher = container.serviceDispatcher,
+            deviceName = container.deviceName,
+            localIpAddress = container.localIpAddress,
+        )
+    }
     val guideViewModel = remember { GuideViewModel(container.logger) }
     val guideState by guideViewModel.state.collectAsState()
 
@@ -206,8 +223,21 @@ fun App(
         }
     }
 
-    val pairingState by pairingManager.uiState.collectAsState()
-    val lockState by container.kioskLockManager.uiState.collectAsState()
+    DisposableEffect(pairingViewModel, currentScreen) {
+        val receiverConfig = (currentScreen as? Screen.ReceiverHome)?.config
+        if (receiverConfig != null) {
+            pairingViewModel.onAction(PairingAction.StartReceiver(receiverConfig))
+        }
+        onDispose {
+            if (receiverConfig != null) {
+                pairingViewModel.onAction(PairingAction.StopReceiver)
+            }
+        }
+    }
+
+    val pairingState by pairingViewModel.state.collectAsState()
+    val lockState by kioskViewModel.state.collectAsState()
+    val receiverPlaybackState by playbackStateHolder.uiState.collectAsState()
     val receiverUpdateState by container.receiverUpdateManager.uiState.collectAsState()
     var showReceiverOptions by remember { mutableStateOf(false) }
     var showUnpairConfirm by remember { mutableStateOf(false) }
@@ -216,19 +246,53 @@ fun App(
     var roleResetFailed by remember { mutableStateOf(false) }
     var wasLocked by remember { mutableStateOf(lockState.isLocked) }
 
+    LaunchedEffect(
+        currentScreen,
+        pairingState.pairing.isPaired,
+        lockState.hasPassword,
+        receiverPlaybackState.hasItems,
+    ) {
+        if (currentScreen is Screen.ReceiverHome) {
+            guideViewModel.onAction(
+                GuideAction.ReportReceiverProgress(
+                    paired = pairingState.pairing.isPaired,
+                    hasPassword = lockState.hasPassword,
+                    hasContent = receiverPlaybackState.hasItems,
+                ),
+            )
+        }
+    }
+
     LaunchedEffect(Unit) {
         if (existingConfig == null && container.args.role == null) {
             guideViewModel.onAction(GuideAction.Start())
         }
     }
 
+    LaunchedEffect(pairingViewModel) {
+        pairingViewModel.effects.collect { effect ->
+            when (effect) {
+                PairingEffect.OpenGuide -> guideViewModel.onAction(GuideAction.Start(AppRole.RECEIVER))
+                PairingEffect.ExitRequested -> onExitRequested()
+                PairingEffect.ChangeRoleRequested -> showChangeRoleConfirm = true
+                PairingEffect.Unpaired -> {
+                    showUnpairConfirm = false
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(pairingViewModel, lockState.isLocked) {
+        pairingViewModel.onAction(PairingAction.AdminActionsChanged(!lockState.isLocked))
+    }
+
     fun relockReceiverIfNeeded() {
         if (
             currentScreen is Screen.ReceiverHome &&
-            pairingState.isPaired &&
+            pairingState.pairing.isPaired &&
             lockState.hasPassword
         ) {
-            container.kioskLockManager.lock(force = true)
+            kioskViewModel.onAction(KioskAction.Lock(force = true))
         }
     }
 
@@ -256,13 +320,13 @@ fun App(
                 }
                 // Refresh the in-memory pairing state as well as its persisted row.
                 // A role change must return a Receiver to a newly generated pairing code.
-                container.pairingManager.unpair()
+            container.pairingManager.unpair()
                 container.kioskLockRepository.clearLock()
                 container.configStore.clear()
                 guideViewModel.onAction(GuideAction.Stop)
                 roleViewModel.onAction(RoleAction.ResetSelection)
                 currentConfig = null
-                container.kioskLockManager.release()
+                kioskViewModel.onAction(KioskAction.Release)
                 container.projectionController.stop()
                 showReceiverOptions = false
                 showUnpairConfirm = false
@@ -293,20 +357,20 @@ fun App(
         )
     }
 
-    LaunchedEffect(currentScreen, pairingState.isPaired, lockState.hasPassword) {
+    LaunchedEffect(currentScreen, pairingState.pairing.isPaired, lockState.hasPassword) {
         when (currentScreen) {
             is Screen.ReceiverHome -> {
-                if (pairingState.isPaired && lockState.hasPassword) {
-                    container.kioskLockManager.lock(force = true)
+                if (pairingState.pairing.isPaired && lockState.hasPassword) {
+                    kioskViewModel.onAction(KioskAction.Lock(force = true))
                 } else {
-                    container.kioskLockManager.release()
+                    kioskViewModel.onAction(KioskAction.Release)
                 }
             }
 
-            is Screen.RoleSelection -> container.kioskLockManager.release()
+            is Screen.RoleSelection -> kioskViewModel.onAction(KioskAction.Release)
             is Screen.EmitterHome -> {
                 if (!container.projectionController.isProjecting) {
-                    container.kioskLockManager.release()
+                    kioskViewModel.onAction(KioskAction.Release)
                 }
             }
         }
@@ -334,10 +398,10 @@ fun App(
         }
     }
 
-    LaunchedEffect(currentScreen, pairingState.isPaired) {
+    LaunchedEffect(currentScreen, pairingState.pairing.isPaired) {
         if (currentScreen is Screen.ReceiverHome) {
             registerEscHandler {
-                if (container.kioskLockManager.uiState.value.isLocked) {
+                if (kioskViewModel.state.value.isLocked) {
                     // Keys are swallowed while locked; do not open dialogs.
                     return@registerEscHandler
                 }
@@ -348,8 +412,8 @@ fun App(
         }
     }
 
-    LaunchedEffect(currentScreen, pairingState.isPaired) {
-        if (currentScreen is Screen.ReceiverHome && pairingState.isPaired) {
+    LaunchedEffect(currentScreen, pairingState.pairing.isPaired) {
+        if (currentScreen is Screen.ReceiverHome && pairingState.pairing.isPaired) {
             registerUnpairHandler { showUnpairConfirm = true }
         } else {
             registerUnpairHandler(null)
@@ -389,16 +453,10 @@ fun App(
 
                     is Screen.ReceiverHome -> {
                         ReceiverHomeScreen(
-                            config = screen.config,
-                            container = container,
-                            pairingManager = pairingManager,
-                            playbackStateHolder = playbackStateHolder,
-                            guideViewModel = guideViewModel,
-                            onOpenGuide = {
-                                guideViewModel.onAction(GuideAction.Start(AppRole.RECEIVER))
-                            },
-                            onExitRequested = onExitRequested,
-                            onChangeRoleRequested = { showChangeRoleConfirm = true }
+                            pairingState = pairingState,
+                            playbackState = receiverPlaybackState,
+                            hasKioskPassword = lockState.hasPassword,
+                            onPairingAction = pairingViewModel::onAction,
                         )
                     }
                 }
@@ -476,17 +534,7 @@ fun App(
                     relockReceiverIfNeeded()
                 },
                 onConfirm = {
-                    coroutineScope.launch {
-                        try {
-                            pairingManager.unpair()
-                            showUnpairConfirm = false
-                            relockReceiverIfNeeded()
-                        } catch (cancelled: CancellationException) {
-                            throw cancelled
-                        } catch (error: Exception) {
-                            container.logger.error("Could not unlink the Receiver", error)
-                        }
-                    }
+                    pairingViewModel.onAction(PairingAction.Unpair)
                 },
             )
         }

@@ -24,7 +24,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import app.kiosksync.core.Strings
-import app.kiosksync.feature.pairing.domain.PairingUiState
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppButtonSize
 import app.kiosksync.core.ui.components.AppButtonVariant
@@ -45,14 +44,9 @@ import app.kiosksync.core.ui.theme.Space
 @Composable
 fun PairingCodeScreen(
     state: PairingUiState,
-    serviceError: String?,
-    onOpenGuide: () -> Unit = {},
-    onExitRequested: () -> Unit,
-    onChangeRoleRequested: () -> Unit,
-    showAdminActions: Boolean = true,
-    receiverIp: String? = null,
-    receiverPort: Int? = null,
+    onAction: (PairingAction) -> Unit,
 ) {
+    val pairing = state.pairing
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -80,11 +74,11 @@ fun PairingCodeScreen(
 
             Spacer(Modifier.height(Space.xl))
 
-            val displayedCode = formatPairingCode(state.currentCode)
+            val displayedCode = formatPairingCode(pairing.currentCode)
             Text(
                 text = displayedCode,
                 style = KioskDisplayType.pairingCode(),
-                color = if (state.isLocked) {
+                color = if (pairing.isLocked) {
                     KioskScreenColors.disabled
                 } else {
                     KioskScreenColors.content
@@ -106,10 +100,10 @@ fun PairingCodeScreen(
 
             Spacer(Modifier.height(Space.lg))
 
-            if (state.isLocked) {
+            if (pairing.isLocked) {
                 LockoutMessage(
                     title = Strings.RECEIVER_LOCKED_TITLE,
-                    message = Strings.receiverLockedMessage(state.lockRemainingSeconds),
+                    message = Strings.receiverLockedMessage(pairing.lockRemainingSeconds),
                 )
             } else {
                 Row(
@@ -122,7 +116,7 @@ fun PairingCodeScreen(
                     )
                     Text(
                         text = Strings.receiverCodeRenewsIn(
-                            formatCountdown(state.codeExpiresInSeconds)
+                            formatCountdown(pairing.codeExpiresInSeconds)
                         ),
                         style = KioskDisplayType.screenCaption(),
                         color = KioskScreenColors.subtle,
@@ -130,7 +124,7 @@ fun PairingCodeScreen(
                 }
             }
 
-            if (receiverPort != null) {
+            if (state.receiverPort != null) {
                 Spacer(Modifier.height(Space.xl))
                 Surface(
                     color = KioskScreenColors.surfaceSubtle,
@@ -144,7 +138,7 @@ fun PairingCodeScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
-                            text = if (receiverIp != null) {
+                            text = if (state.receiverIp != null) {
                                 Strings.RECEIVER_IP_HINT
                             } else {
                                 Strings.RECEIVER_IP_UNAVAILABLE
@@ -154,10 +148,10 @@ fun PairingCodeScreen(
                             textAlign = TextAlign.Center,
                         )
                         Spacer(Modifier.height(Space.xs))
-                        if (receiverIp != null) {
+                        if (state.receiverIp != null) {
                             SelectionContainer {
                                 Text(
-                                    text = Strings.receiverAddress(receiverIp, receiverPort),
+                                    text = Strings.receiverAddress(state.receiverIp, state.receiverPort),
                                     style = KioskDisplayType.screenBody(),
                                     color = KioskScreenColors.content,
                                     textAlign = TextAlign.Center,
@@ -165,7 +159,7 @@ fun PairingCodeScreen(
                             }
                         } else {
                             Text(
-                                text = "${Strings.RECEIVER_PORT_LABEL}: $receiverPort",
+                                text = "${Strings.RECEIVER_PORT_LABEL}: ${state.receiverPort}",
                                 style = KioskDisplayType.screenBody(),
                                 color = KioskScreenColors.content,
                             )
@@ -174,7 +168,7 @@ fun PairingCodeScreen(
                 }
             }
 
-            if (serviceError != null) {
+            if (state.serviceError != null) {
                 Spacer(Modifier.height(Space.lg))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -187,7 +181,7 @@ fun PairingCodeScreen(
                         tint = KioskScreenColors.error,
                     )
                     Text(
-                        text = serviceError,
+                        text = state.serviceError,
                         style = KioskDisplayType.screenCaption(),
                         color = KioskScreenColors.error,
                         textAlign = TextAlign.Start,
@@ -196,7 +190,7 @@ fun PairingCodeScreen(
             }
         }
 
-        if (showAdminActions) {
+        if (state.showAdminActions) {
             Row(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
@@ -205,21 +199,21 @@ fun PairingCodeScreen(
             ) {
                 AppButton(
                     text = Strings.GUIDE_BUTTON,
-                    onClick = onOpenGuide,
+                    onClick = { onAction(PairingAction.OpenGuide) },
                     variant = AppButtonVariant.TEXT,
                     size = AppButtonSize.SMALL,
                     icon = AppIcon.HELP,
                 )
                 AppButton(
                     text = Strings.CHANGE_ROLE,
-                    onClick = onChangeRoleRequested,
+                    onClick = { onAction(PairingAction.ChangeRoleRequested) },
                     variant = AppButtonVariant.TEXT,
                     size = AppButtonSize.SMALL,
                     icon = AppIcon.SWAP_HORIZ,
                 )
                 AppButton(
                     text = Strings.EXIT_APP,
-                    onClick = onExitRequested,
+                    onClick = { onAction(PairingAction.ExitRequested) },
                     variant = AppButtonVariant.TEXT,
                     size = AppButtonSize.SMALL,
                     icon = AppIcon.LOGOUT,

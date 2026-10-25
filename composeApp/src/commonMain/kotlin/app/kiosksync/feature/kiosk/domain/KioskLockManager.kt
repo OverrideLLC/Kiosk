@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class KioskLockUiState(
+data class KioskLockState(
     val isLocked: Boolean = false,
     val hasPassword: Boolean = false,
     val showUnlockHint: Boolean = false,
@@ -38,8 +38,8 @@ class KioskLockManager(
     private val scope: CoroutineScope,
     val platformLockAvailable: Boolean = true
 ) {
-    private val _uiState = MutableStateFlow(KioskLockUiState())
-    val uiState: StateFlow<KioskLockUiState> = _uiState.asStateFlow()
+    private val _state = MutableStateFlow(KioskLockState())
+    val state: StateFlow<KioskLockState> = _state.asStateFlow()
 
     private var config: KioskLockConfig? = null
     private var detector: KioskUnlockDetector? = null
@@ -49,20 +49,20 @@ class KioskLockManager(
 
     fun setConfig(newConfig: KioskLockConfig?) {
         config = newConfig?.takeIf { it.enabled }
-        _uiState.update { it.copy(hasPassword = hasPassword()) }
-        if (_uiState.value.isLocked) {
+        _state.update { it.copy(hasPassword = hasPassword()) }
+        if (_state.value.isLocked) {
             detector = newDetector()
-            _uiState.update {
+            _state.update {
                 it.copy(typedLength = 0)
             }
         }
     }
 
     fun lock(force: Boolean = false) {
-        if (_uiState.value.isLocked) return
+        if (_state.value.isLocked) return
         if (!platformLockAvailable && !force) return
         detector = newDetector()
-        _uiState.update {
+        _state.update {
             it.copy(
                 isLocked = true,
                 hasPassword = hasPassword(),
@@ -82,13 +82,13 @@ class KioskLockManager(
     fun release() {
         cancelJobs()
         detector = null
-        _uiState.update {
-            KioskLockUiState(hasPassword = hasPassword())
+        _state.update {
+            KioskLockState(hasPassword = hasPassword())
         }
     }
 
     fun onKey(event: KioskKeyEvent) {
-        val state = _uiState.value
+        val state = _state.value
         if (!state.isLocked || state.lockoutRemainingSec > 0) return
 
         val activeDetector = detector ?: newDetector().also { detector = it }
@@ -108,7 +108,7 @@ class KioskLockManager(
 
             KioskUnlockResult.ChordProgress, KioskUnlockResult.Typing -> {
                 scheduleHintHide()
-                _uiState.update {
+                _state.update {
                     it.copy(
                         showUnlockHint = true,
                         typedLength = activeDetector.typedLength,
@@ -122,8 +122,8 @@ class KioskLockManager(
             // once the Shift+Shift+Ctrl sequence starts. If the card is already
             // visible, keep the typed-length indicator in sync with the detector.
             KioskUnlockResult.Ignored -> {
-                if (_uiState.value.showUnlockHint) {
-                    _uiState.update {
+                if (_state.value.showUnlockHint) {
+                    _state.update {
                         it.copy(typedLength = activeDetector.typedLength)
                     }
                 }
@@ -134,7 +134,7 @@ class KioskLockManager(
     private fun unlock(logMessage: String) {
         cancelJobs()
         detector = null
-        _uiState.update {
+        _state.update {
             it.copy(
                 isLocked = false,
                 showUnlockHint = false,
@@ -148,7 +148,7 @@ class KioskLockManager(
     }
 
     private fun registerFailure() {
-        val failed = _uiState.value.failedAttempts + 1
+        val failed = _state.value.failedAttempts + 1
         detector?.reset()
 
         if (failed >= MAX_UNLOCK_ATTEMPTS) {
@@ -156,7 +156,7 @@ class KioskLockManager(
             return
         }
 
-        _uiState.update {
+        _state.update {
             it.copy(
                 showUnlockHint = true,
                 typedLength = 0,
@@ -172,7 +172,7 @@ class KioskLockManager(
 
     private fun startLockout() {
         lockoutJob?.cancel()
-        _uiState.update {
+        _state.update {
             it.copy(
                 showUnlockHint = true,
                 typedLength = 0,
@@ -185,12 +185,12 @@ class KioskLockManager(
         lockoutJob = scope.launch {
             var remaining = UNLOCK_LOCKOUT_SECONDS
             while (remaining > 0) {
-                _uiState.update { it.copy(lockoutRemainingSec = remaining) }
+                _state.update { it.copy(lockoutRemainingSec = remaining) }
                 delay(1000)
                 remaining--
             }
             detector?.reset()
-            _uiState.update {
+            _state.update {
                 it.copy(
                     lockoutRemainingSec = 0,
                     failedAttempts = 0,
@@ -206,7 +206,7 @@ class KioskLockManager(
         feedbackJob?.cancel()
         feedbackJob = scope.launch {
             delay(4000)
-            _uiState.update {
+            _state.update {
                 if (it.lockoutRemainingSec > 0) it else it.copy(feedback = null)
             }
         }
@@ -216,7 +216,7 @@ class KioskLockManager(
         hintJob?.cancel()
         hintJob = scope.launch {
             delay(6000)
-            _uiState.update {
+            _state.update {
                 if (it.lockoutRemainingSec > 0) {
                     it
                 } else {

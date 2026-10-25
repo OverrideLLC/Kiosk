@@ -13,7 +13,7 @@ internal fun Route.registerReceiverPublicRoutes(context: ReceiverRouteContext) {
                 deviceId = context.deviceId(),
                 deviceName = context.deviceName(),
                 role = "receiver",
-                paired = context.pairingManager.uiState.value.isPaired,
+                paired = context.pairingManager.state.value.isPaired,
                 appVersion = APP_VERSION,
                 skippedUpdateVersion = context.updateManager.skippedVersion,
             ),

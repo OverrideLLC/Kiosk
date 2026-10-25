@@ -108,14 +108,14 @@ suspend fun createDesktopAppContainer(
         val projectionController = ProjectionController()
         val keyboardGuard = createKioskKeyboardGuard(
             enabled = kioskLockAvailable,
-            isLocked = { kioskLockManager.uiState.value.isLocked },
+            isLocked = { kioskLockManager.state.value.isLocked },
             onKey = { kioskLockManager.onKey(it) },
             onProjectionToggle = { projectionController.requestToggle() },
             logger = logger,
         )
         val mouseGuard = createKioskMouseGuard(
             enabled = kioskLockAvailable,
-            isLocked = { kioskLockManager.uiState.value.isLocked },
+            isLocked = { kioskLockManager.state.value.isLocked },
             logger = logger,
         )
 

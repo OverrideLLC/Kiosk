@@ -92,7 +92,7 @@ class ReceiverServerIntegrationTest {
             assertTrue(
                 client.pair("127.0.0.1", port, "tx-1", "Caja", "000000").isFailure,
             )
-            assertFalse(pairing.uiState.value.isPaired)
+            assertFalse(pairing.state.value.isPaired)
 
             val paired = client.pair("127.0.0.1", port, "tx-1", "Caja", "123456").getOrThrow()
             assertEquals("a".repeat(64), paired.token)
