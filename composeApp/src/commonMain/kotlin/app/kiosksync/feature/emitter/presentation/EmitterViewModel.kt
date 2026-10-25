@@ -11,8 +11,9 @@ import app.kiosksync.feature.emitter.presentation.coordinators.EmitterDeliveryCo
 import app.kiosksync.feature.emitter.presentation.coordinators.EmitterManualIpCoordinator
 import app.kiosksync.feature.emitter.presentation.coordinators.EmitterPairingCoordinator
 import app.kiosksync.feature.emitter.presentation.coordinators.EmitterSecurityCoordinator
-import app.kiosksync.feature.emitter.presentation.EmitterAction
-import app.kiosksync.feature.emitter.presentation.EmitterReducer
+import app.kiosksync.core.DEFAULT_UNLOCK_SEQUENCE
+import app.kiosksync.core.MAX_RECOVERY_PHRASE_LENGTH
+import app.kiosksync.core.MAX_UNLOCK_SEQUENCE_LENGTH
 import app.kiosksync.feature.emitter.presentation.DeviceUpdateStatus
 import app.kiosksync.feature.emitter.presentation.DeviceUpdateUi
 import app.kiosksync.feature.emitter.presentation.EmitterDeviceUi
@@ -140,38 +141,109 @@ class EmitterViewModel(
     fun onAction(action: EmitterAction) {
         if (action == EmitterAction.DismissPairDialog && _uiState.value.isPairing) return
         if (action == EmitterAction.DismissManualIpDialog && _uiState.value.isManualIpLoading) return
-        _uiState.update { EmitterReducer.reduce(it, action) }
         when (action) {
             EmitterAction.RefreshDevices -> refreshDevices()
-            EmitterAction.OpenManualIp,
-            EmitterAction.DismissManualIpDialog,
-            is EmitterAction.UpdateManualIp,
-            EmitterAction.DismissStatusMessage,
-            is EmitterAction.OpenPairDialog,
-            EmitterAction.DismissPairDialog,
-            is EmitterAction.UpdatePairingCode,
-            is EmitterAction.RequestUnpair,
-            EmitterAction.DismissUnpairDialog,
-            is EmitterAction.UpdatePasswordDraft,
-            is EmitterAction.UpdatePasswordConfirmDraft,
-            EmitterAction.DismissPasswordDialog,
-            EmitterAction.ToggleRecoveryEditor,
-            is EmitterAction.SetRecoveryAccepted,
-            is EmitterAction.UpdateRecoveryDraft,
-            is EmitterAction.UpdateRecoveryConfirmDraft,
-            EmitterAction.DismissSecurityDialog -> Unit
-
+            EmitterAction.OpenManualIp -> _uiState.update {
+                it.copy(showManualIpDialog = true, manualIpInput = "", manualIpError = null)
+            }
+            EmitterAction.DismissManualIpDialog -> _uiState.update {
+                it.copy(showManualIpDialog = false, manualIpInput = "", manualIpError = null)
+            }
+            is EmitterAction.UpdateManualIp -> _uiState.update {
+                it.copy(manualIpInput = action.value, manualIpError = null)
+            }
+            EmitterAction.DismissStatusMessage -> _uiState.update {
+                it.copy(statusMessage = null, statusIsError = false)
+            }
+            is EmitterAction.OpenPairDialog -> _uiState.update {
+                it.copy(pairingDevice = action.device, pairingCode = "", pairingError = null)
+            }
+            EmitterAction.DismissPairDialog -> _uiState.update {
+                it.copy(pairingDevice = null, pairingCode = "", pairingError = null)
+            }
+            is EmitterAction.UpdatePairingCode -> _uiState.update {
+                it.copy(pairingCode = action.value.filter(Char::isDigit).take(6), pairingError = null)
+            }
+            is EmitterAction.RequestUnpair -> _uiState.update { it.copy(unpairDevice = action.device) }
+            EmitterAction.DismissUnpairDialog -> _uiState.update { it.copy(unpairDevice = null) }
+            is EmitterAction.UpdatePasswordDraft -> _uiState.update { state ->
+                state.copy(
+                    passwordDialog = state.passwordDialog?.copy(draft = action.value.take(64), error = null)
+                )
+            }
+            is EmitterAction.UpdatePasswordConfirmDraft -> _uiState.update { state ->
+                state.copy(
+                    passwordDialog = state.passwordDialog?.copy(
+                        confirmDraft = action.value.take(64),
+                        error = null,
+                    )
+                )
+            }
+            EmitterAction.DismissPasswordDialog -> _uiState.update { it.copy(passwordDialog = null) }
+            is EmitterAction.AppendUnlockKey -> _uiState.update { state ->
+                state.copy(
+                    securityDialog = state.securityDialog?.let { dialog ->
+                        if (dialog.sequence.size >= MAX_UNLOCK_SEQUENCE_LENGTH) dialog
+                        else dialog.copy(sequence = dialog.sequence + action.key, sequenceError = null)
+                    }
+                )
+            }
+            EmitterAction.RemoveLastUnlockKey -> _uiState.update { state ->
+                state.copy(
+                    securityDialog = state.securityDialog?.let { dialog ->
+                        if (dialog.sequence.isEmpty()) dialog
+                        else dialog.copy(sequence = dialog.sequence.dropLast(1), sequenceError = null)
+                    }
+                )
+            }
+            EmitterAction.ResetUnlockSequence -> _uiState.update { state ->
+                state.copy(
+                    securityDialog = state.securityDialog?.copy(
+                        sequence = DEFAULT_UNLOCK_SEQUENCE,
+                        sequenceError = null,
+                    )
+                )
+            }
             is EmitterAction.ToggleSelection -> toggleSelection(action.deviceId)
             is EmitterAction.RequestUpdate -> service.requestUpdate(action.deviceId, emitterId)
             EmitterAction.OpenSecurityDialog -> securityCoordinator.openSecurityDialog()
+            EmitterAction.DismissSecurityDialog -> _uiState.update { it.copy(securityDialog = null) }
+            EmitterAction.ToggleRecoveryEditor -> _uiState.update { state ->
+                state.copy(
+                    securityDialog = state.securityDialog?.let { dialog ->
+                        dialog.copy(showRecoveryEditor = !dialog.showRecoveryEditor, recoveryError = null)
+                    }
+                )
+            }
+            is EmitterAction.SetRecoveryAccepted -> _uiState.update { state ->
+                state.copy(
+                    securityDialog = state.securityDialog?.copy(
+                        recoveryAccepted = action.accepted,
+                        recoveryError = null,
+                    )
+                )
+            }
+            is EmitterAction.UpdateRecoveryDraft -> _uiState.update { state ->
+                state.copy(
+                    securityDialog = state.securityDialog?.copy(
+                        recoveryDraft = action.value.take(MAX_RECOVERY_PHRASE_LENGTH),
+                        recoveryError = null,
+                    )
+                )
+            }
+            is EmitterAction.UpdateRecoveryConfirmDraft -> _uiState.update { state ->
+                state.copy(
+                    securityDialog = state.securityDialog?.copy(
+                        recoveryConfirmDraft = action.value.take(MAX_RECOVERY_PHRASE_LENGTH),
+                        recoveryError = null,
+                    )
+                )
+            }
+
             is EmitterAction.SendToSelected -> sendToSelected(action.playlist)
             is EmitterAction.RequestProjection -> requestProjection(action.playlist)
             EmitterAction.SynchronizePlayback -> deliveryCoordinator.synchronizePlayback()
             EmitterAction.ConfirmPassword -> securityCoordinator.confirmPassword()
-            is EmitterAction.AppendUnlockKey,
-            EmitterAction.RemoveLastUnlockKey,
-            EmitterAction.ResetUnlockSequence -> Unit
-
             EmitterAction.SaveUnlockSequence -> securityCoordinator.saveUnlockSequence()
             EmitterAction.SaveRecoveryPhrase -> securityCoordinator.saveRecoveryPhrase()
             EmitterAction.ResetRecoveryPhrase -> securityCoordinator.resetRecoveryPhrase()

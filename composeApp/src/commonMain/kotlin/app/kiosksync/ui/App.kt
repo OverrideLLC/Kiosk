@@ -20,10 +20,10 @@ import app.kiosksync.core.DEFAULT_PORT
 import app.kiosksync.core.ui.theme.KioskColors
 import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.feature.emitter.presentation.EmitterAction
+import app.kiosksync.feature.emitter.presentation.EmitterScreen
 import app.kiosksync.feature.guide.domain.GuideManager
 import app.kiosksync.feature.guide.domain.GuideStep
 import app.kiosksync.feature.guide.presentation.GuideOverlay
-import app.kiosksync.feature.emitter.presentation.EmitterRoute
 import app.kiosksync.feature.emitter.presentation.EmitterViewModel
 import app.kiosksync.feature.kiosk.presentation.KioskUnlockOverlay
 import app.kiosksync.feature.pairing.domain.PairingManager
@@ -532,6 +532,7 @@ private fun EmitterWorkspace(
             backgroundDispatcher = container.backgroundDispatcher,
         )
     }
+    val emitterState by viewModel.state.collectAsState()
     val playlistStateHolder = remember(config.deviceId, container) {
         PlaylistEditorStateHolder(
             playlistRepository = container.playlistRepository,
@@ -542,6 +543,11 @@ private fun EmitterWorkspace(
         )
     }
     val playlistEditorState by playlistStateHolder.uiState.collectAsState()
+
+    DisposableEffect(viewModel) {
+        viewModel.start()
+        onDispose { viewModel.stop() }
+    }
 
     LaunchedEffect(playlistStateHolder) {
         playlistStateHolder.effects.collect { effect ->
@@ -564,8 +570,9 @@ private fun EmitterWorkspace(
         }
     }
 
-    EmitterRoute(
-        viewModel = viewModel,
+    EmitterScreen(
+        state = emitterState,
+        onAction = viewModel::onAction,
         playlist = playlistEditorState.playlist,
         onAddImages = playlistStateHolder::addImages,
         playlistPanel = { modifier, fillHeight, onRequestRemove ->

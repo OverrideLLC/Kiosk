@@ -267,19 +267,25 @@ cuando afectan a una acción del usuario.
 
 ## UI y estado
 
-- El Controlador, la selección de rol y el editor de playlist usan acciones y
-  reducers para sus transiciones visibles. Los efectos de una sola vez usan un
-  canal consumible (confirmar rol o abrir el selector de imágenes); las
-  operaciones de red y almacenamiento mantienen su progreso y error en el estado.
-  No hay ViewModels de AndroidX ni framework MVI.
-- `feature/emitter/presentation` contiene en el paquete raíz el estado inmutable
-  (`EmitterUiState`), `EmitterAction`, `EmitterReducer`, `EmitterViewModel` y las
-  pantallas. `coordinators` agrupa los coordinadores que adaptan resultados al
-  estado de UI; `components` agrupa los componentes exclusivos del Controlador.
-  La pantalla recibe estado y un callback de acciones; no conserva ni invoca el
-  ViewModel. Hay un solo `EmitterViewModel`; los coordinadores actualizan estado
-  y progreso, no son ViewModels independientes. Emparejamiento, dirección manual y configuración
-  de seguridad usan casos de uso en `domain`. `EmitterClient`,
+- El Controlador, la selección de rol y el editor de playlist usan acciones
+  tipadas y estado inmutable. Cada ViewModel o state holder aplica las
+  transiciones y coordina efectos; un reducer puro se añade solo cuando separa
+  lógica no trivial. Los efectos de una sola vez usan un canal consumible
+  (confirmar rol o abrir el selector de imágenes); las operaciones de red y
+  almacenamiento mantienen su progreso y error en el estado. No hay ViewModels
+  de AndroidX ni framework MVI.
+- `feature/emitter/presentation` contiene en el paquete raíz `EmitterUiState`,
+  `EmitterAction`, `EmitterViewModel` y `EmitterScreen`. El ViewModel aplica las
+  transiciones locales y delega efectos en coordinadores. `App.kt` crea el
+  ViewModel desde `AppContainer`, gestiona `start/stop` con el ciclo de vida del
+  workspace y conecta directamente el Screen; un `EmitterRoute` duplicaría esa
+  composición sin aportar lógica. `coordinators` agrupa los flujos que adaptan
+  operaciones y resultados al estado de UI; `components` agrupa los composables
+  exclusivos del Controlador. La pantalla recibe estado y un callback de
+  acciones, y no conserva ni invoca el ViewModel. Hay un solo `EmitterViewModel`;
+  los coordinadores actualizan estado y progreso, no son ViewModels
+  independientes. Emparejamiento, dirección manual y configuración de seguridad
+  usan casos de uso en `domain`. `EmitterClient`,
   `EmitterScreensRepository` y `EmitterSyncRepository` son contratos de dominio;
   `EmitterServiceImpl`, `EmitterUpdateRunner`, Ktor, Room y la transferencia de
   medios viven en `data`. Botones, diálogos e iconos reutilizados por otras features

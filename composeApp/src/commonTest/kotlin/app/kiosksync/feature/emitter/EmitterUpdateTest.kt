@@ -117,7 +117,45 @@ class EmitterUpdateTest {
     }
 }
 
-private class FixedDiscovery(devices: List<DiscoveredDevice>) : DeviceDiscovery {
+internal fun createEmitterViewModelForActionTests(scope: CoroutineScope): EmitterViewModel {
+    val storage = FakeRepositories()
+    val service = EmitterServiceImpl(
+        discovery = FixedDiscovery(emptyList()),
+        client = RecordingEmitterClient(screenVersion = APP_VERSION),
+        screensRepository = storage,
+        kioskLockRepository = storage,
+        syncRepository = storage,
+        logger = NoOpLogger(),
+        serviceScope = scope,
+        backgroundDispatcher = Dispatchers.Unconfined,
+        updatePackageProvider = FakeUpdatePackageProvider(
+            UpdatePackage(version = APP_VERSION, sha256 = "a".repeat(64), bytes = byteArrayOf(1))
+        ),
+    )
+    val lockManager = KioskLockManager(
+        logger = NoOpLogger(),
+        passwordHasher = { it },
+        scope = scope,
+        platformLockAvailable = false,
+    )
+    return EmitterViewModel(
+        service = service,
+        kioskLockConfigurationUseCases = KioskLockConfigurationUseCases(
+            repository = storage,
+            manager = lockManager,
+            passwordHasher = { it },
+        ),
+        logger = NoOpLogger(),
+        emitterId = "tx-1",
+        emitterName = "Caja",
+        scope = scope,
+        kioskLockManager = lockManager,
+        projectionController = ProjectionController(),
+        backgroundDispatcher = Dispatchers.Unconfined,
+    )
+}
+
+internal class FixedDiscovery(devices: List<DiscoveredDevice>) : DeviceDiscovery {
     private val state = MutableStateFlow(devices)
     override val discoveredDevices: StateFlow<List<DiscoveredDevice>> = state
     override fun startDiscovery() {}
@@ -132,7 +170,7 @@ private class FixedDiscovery(devices: List<DiscoveredDevice>) : DeviceDiscovery 
     override fun unregisterService() {}
 }
 
-private class RecordingEmitterClient(
+internal class RecordingEmitterClient(
     private val screenVersion: String
 ) : EmitterClient {
     val uploadedVersions = mutableListOf<String>()
