@@ -17,7 +17,6 @@ import app.kiosksync.feature.kiosk.domain.KioskLockConfigurationUseCases
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.projection.domain.ProjectionService
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -324,13 +323,13 @@ class EmitterViewModel(
         logger.info("Projection started with playlist '${playlist.name}'")
     }
 
-    private fun rebuild(newState: EmitterServiceState) {
-        val devices = newState.devices.map { it.toUiDevice() }.sortedBy { it.deviceName.lowercase() }
+    private fun rebuild(serviceState: EmitterServiceState) {
+        val devices = serviceState.devices.map { it.toUiDevice() }.sortedBy { it.deviceName.lowercase() }
         _uiState.update {
             it.copy(
                 devices = devices,
-                isSearching = newState.isSearching,
-                updateByDevice = newState.updateByDevice,
+                isSearching = serviceState.isSearching,
+                updateByDevice = serviceState.updateByDevice,
             )
         }
     }
