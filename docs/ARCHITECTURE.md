@@ -58,12 +58,12 @@ composeApp/src/
 │   │   ├── emitter/{domain,data,presentation/{components,coordinators}}/
 │   │   ├── media/domain/
 │   │   ├── playlist/{domain,presentation}/
-│   │   ├── sync/{domain,data}/
+│   │   ├── sync/domain/
 │   │   ├── playback/{domain,presentation}/
 │   │   ├── kiosk/{domain,presentation}/
 │   │   ├── receiver/domain/
-│   │   ├── projection/presentation/
-│   │   ├── guide/{domain,presentation}/
+│   │   ├── projection/domain/
+│   │   ├── guide/{domain,presentation/{components}}/
 │   │   └── update/{domain,presentation}/
 │   ├── data/local/room/ # esquema Room compartido: entidades, DAO y base de datos
 │   ├── ui/              # App.kt, navegación y pantallas por rol
@@ -308,10 +308,11 @@ cuando afectan a una acción del usuario.
   reales en varias features; componentes específicos permanecen junto a su feature.
 - Todos los textos visibles están en `core/Strings.kt`.
 - La guía interactiva vive en `feature/guide/presentation`: `GuideViewModel`
-  mantiene la máquina de estados y emite efectos tipados; `GuideOverlay` solo
-  presenta estado y envía acciones. Las pantallas reportan playlist, vinculación,
-  contraseña y contenido para que avance al completar cada paso. Ver
-  [GUIDE.md](GUIDE.md).
+  mantiene la máquina de estados y emite efectos tipados; `GuideOverlay` conecta
+  estado y acciones, y los composables de su carpeta `components` separan el
+  diálogo de rol, la tarjeta y el contenido de los pasos. Las pantallas reportan
+  playlist, vinculación, contraseña y contenido para que avance al completar
+  cada paso. Ver [GUIDE.md](GUIDE.md).
 - El Controlador usa un layout de dos paneles en anchos ≥1100 dp y pestañas
   Pantallas/Playlist en anchos menores.
 

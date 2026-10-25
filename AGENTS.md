@@ -133,12 +133,12 @@ composeApp/src/
 │   │   ├── emitter/{domain,data,presentation/{components,coordinators}}/
 │   │   ├── media/domain/
 │   │   ├── playlist/{domain,presentation}/
-│   │   ├── sync/{domain,data}/
+│   │   ├── sync/domain/
 │   │   ├── playback/{domain,presentation}/
 │   │   ├── kiosk/{domain,presentation}/
 │   │   ├── receiver/domain/
-│   │   ├── projection/presentation/
-│   │   ├── guide/{domain,presentation}/
+│   │   ├── projection/domain/
+│   │   ├── guide/{domain,presentation/{components}}/
 │   │   └── update/{domain,presentation}/
 │   ├── data/local/room/ # entidades, DAO y esquema Room compartido
 │   ├── ui/              # App.kt, navegación y pantallas por rol
