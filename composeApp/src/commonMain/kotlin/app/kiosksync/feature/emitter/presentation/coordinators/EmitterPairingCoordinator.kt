@@ -1,4 +1,4 @@
-package app.kiosksync.feature.emitter.presentation
+package app.kiosksync.feature.emitter.presentation.coordinators
 
 import app.kiosksync.feature.emitter.presentation.EmitterDeviceUi
 import app.kiosksync.feature.emitter.presentation.EmitterPendingAction

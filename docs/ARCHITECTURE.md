@@ -55,7 +55,7 @@ composeApp/src/
 │   ├── feature/
 │   │   ├── role/{domain,presentation}/
 │   │   ├── pairing/{domain,presentation}/
-│   │   ├── emitter/{domain,data,presentation/components}/
+│   │   ├── emitter/{domain,data,presentation/{components,coordinators}}/
 │   │   ├── media/domain/
 │   │   ├── playlist/{domain,presentation}/
 │   │   ├── sync/{domain,data}/
@@ -272,13 +272,13 @@ cuando afectan a una acción del usuario.
   canal consumible (confirmar rol o abrir el selector de imágenes); las
   operaciones de red y almacenamiento mantienen su progreso y error en el estado.
   No hay ViewModels de AndroidX ni framework MVI.
-- `feature/emitter/presentation` contiene el estado inmutable (`EmitterUiState`),
-  `EmitterViewModel`, las pantallas y los coordinadores que adaptan resultados a
-  la UI, todos en el paquete raíz, incluidas las acciones y el reducer.
-  `components` agrupa los componentes exclusivos del Controlador. La pantalla
-  recibe estado y un callback de acciones; no conserva ni invoca el ViewModel. Hay
-  un solo `EmitterViewModel`; sus coordinadores actualizan estado y progreso, no
-  son ViewModels independientes. Emparejamiento, dirección manual y configuración
+- `feature/emitter/presentation` contiene en el paquete raíz el estado inmutable
+  (`EmitterUiState`), `EmitterAction`, `EmitterReducer`, `EmitterViewModel` y las
+  pantallas. `coordinators` agrupa los coordinadores que adaptan resultados al
+  estado de UI; `components` agrupa los componentes exclusivos del Controlador.
+  La pantalla recibe estado y un callback de acciones; no conserva ni invoca el
+  ViewModel. Hay un solo `EmitterViewModel`; los coordinadores actualizan estado
+  y progreso, no son ViewModels independientes. Emparejamiento, dirección manual y configuración
   de seguridad usan casos de uso en `domain`. `EmitterClient`,
   `EmitterScreensRepository` y `EmitterSyncRepository` son contratos de dominio;
   `EmitterServiceImpl`, `EmitterUpdateRunner`, Ktor, Room y la transferencia de

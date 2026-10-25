@@ -130,7 +130,7 @@ composeApp/src/
 │   ├── feature/
 │   │   ├── role/{domain,presentation}/
 │   │   ├── pairing/{domain,presentation}/
-│   │   ├── emitter/{domain,data,presentation/components}/
+│   │   ├── emitter/{domain,data,presentation/{components,coordinators}}/
 │   │   ├── media/domain/
 │   │   ├── playlist/{domain,presentation}/
 │   │   ├── sync/{domain,data}/
@@ -154,7 +154,7 @@ composeApp/src/
     └── Main.kt          # argumentos de línea de comandos y punto de entrada
 ```
 
-Dentro de cada `feature/<nombre>/` crea capas solo cuando contengan responsabilidades reales. En `feature/emitter`, estado, acciones, reducer, ViewModel, coordinadores y pantallas viven directamente en `presentation`; `components` agrupa solo los componentes UI que lo necesitan. Los servicios operativos y adaptadores concretos viven en `data`. La pantalla recibe estado y emite acciones; el ViewModel consume contratos y casos de uso del dominio, nunca DAOs ni implementaciones. Los contratos y modelos pertenecen al `domain`; Room, DataStore, red, operaciones de datos y repositorios concretos pertenecen a `data`, junto a la feature que los usa. Solo la composición de servicios compartidos, el esquema Room y las migraciones permanecen en `data/local`; las entidades Room nunca son modelos de protocolo. Comparte un componente `core.ui` cuando tenga consumidores reales en más de una feature; los componentes exclusivos permanecen en su feature. Mantén un solo módulo Gradle y el `AppContainer` manual. DataStore Preferences almacena preferencias pequeñas; Room 3 datos estructurados; archivos, imágenes, logs y paquetes.
+Dentro de cada `feature/<nombre>/` crea capas solo cuando contengan responsabilidades reales. En `feature/emitter`, estado, acciones, reducer, ViewModel y pantallas viven directamente en `presentation`; coordinadores UI viven en `presentation/coordinators` y composables en `presentation/components`. Los servicios operativos y adaptadores concretos viven en `data`. La pantalla recibe estado y emite acciones; el ViewModel consume contratos y casos de uso del dominio, nunca DAOs ni implementaciones. Los contratos y modelos pertenecen al `domain`; Room, DataStore, red, operaciones de datos y repositorios concretos pertenecen a `data`, junto a la feature que los usa. Solo la composición de servicios compartidos, el esquema Room y las migraciones permanecen en `data/local`; las entidades Room nunca son modelos de protocolo. Comparte un componente `core.ui` cuando tenga consumidores reales en más de una feature; los componentes exclusivos permanecen en su feature. Mantén un solo módulo Gradle y el `AppContainer` manual. DataStore Preferences almacena preferencias pequeñas; Room 3 datos estructurados; archivos, imágenes, logs y paquetes.
 
 ---
 
