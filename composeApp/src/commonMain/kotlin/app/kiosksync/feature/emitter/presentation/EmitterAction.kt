@@ -1,4 +1,4 @@
-package app.kiosksync.feature.emitter.presentation.actions
+package app.kiosksync.feature.emitter.presentation
 
 import app.kiosksync.feature.emitter.presentation.EmitterDeviceUi
 import app.kiosksync.feature.playlist.domain.Playlist

@@ -55,7 +55,7 @@ composeApp/src/
 │   ├── feature/
 │   │   ├── role/{domain,presentation}/
 │   │   ├── pairing/{domain,presentation}/
-│   │   ├── emitter/{domain,data,presentation/{actions,components}}/
+│   │   ├── emitter/{domain,data,presentation/components}/
 │   │   ├── media/domain/
 │   │   ├── playlist/{domain,presentation}/
 │   │   ├── sync/{domain,data}/
@@ -274,7 +274,7 @@ cuando afectan a una acción del usuario.
   No hay ViewModels de AndroidX ni framework MVI.
 - `feature/emitter/presentation` contiene el estado inmutable (`EmitterUiState`),
   `EmitterViewModel`, las pantallas y los coordinadores que adaptan resultados a
-  la UI, todos en el paquete raíz. `actions` conserva `EmitterAction` y el reducer;
+  la UI, todos en el paquete raíz, incluidas las acciones y el reducer.
   `components` agrupa los componentes exclusivos del Controlador. La pantalla
   recibe estado y un callback de acciones; no conserva ni invoca el ViewModel. Hay
   un solo `EmitterViewModel`; sus coordinadores actualizan estado y progreso, no

@@ -1,4 +1,4 @@
-package app.kiosksync.feature.emitter.presentation.actions
+package app.kiosksync.feature.emitter.presentation
 
 import app.kiosksync.core.DEFAULT_UNLOCK_SEQUENCE
 import app.kiosksync.core.MAX_RECOVERY_PHRASE_LENGTH

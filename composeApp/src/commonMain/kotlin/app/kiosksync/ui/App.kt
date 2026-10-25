@@ -19,7 +19,7 @@ import app.kiosksync.core.AppTheme
 import app.kiosksync.core.DEFAULT_PORT
 import app.kiosksync.core.ui.theme.KioskColors
 import app.kiosksync.core.ui.theme.KioskTheme
-import app.kiosksync.feature.emitter.presentation.actions.EmitterAction
+import app.kiosksync.feature.emitter.presentation.EmitterAction
 import app.kiosksync.feature.guide.domain.GuideManager
 import app.kiosksync.feature.guide.domain.GuideStep
 import app.kiosksync.feature.guide.presentation.GuideOverlay

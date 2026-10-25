@@ -1,6 +1,6 @@
 package app.kiosksync.feature.emitter.presentation.components
 
-import app.kiosksync.feature.emitter.presentation.actions.EmitterAction
+import app.kiosksync.feature.emitter.presentation.EmitterAction
 import app.kiosksync.feature.emitter.presentation.EmitterUiState
 
 import androidx.compose.foundation.BorderStroke

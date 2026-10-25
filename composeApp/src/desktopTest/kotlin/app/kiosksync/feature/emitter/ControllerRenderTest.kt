@@ -8,7 +8,7 @@ import androidx.compose.ui.Modifier
 import app.kiosksync.FakeRepositories
 import app.kiosksync.FakeUpdatePackageProvider
 import app.kiosksync.NoOpLogger
-import app.kiosksync.feature.emitter.presentation.actions.EmitterAction
+import app.kiosksync.feature.emitter.presentation.EmitterAction
 import app.kiosksync.feature.emitter.presentation.EmitterScreen
 import app.kiosksync.feature.emitter.presentation.EmitterViewModel
 import app.kiosksync.feature.emitter.data.EmitterServiceImpl

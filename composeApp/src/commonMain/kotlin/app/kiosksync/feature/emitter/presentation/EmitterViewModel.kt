@@ -7,8 +7,8 @@ import app.kiosksync.feature.emitter.domain.EmitterService
 import app.kiosksync.feature.emitter.domain.EmitterServiceDevice
 import app.kiosksync.feature.emitter.domain.EmitterServiceState
 import app.kiosksync.feature.emitter.domain.EmitterUpdateStatus
-import app.kiosksync.feature.emitter.presentation.actions.EmitterAction
-import app.kiosksync.feature.emitter.presentation.actions.EmitterReducer
+import app.kiosksync.feature.emitter.presentation.EmitterAction
+import app.kiosksync.feature.emitter.presentation.EmitterReducer
 import app.kiosksync.feature.emitter.presentation.DeviceUpdateStatus
 import app.kiosksync.feature.emitter.presentation.DeviceUpdateUi
 import app.kiosksync.feature.emitter.presentation.EmitterDeviceUi
