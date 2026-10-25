@@ -3,24 +3,25 @@ package app.kiosksync.feature.emitter
 import app.kiosksync.FakeRepositories
 import app.kiosksync.FakeUpdatePackageProvider
 import app.kiosksync.NoOpLogger
-import app.kiosksync.feature.emitter.presentation.state.DeviceUpdateStatus
-import app.kiosksync.feature.emitter.presentation.viewmodel.EmitterViewModel
+import app.kiosksync.feature.emitter.presentation.DeviceUpdateStatus
+import app.kiosksync.feature.emitter.presentation.EmitterViewModel
 import app.kiosksync.core.APP_VERSION
-import app.kiosksync.core.DeviceInfo
 import app.kiosksync.core.DiscoveredDevice
 import app.kiosksync.core.EmitterPairedDevice
 import app.kiosksync.core.KioskLockConfig
-import app.kiosksync.core.MediaUploadResponse
-import app.kiosksync.core.PairResponse
-import app.kiosksync.core.PlaylistApplyResponse
-import app.kiosksync.core.ReceiverStatusResponse
-import app.kiosksync.core.SyncStateResponse
-import app.kiosksync.core.UpdateUploadResponse
+import app.kiosksync.feature.kiosk.domain.KioskLockConfigurationUseCases
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.projection.presentation.ProjectionController
 import app.kiosksync.feature.pairing.domain.DeviceDiscovery
 import app.kiosksync.feature.emitter.domain.EmitterClient
+import app.kiosksync.feature.emitter.domain.ReceiverInfo
+import app.kiosksync.feature.emitter.domain.ReceiverPairingCredential
+import app.kiosksync.feature.emitter.domain.ReceiverStatus
+import app.kiosksync.feature.emitter.domain.PlaylistApplyResult
+import app.kiosksync.feature.emitter.domain.RemoteSyncState
+import app.kiosksync.feature.emitter.domain.UpdateUploadResult
+import app.kiosksync.feature.emitter.data.EmitterServiceImpl
 import app.kiosksync.feature.update.domain.UpdatePackage
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -62,25 +63,14 @@ class EmitterUpdateTest {
             )
         )
         val client = RecordingEmitterClient(screenVersion = "0.9.0")
-        val holder = EmitterViewModel(
+        val service = EmitterServiceImpl(
             discovery = discovery,
             client = client,
             screensRepository = storage,
             kioskLockRepository = storage,
             syncRepository = storage,
             logger = NoOpLogger(),
-            emitterId = "tx-1",
-            emitterName = "Caja",
-            scope = scope,
             serviceScope = scope,
-            kioskLockManager = KioskLockManager(
-                logger = NoOpLogger(),
-                passwordHasher = { it },
-                scope = scope,
-                platformLockAvailable = false
-            ),
-            projectionController = ProjectionController(),
-            passwordHasher = { it },
             backgroundDispatcher = Dispatchers.Unconfined,
             updatePackageProvider = FakeUpdatePackageProvider(
                 UpdatePackage(
@@ -88,7 +78,28 @@ class EmitterUpdateTest {
                     sha256 = "a".repeat(64),
                     bytes = byteArrayOf(1, 2, 3)
                 )
-            )
+            ),
+        )
+        val lockManager = KioskLockManager(
+            logger = NoOpLogger(),
+            passwordHasher = { it },
+            scope = scope,
+            platformLockAvailable = false,
+        )
+        val holder = EmitterViewModel(
+            service = service,
+            kioskLockConfigurationUseCases = KioskLockConfigurationUseCases(
+                repository = storage,
+                manager = lockManager,
+                passwordHasher = { it },
+            ),
+            logger = NoOpLogger(),
+            emitterId = "tx-1",
+            emitterName = "Caja",
+            scope = scope,
+            kioskLockManager = lockManager,
+            projectionController = ProjectionController(),
+            backgroundDispatcher = Dispatchers.Unconfined,
         )
         try {
             holder.start()
@@ -126,7 +137,7 @@ private class RecordingEmitterClient(
 ) : EmitterClient {
     val uploadedVersions = mutableListOf<String>()
 
-    override suspend fun getInfo(host: String, port: Int): Result<DeviceInfo> =
+    override suspend fun getInfo(host: String, port: Int): Result<ReceiverInfo> =
         Result.failure(UnsupportedOperationException())
 
     override suspend fun pair(
@@ -135,7 +146,7 @@ private class RecordingEmitterClient(
         emitterId: String,
         emitterName: String,
         code: String
-    ): Result<PairResponse> = Result.failure(UnsupportedOperationException())
+    ): Result<ReceiverPairingCredential> = Result.failure(UnsupportedOperationException())
 
     override suspend fun unpair(
         host: String,
@@ -149,11 +160,8 @@ private class RecordingEmitterClient(
         port: Int,
         emitterId: String,
         token: String
-    ): Result<ReceiverStatusResponse> = Result.success(
-        ReceiverStatusResponse(
-            playlistVersion = 0,
-            appVersion = screenVersion
-        )
+    ): Result<ReceiverStatus> = Result.success(
+        ReceiverStatus(appVersion = screenVersion, skippedUpdateVersion = null)
     )
 
     override suspend fun synchronizePlayback(
@@ -169,7 +177,7 @@ private class RecordingEmitterClient(
         port: Int,
         emitterId: String,
         token: String
-    ): Result<SyncStateResponse> = Result.success(SyncStateResponse())
+    ): Result<RemoteSyncState> = Result.success(RemoteSyncState(playlistVersion = 0, media = emptyList()))
 
     override suspend fun uploadMedia(
         host: String,
@@ -179,7 +187,7 @@ private class RecordingEmitterClient(
         mediaId: String,
         sha256: String,
         bytes: ByteArray
-    ): Result<MediaUploadResponse> = Result.failure(UnsupportedOperationException())
+    ): Result<Unit> = Result.failure(UnsupportedOperationException())
 
     override suspend fun uploadUpdate(
         host: String,
@@ -189,10 +197,10 @@ private class RecordingEmitterClient(
         version: String,
         sha256: String,
         bytes: ByteArray
-    ): Result<UpdateUploadResponse> {
+    ): Result<UpdateUploadResult> {
         uploadedVersions += version
         return Result.success(
-            UpdateUploadResponse(
+            UpdateUploadResult(
                 accepted = true,
                 version = version,
                 forced = true
@@ -207,7 +215,9 @@ private class RecordingEmitterClient(
         token: String,
         playlist: Playlist,
         lock: KioskLockConfig?
-    ): Result<PlaylistApplyResponse> = Result.success(PlaylistApplyResponse(applied = true))
+    ): Result<PlaylistApplyResult> = Result.success(
+        PlaylistApplyResult(applied = true, version = 0, missingMediaIds = emptyList())
+    )
 
     override suspend fun putLock(
         host: String,

@@ -12,6 +12,8 @@ class KioskLockConfigurationUseCases(
     private val manager: KioskLockManager,
     private val passwordHasher: (String) -> String,
 ) {
+    suspend fun load(): KioskLockConfig? = repository.load()
+
     suspend fun saveUnlockSequence(sequence: List<String>): KioskLockConfig {
         require(isValidUnlockSequence(sequence)) { "Invalid kiosk unlock sequence" }
         val config = (repository.load() ?: KioskLockConfig()).copy(

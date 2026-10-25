@@ -117,19 +117,3 @@ data class ErrorResponse(
     val remainingAttempts: Int? = null,
     val remainingSeconds: Long? = null
 )
-
-enum class PairError {
-    INVALID_CODE,
-    LOCKED_OUT,
-    ALREADY_PAIRED
-}
-
-class PairRejectedException(
-    val error: PairError,
-    val remainingAttempts: Int? = null,
-    val remainingSeconds: Long? = null
-) : Exception("Pairing rejected: $error")
-
-class PlaylistRejectedException(
-    val missingMediaIds: List<String>
-) : Exception("Receiver rejected the playlist because media is missing")

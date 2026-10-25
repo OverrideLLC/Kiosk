@@ -1,6 +1,6 @@
 package app.kiosksync.feature.emitter.presentation.actions
 
-import app.kiosksync.feature.emitter.presentation.state.EmitterDeviceUi
+import app.kiosksync.feature.emitter.presentation.EmitterDeviceUi
 import app.kiosksync.feature.playlist.domain.Playlist
 
 sealed interface EmitterAction {

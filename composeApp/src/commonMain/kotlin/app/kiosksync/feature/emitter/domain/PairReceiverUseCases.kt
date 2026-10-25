@@ -1,7 +1,6 @@
 package app.kiosksync.feature.emitter.domain
 
 import app.kiosksync.core.EmitterPairedDevice
-import app.kiosksync.core.PairResponse
 import kotlinx.coroutines.CancellationException
 
 data class PairReceiverRequest(
@@ -30,7 +29,7 @@ class PairReceiverUseCase(
     private val screensRepository: EmitterScreensRepository,
 ) {
     suspend operator fun invoke(request: PairReceiverRequest): PairReceiverResult {
-        val response: PairResponse = client.pair(
+        val response = client.pair(
             host = request.host,
             port = request.port,
             emitterId = request.emitterId,

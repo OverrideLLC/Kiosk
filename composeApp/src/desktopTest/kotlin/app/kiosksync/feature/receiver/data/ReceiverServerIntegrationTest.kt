@@ -5,8 +5,8 @@ import app.kiosksync.FakeReceiverUpdateManager
 import app.kiosksync.NoOpLogger
 import app.kiosksync.data.security.Sha256
 import app.kiosksync.core.APP_VERSION
-import app.kiosksync.core.PlaylistRejectedException
 import app.kiosksync.core.ReceiverStatusResponse
+import app.kiosksync.feature.emitter.domain.PlaylistRejectedException
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.pairing.domain.PairingManager
 import app.kiosksync.feature.emitter.data.KtorEmitterClient
@@ -83,10 +83,10 @@ class ReceiverServerIntegrationTest {
 
         try {
             val info = client.getInfo("127.0.0.1", port).getOrThrow()
-            assertEquals("receiver", info.role)
+            assertTrue(info.isReceiver)
             assertEquals("Pantalla", info.deviceName)
             assertEquals(APP_VERSION, info.appVersion)
-            assertFalse(info.paired)
+            assertFalse(info.isPaired)
 
             // A wrong code is rejected and does not pair the screen.
             assertTrue(
@@ -96,7 +96,6 @@ class ReceiverServerIntegrationTest {
 
             val paired = client.pair("127.0.0.1", port, "tx-1", "Caja", "123456").getOrThrow()
             assertEquals("a".repeat(64), paired.token)
-            assertEquals("rx-1", paired.receiverId)
 
             // A second emitter cannot take over the screen.
             val second = client.pair("127.0.0.1", port, "tx-2", "Otra caja", "123456")
@@ -121,7 +120,7 @@ class ReceiverServerIntegrationTest {
             )
             assertTrue(storage.listStored().isEmpty())
 
-            val uploaded = client.uploadMedia(
+            client.uploadMedia(
                 host = "127.0.0.1",
                 port = port,
                 emitterId = "tx-1",
@@ -130,9 +129,6 @@ class ReceiverServerIntegrationTest {
                 sha256 = hash,
                 bytes = bytes,
             ).getOrThrow()
-            assertEquals("m1", uploaded.mediaId)
-            assertEquals(hash, uploaded.sha256)
-            assertEquals(bytes.size.toLong(), uploaded.sizeBytes)
 
             val state = client.getSyncState("127.0.0.1", port, "tx-1", paired.token).getOrThrow()
             assertEquals(listOf("m1"), state.media.map { it.mediaId })
@@ -178,7 +174,6 @@ class ReceiverServerIntegrationTest {
             assertEquals(playlist, appliedPlaylist)
 
             val status = client.getStatus("127.0.0.1", port, "tx-1", paired.token).getOrThrow()
-            assertEquals(1, status.playlistVersion)
             assertEquals(APP_VERSION, status.appVersion)
 
             val updateBytes = "update-package-for-test".toByteArray()
@@ -215,7 +210,7 @@ class ReceiverServerIntegrationTest {
                 client.getStatus("127.0.0.1", port, "tx-1", paired.token).isFailure,
             )
             val after = client.getInfo("127.0.0.1", port).getOrThrow()
-            assertFalse(after.paired)
+            assertFalse(after.isPaired)
         } finally {
             client.close()
             server.stop()

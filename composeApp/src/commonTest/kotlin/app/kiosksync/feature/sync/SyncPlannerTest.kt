@@ -1,9 +1,9 @@
 package app.kiosksync.feature.sync
 
-import app.kiosksync.core.MediaState
-import app.kiosksync.core.SyncStateResponse
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.domain.PlaylistItem
+import app.kiosksync.feature.emitter.domain.RemoteMediaState
+import app.kiosksync.feature.emitter.domain.RemoteSyncState
 import app.kiosksync.feature.sync.domain.SyncPlanner
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -27,11 +27,11 @@ class SyncPlannerTest {
     @Test
     fun `no uploads when receiver already has every hash`() {
         val local = playlist(item("a", "hash-a"), item("b", "hash-b"))
-        val remote = SyncStateResponse(
+        val remote = RemoteSyncState(
             playlistVersion = 2,
             media = listOf(
-                MediaState("a", "hash-a"),
-                MediaState("b", "hash-b")
+                RemoteMediaState("a", "hash-a"),
+                RemoteMediaState("b", "hash-b")
             )
         )
 
@@ -46,7 +46,7 @@ class SyncPlannerTest {
     @Test
     fun `uploads only missing media`() {
         val local = playlist(item("a", "hash-a"), item("b", "hash-b"))
-        val remote = SyncStateResponse(media = listOf(MediaState("a", "hash-a")))
+        val remote = RemoteSyncState(playlistVersion = 0, media = listOf(RemoteMediaState("a", "hash-a")))
 
         val plan = SyncPlanner.plan(local, remote)
 
@@ -58,10 +58,11 @@ class SyncPlannerTest {
     @Test
     fun `uploads only media whose hash changed`() {
         val local = playlist(item("a", "hash-a"), item("b", "new-hash-b"))
-        val remote = SyncStateResponse(
+        val remote = RemoteSyncState(
+            playlistVersion = 0,
             media = listOf(
-                MediaState("a", "hash-a"),
-                MediaState("b", "old-hash-b")
+                RemoteMediaState("a", "hash-a"),
+                RemoteMediaState("b", "old-hash-b")
             )
         )
 
@@ -74,10 +75,11 @@ class SyncPlannerTest {
     @Test
     fun `lists remote media that is no longer referenced`() {
         val local = playlist(item("a", "hash-a"))
-        val remote = SyncStateResponse(
+        val remote = RemoteSyncState(
+            playlistVersion = 0,
             media = listOf(
-                MediaState("a", "hash-a"),
-                MediaState("orphan", "hash-o")
+                RemoteMediaState("a", "hash-a"),
+                RemoteMediaState("orphan", "hash-o")
             )
         )
 
@@ -94,7 +96,7 @@ class SyncPlannerTest {
             item("a", "hash-a"),
             item("a", "hash-a")
         )
-        val remote = SyncStateResponse()
+        val remote = RemoteSyncState(playlistVersion = 0, media = emptyList())
 
         val plan = SyncPlanner.plan(local, remote)
 
@@ -105,7 +107,7 @@ class SyncPlannerTest {
     @Test
     fun `compares hashes ignoring case`() {
         val local = playlist(item("a", "ABCDEF"))
-        val remote = SyncStateResponse(media = listOf(MediaState("a", "abcdef")))
+        val remote = RemoteSyncState(playlistVersion = 0, media = listOf(RemoteMediaState("a", "abcdef")))
 
         val plan = SyncPlanner.plan(local, remote)
 

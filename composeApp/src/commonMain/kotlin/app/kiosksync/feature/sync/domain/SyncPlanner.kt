@@ -1,8 +1,8 @@
 package app.kiosksync.feature.sync.domain
 
-import app.kiosksync.core.SyncStateResponse
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.domain.PlaylistItem
+import app.kiosksync.feature.emitter.domain.RemoteSyncState
 
 data class SyncPlan(
     val uploads: List<PlaylistItem>,
@@ -18,7 +18,7 @@ data class SyncPlan(
  * Only images whose mediaId is unknown or whose hash differs are uploaded.
  */
 object SyncPlanner {
-    fun plan(localPlaylist: Playlist, remoteState: SyncStateResponse): SyncPlan {
+    fun plan(localPlaylist: Playlist, remoteState: RemoteSyncState): SyncPlan {
         val remoteById = remoteState.media.associateBy { it.mediaId }
         val seen = mutableSetOf<String>()
 

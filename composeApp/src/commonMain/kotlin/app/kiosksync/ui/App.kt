@@ -19,13 +19,20 @@ import app.kiosksync.core.AppTheme
 import app.kiosksync.core.DEFAULT_PORT
 import app.kiosksync.core.ui.theme.KioskColors
 import app.kiosksync.core.ui.theme.KioskTheme
+import app.kiosksync.feature.emitter.presentation.actions.EmitterAction
 import app.kiosksync.feature.guide.domain.GuideManager
 import app.kiosksync.feature.guide.domain.GuideStep
 import app.kiosksync.feature.guide.presentation.GuideOverlay
-import app.kiosksync.feature.emitter.presentation.screen.EmitterRoute
+import app.kiosksync.feature.emitter.presentation.EmitterRoute
+import app.kiosksync.feature.emitter.presentation.EmitterViewModel
 import app.kiosksync.feature.kiosk.presentation.KioskUnlockOverlay
 import app.kiosksync.feature.pairing.domain.PairingManager
 import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
+import app.kiosksync.feature.playlist.presentation.PlaylistEditorAction
+import app.kiosksync.feature.playlist.presentation.PlaylistEditorDialogs
+import app.kiosksync.feature.playlist.presentation.PlaylistEditorEffect
+import app.kiosksync.feature.playlist.presentation.PlaylistEditorStateHolder
+import app.kiosksync.feature.playlist.presentation.PlaylistPanel
 import app.kiosksync.feature.role.domain.AppConfig
 import app.kiosksync.feature.role.presentation.RoleSelectionScreen
 import app.kiosksync.feature.role.presentation.RoleStateHolder
@@ -346,7 +353,7 @@ fun App(
                     }
 
                     is Screen.EmitterHome -> {
-                        EmitterRoute(
+                        EmitterWorkspace(
                             config = screen.config,
                             container = container,
                             guideManager = guideManager,
@@ -497,4 +504,94 @@ fun App(
             )
         }
     }
+}
+
+@Composable
+private fun EmitterWorkspace(
+    config: AppConfig,
+    container: AppContainer,
+    guideManager: GuideManager,
+    onExitRequested: () -> Unit,
+    onRoleReset: () -> Unit,
+    theme: AppTheme,
+    reduceMotion: Boolean,
+    onThemeChange: (AppTheme) -> Unit,
+    onReduceMotionChange: (Boolean) -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    val viewModel = remember(config.deviceId, container) {
+        EmitterViewModel(
+            service = container.emitterService,
+            kioskLockConfigurationUseCases = container.kioskLockConfigurationUseCases,
+            logger = container.logger,
+            emitterId = config.deviceId,
+            emitterName = container.deviceName,
+            scope = scope,
+            kioskLockManager = container.kioskLockManager,
+            projectionController = container.projectionController,
+            backgroundDispatcher = container.backgroundDispatcher,
+        )
+    }
+    val playlistStateHolder = remember(config.deviceId, container) {
+        PlaylistEditorStateHolder(
+            playlistRepository = container.playlistRepository,
+            mediaRepository = container.mediaRepository,
+            logger = container.logger,
+            scope = scope,
+            newPlaylistId = container.newDeviceId,
+        )
+    }
+    val playlistEditorState by playlistStateHolder.uiState.collectAsState()
+
+    LaunchedEffect(playlistStateHolder) {
+        playlistStateHolder.effects.collect { effect ->
+            when (effect) {
+                PlaylistEditorEffect.SelectImageFiles -> try {
+                    playlistStateHolder.dispatch(
+                        PlaylistEditorAction.ImagesSelected(container.pickImageFiles())
+                    )
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    playlistStateHolder.dispatch(PlaylistEditorAction.ImagePickerFailed(error))
+                }
+            }
+        }
+    }
+    LaunchedEffect(viewModel, playlistStateHolder) {
+        container.projectionController.toggleRequests.collect {
+            viewModel.onAction(EmitterAction.RequestProjection(playlistStateHolder.currentPlaylist()))
+        }
+    }
+
+    EmitterRoute(
+        viewModel = viewModel,
+        playlist = playlistEditorState.playlist,
+        onAddImages = playlistStateHolder::addImages,
+        playlistPanel = { modifier, fillHeight, onRequestRemove ->
+            PlaylistPanel(
+                stateHolder = playlistStateHolder,
+                state = playlistEditorState,
+                mediaRepository = container.mediaRepository,
+                fillHeight = fillHeight,
+                onRequestRemove = onRequestRemove,
+                modifier = modifier,
+            )
+        },
+        playlistDialogs = { removeTarget, onDismissRemove ->
+            PlaylistEditorDialogs(
+                stateHolder = playlistStateHolder,
+                state = playlistEditorState,
+                removeTarget = removeTarget,
+                onDismissRemove = onDismissRemove,
+            )
+        },
+        guideManager = guideManager,
+        onExitRequested = onExitRequested,
+        onRoleReset = onRoleReset,
+        theme = theme,
+        reduceMotion = reduceMotion,
+        onThemeChange = onThemeChange,
+        onReduceMotionChange = onReduceMotionChange,
+    )
 }

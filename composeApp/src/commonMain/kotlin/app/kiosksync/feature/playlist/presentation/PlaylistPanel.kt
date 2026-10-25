@@ -60,7 +60,7 @@ import app.kiosksync.feature.playlist.domain.PlaylistItem
 import app.kiosksync.feature.media.domain.MediaRepository
 
 @Composable
-internal fun PlaylistPanel(
+fun PlaylistPanel(
     stateHolder: PlaylistEditorStateHolder,
     state: PlaylistEditorUiState,
     mediaRepository: MediaRepository,

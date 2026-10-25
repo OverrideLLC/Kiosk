@@ -55,7 +55,7 @@ composeApp/src/
 │   ├── feature/
 │   │   ├── role/{domain,presentation}/
 │   │   ├── pairing/{domain,presentation}/
-│   │   ├── emitter/{domain,presentation/{actions,components,screen,state,viewmodel}}/
+│   │   ├── emitter/{domain,data,presentation/{actions,components}}/
 │   │   ├── media/domain/
 │   │   ├── playlist/{domain,presentation}/
 │   │   ├── sync/{domain,data}/
@@ -272,17 +272,18 @@ cuando afectan a una acción del usuario.
   canal consumible (confirmar rol o abrir el selector de imágenes); las
   operaciones de red y almacenamiento mantienen su progreso y error en el estado.
   No hay ViewModels de AndroidX ni framework MVI.
-- `feature/emitter/presentation` contiene el MVI y la UI: `EmitterAction` y el
-  reducer en `actions`, el estado inmutable en `state`, `EmitterViewModel`, la
-  pantalla y los componentes. La pantalla recibe `EmitterUiState` y un callback
-  de acciones; no conserva ni invoca el ViewModel. Hay un solo `EmitterViewModel`;
-  sus coordinadores internos son adaptadores de presentación que actualizan el
-  estado/progreso, no ViewModels independientes. Emparejamiento, dirección manual
-  y configuración de seguridad usan casos de uso en `domain`. `EmitterClient`,
+- `feature/emitter/presentation` contiene el estado inmutable (`EmitterUiState`),
+  `EmitterViewModel`, las pantallas y los coordinadores que adaptan resultados a
+  la UI, todos en el paquete raíz. `actions` conserva `EmitterAction` y el reducer;
+  `components` agrupa los componentes exclusivos del Controlador. La pantalla
+  recibe estado y un callback de acciones; no conserva ni invoca el ViewModel. Hay
+  un solo `EmitterViewModel`; sus coordinadores actualizan estado y progreso, no
+  son ViewModels independientes. Emparejamiento, dirección manual y configuración
+  de seguridad usan casos de uso en `domain`. `EmitterClient`,
   `EmitterScreensRepository` y `EmitterSyncRepository` son contratos de dominio;
-  Ktor, Room y la transferencia de medios se implementan en `data`. Los controles
-  propios del Controlador permanecen en `components`; botones, diálogos e iconos
-  reutilizados por otras features viven en `core/ui`.
+  `EmitterServiceImpl`, `EmitterUpdateRunner`, Ktor, Room y la transferencia de
+  medios viven en `data`. Botones, diálogos e iconos reutilizados por otras features
+  viven en `core/ui`.
 - Pairing, playback y kiosk conservan managers/state holders especializados para
   reglas con temporizadores, reproducción o eventos externos. Solo se introduce
   un reducer cuando aclara transiciones de UI; no se fuerza el mismo patrón a toda

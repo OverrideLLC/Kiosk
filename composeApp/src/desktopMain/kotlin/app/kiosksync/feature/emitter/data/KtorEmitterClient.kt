@@ -2,6 +2,10 @@ package app.kiosksync.feature.emitter.data
 
 import app.kiosksync.core.AppLogger
 import app.kiosksync.feature.emitter.domain.EmitterClient
+import app.kiosksync.feature.emitter.domain.PairError
+import app.kiosksync.feature.emitter.domain.PairRejectedException
+import app.kiosksync.feature.emitter.domain.PlaylistApplyResult
+import app.kiosksync.feature.emitter.domain.PlaylistRejectedException
 import app.kiosksync.core.DeviceInfo
 import app.kiosksync.core.ErrorResponse
 import app.kiosksync.core.HEADER_AUTH_TOKEN
@@ -9,20 +13,22 @@ import app.kiosksync.core.HEADER_CONTENT_SHA256
 import app.kiosksync.core.HEADER_EMITTER_ID
 import app.kiosksync.core.HTTP_TIMEOUT_MS
 import app.kiosksync.core.KioskLockConfig
-import app.kiosksync.core.MediaUploadResponse
-import app.kiosksync.core.PairError
-import app.kiosksync.core.PairRejectedException
 import app.kiosksync.core.PairRequest
 import app.kiosksync.core.PairResponse
 import app.kiosksync.core.PlaybackSyncRequest
 import app.kiosksync.core.PlaylistApplyResponse
-import app.kiosksync.core.PlaylistRejectedException
 import app.kiosksync.core.ReceiverStatusResponse
 import app.kiosksync.core.SYNC_TIMEOUT_MS
 import app.kiosksync.core.SyncStateResponse
 import app.kiosksync.core.UPDATE_UPLOAD_TIMEOUT_MS
 import app.kiosksync.core.UPLOAD_TIMEOUT_MS
 import app.kiosksync.core.UpdateUploadResponse
+import app.kiosksync.feature.emitter.domain.ReceiverInfo
+import app.kiosksync.feature.emitter.domain.ReceiverPairingCredential
+import app.kiosksync.feature.emitter.domain.RemoteMediaState
+import app.kiosksync.feature.emitter.domain.RemoteSyncState
+import app.kiosksync.feature.emitter.domain.ReceiverStatus
+import app.kiosksync.feature.emitter.domain.UpdateUploadResult
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.core.PlaylistUpdateRequest
 import io.ktor.client.HttpClient
@@ -61,12 +67,12 @@ class KtorEmitterClient(
         expectSuccess = false
     }
 
-    override suspend fun getInfo(host: String, port: Int): Result<DeviceInfo> = runCatching {
+    override suspend fun getInfo(host: String, port: Int): Result<ReceiverInfo> = runCatching {
         val response = client.get("${baseUrl(host, port)}/info")
         if (response.status != HttpStatusCode.OK) {
             throw IOException("GET /info returned HTTP ${response.status}")
         }
-        response.body<DeviceInfo>()
+        response.body<DeviceInfo>().toDomain()
     }.onFailure {
         logger.warn("Could not read screen info from $host:$port: ${it.message}")
     }
@@ -77,14 +83,14 @@ class KtorEmitterClient(
         emitterId: String,
         emitterName: String,
         code: String
-    ): Result<PairResponse> = runCatching {
+    ): Result<ReceiverPairingCredential> = runCatching {
         val response = client.post("${baseUrl(host, port)}/pair") {
             contentType(ContentType.Application.Json)
             setBody(PairRequest(emitterId = emitterId, emitterName = emitterName, code = code))
         }
 
         when (response.status) {
-            HttpStatusCode.OK -> response.body<PairResponse>()
+            HttpStatusCode.OK -> response.body<PairResponse>().let { ReceiverPairingCredential(it.token) }
 
             HttpStatusCode.Conflict ->
                 throw PairRejectedException(PairError.ALREADY_PAIRED)
@@ -130,7 +136,7 @@ class KtorEmitterClient(
         port: Int,
         emitterId: String,
         token: String
-    ): Result<ReceiverStatusResponse> = runCatching {
+    ): Result<ReceiverStatus> = runCatching {
         val response = client.get("${baseUrl(host, port)}/status") {
             header(HEADER_EMITTER_ID, emitterId)
             header(HEADER_AUTH_TOKEN, token)
@@ -138,7 +144,12 @@ class KtorEmitterClient(
         if (response.status != HttpStatusCode.OK) {
             throw IOException("GET /status returned HTTP ${response.status}")
         }
-        response.body<ReceiverStatusResponse>()
+        response.body<ReceiverStatusResponse>().let {
+            ReceiverStatus(
+                appVersion = it.appVersion,
+                skippedUpdateVersion = it.skippedUpdateVersion,
+            )
+        }
     }
 
     override suspend fun synchronizePlayback(
@@ -165,7 +176,7 @@ class KtorEmitterClient(
         port: Int,
         emitterId: String,
         token: String
-    ): Result<SyncStateResponse> = runCatching {
+    ): Result<RemoteSyncState> = runCatching {
         val response = client.get("${baseUrl(host, port)}/sync/state") {
             header(HEADER_EMITTER_ID, emitterId)
             header(HEADER_AUTH_TOKEN, token)
@@ -174,7 +185,12 @@ class KtorEmitterClient(
         if (response.status != HttpStatusCode.OK) {
             throw IOException("GET /sync/state returned HTTP ${response.status}")
         }
-        response.body<SyncStateResponse>()
+        response.body<SyncStateResponse>().let { syncState ->
+            RemoteSyncState(
+                playlistVersion = syncState.playlistVersion,
+                media = syncState.media.map { RemoteMediaState(it.mediaId, it.sha256) },
+            )
+        }
     }
 
     override suspend fun uploadMedia(
@@ -185,7 +201,7 @@ class KtorEmitterClient(
         mediaId: String,
         sha256: String,
         bytes: ByteArray
-    ): Result<MediaUploadResponse> = runCatching {
+    ): Result<Unit> = runCatching {
         val response = client.put("${baseUrl(host, port)}/media/$mediaId") {
             header(HEADER_EMITTER_ID, emitterId)
             header(HEADER_AUTH_TOKEN, token)
@@ -200,7 +216,7 @@ class KtorEmitterClient(
         if (response.status != HttpStatusCode.OK) {
             throw IOException("PUT /media returned HTTP ${response.status}")
         }
-        response.body<MediaUploadResponse>()
+        Unit
     }
 
     override suspend fun uploadUpdate(
@@ -211,7 +227,7 @@ class KtorEmitterClient(
         version: String,
         sha256: String,
         bytes: ByteArray
-    ): Result<UpdateUploadResponse> = runCatching {
+    ): Result<UpdateUploadResult> = runCatching {
         val response = client.put("${baseUrl(host, port)}/update/$version") {
             header(HEADER_EMITTER_ID, emitterId)
             header(HEADER_AUTH_TOKEN, token)
@@ -226,7 +242,9 @@ class KtorEmitterClient(
         if (response.status != HttpStatusCode.OK) {
             throw IOException("PUT /update returned HTTP ${response.status}")
         }
-        response.body<UpdateUploadResponse>()
+        response.body<UpdateUploadResponse>().let {
+            UpdateUploadResult(accepted = it.accepted, version = it.version, forced = it.forced)
+        }
     }.onFailure {
         logger.warn("Could not send update $version to $host:$port: ${it.message}")
     }
@@ -238,7 +256,7 @@ class KtorEmitterClient(
         token: String,
         playlist: Playlist,
         lock: KioskLockConfig?
-    ): Result<PlaylistApplyResponse> = runCatching {
+    ): Result<PlaylistApplyResult> = runCatching {
         val response = client.put("${baseUrl(host, port)}/playlist") {
             header(HEADER_EMITTER_ID, emitterId)
             header(HEADER_AUTH_TOKEN, token)
@@ -247,7 +265,7 @@ class KtorEmitterClient(
             timeout { requestTimeoutMillis = SYNC_TIMEOUT_MS }
         }
         when (response.status) {
-            HttpStatusCode.OK -> response.body<PlaylistApplyResponse>()
+            HttpStatusCode.OK -> response.body<PlaylistApplyResponse>().toDomain()
 
             HttpStatusCode.Conflict -> {
                 val rejected = runCatching { response.body<PlaylistApplyResponse>() }.getOrNull()
@@ -285,4 +303,19 @@ class KtorEmitterClient(
         val formattedHost = if (host.contains(':') && !host.startsWith("[")) "[$host]" else host
         return "http://$formattedHost:$port"
     }
+
+    private fun DeviceInfo.toDomain() = ReceiverInfo(
+        deviceId = deviceId,
+        deviceName = deviceName,
+        isReceiver = role == "receiver",
+        isPaired = paired,
+        appVersion = appVersion,
+        skippedUpdateVersion = skippedUpdateVersion,
+    )
+
+    private fun PlaylistApplyResponse.toDomain() = PlaylistApplyResult(
+        applied = applied,
+        version = version,
+        missingMediaIds = missingMediaIds,
+    )
 }

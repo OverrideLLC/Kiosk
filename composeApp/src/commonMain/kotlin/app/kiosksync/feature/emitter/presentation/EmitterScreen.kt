@@ -1,9 +1,9 @@
-package app.kiosksync.feature.emitter.presentation.screen
+package app.kiosksync.feature.emitter.presentation
 
 import app.kiosksync.feature.emitter.presentation.actions.EmitterAction
 import app.kiosksync.feature.emitter.presentation.components.*
-import app.kiosksync.feature.emitter.presentation.state.EmitterUiState
-import app.kiosksync.feature.emitter.presentation.state.SyncUiStatus
+import app.kiosksync.feature.emitter.presentation.EmitterUiState
+import app.kiosksync.feature.emitter.presentation.SyncUiStatus
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -25,6 +25,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import app.kiosksync.core.AppRole
@@ -43,20 +44,24 @@ import app.kiosksync.core.ui.theme.Space
 import app.kiosksync.feature.guide.domain.GuideAction
 import app.kiosksync.feature.guide.domain.GuideManager
 import app.kiosksync.feature.guide.domain.GuideStep
-import app.kiosksync.feature.playlist.presentation.PlaylistEditorAction
-import app.kiosksync.feature.playlist.presentation.PlaylistEditorEffect
-import app.kiosksync.feature.playlist.presentation.PlaylistEditorStateHolder
+import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.domain.PlaylistItem
-import app.kiosksync.feature.playlist.presentation.PlaylistPanel
-import app.kiosksync.feature.media.domain.MediaRepository
-import kotlinx.coroutines.CancellationException
 
 @Composable
 fun EmitterScreen(
     state: EmitterUiState,
     onAction: (EmitterAction) -> Unit,
-    playlistStateHolder: PlaylistEditorStateHolder,
-    mediaRepository: MediaRepository,
+    playlist: Playlist,
+    onAddImages: () -> Unit,
+    playlistPanel: @Composable (
+        modifier: Modifier,
+        fillHeight: Boolean,
+        onRequestRemove: (PlaylistItem) -> Unit,
+    ) -> Unit,
+    playlistDialogs: @Composable (
+        removeTarget: PlaylistItem?,
+        onDismissRemove: () -> Unit,
+    ) -> Unit,
     guideManager: GuideManager,
     onExitRequested: () -> Unit,
     onRoleReset: () -> Unit,
@@ -64,10 +69,11 @@ fun EmitterScreen(
     reduceMotion: Boolean = false,
     onThemeChange: (AppTheme) -> Unit = {},
     onReduceMotionChange: (Boolean) -> Unit = {},
-    pickImageFiles: suspend () -> List<String> = { emptyList() },
 ) {
-    val editorState by playlistStateHolder.uiState.collectAsState()
     val guideState by guideManager.uiState.collectAsState()
+    val currentPlaylist by rememberUpdatedState(playlist)
+    val currentOnAction by rememberUpdatedState(onAction)
+    val currentOnAddImages by rememberUpdatedState(onAddImages)
     var showChangeRoleConfirm by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
     var removeTarget by remember { mutableStateOf<PlaylistItem?>(null) }
@@ -75,26 +81,10 @@ fun EmitterScreen(
     // neither list gets clipped by a fixed height.
     var compactTab by remember { mutableStateOf(0) }
 
-    LaunchedEffect(playlistStateHolder, pickImageFiles) {
-        playlistStateHolder.effects.collect { effect ->
-            when (effect) {
-                PlaylistEditorEffect.SelectImageFiles -> try {
-                    playlistStateHolder.dispatch(
-                        PlaylistEditorAction.ImagesSelected(pickImageFiles())
-                    )
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (error: Exception) {
-                    playlistStateHolder.dispatch(PlaylistEditorAction.ImagePickerFailed(error))
-                }
-            }
-        }
-    }
-
     val colors = KioskColors.scheme
     val selectedCount = state.devices.count { it.isSelected && it.isPairedToThisEmitter }
     val sendHint = when {
-        editorState.playlist.items.isEmpty() -> Strings.SEND_EMPTY_PLAYLIST
+        playlist.items.isEmpty() -> Strings.SEND_EMPTY_PLAYLIST
         selectedCount == 0 -> Strings.SEND_NO_SCREENS
         else -> Strings.selectedScreens(selectedCount)
     }
@@ -108,10 +98,10 @@ fun EmitterScreen(
     val canSend = !state.isSending &&
         !state.isSyncing &&
         selectedCount > 0 &&
-        editorState.playlist.items.isNotEmpty()
+        playlist.items.isNotEmpty()
     val canProject = !state.isSending &&
         !state.isSyncing &&
-        editorState.playlist.items.isNotEmpty()
+        playlist.items.isNotEmpty()
     val canSync = !state.isSending && !state.isSyncing && pairedCount > 0
 
     LaunchedEffect(guideState.step) {
@@ -126,14 +116,14 @@ fun EmitterScreen(
     }
 
     LaunchedEffect(
-        editorState.playlist.items.size,
+        playlist.items.size,
         pairedCount,
         selectedCount,
         state.hasKioskPassword,
         selectedSendSucceeded,
     ) {
         guideManager.updateEmitter(
-            playlistItems = editorState.playlist.items.size,
+            playlistItems = playlist.items.size,
             pairedScreens = pairedCount,
             selectedScreens = selectedCount,
             hasPassword = state.hasKioskPassword,
@@ -154,13 +144,13 @@ fun EmitterScreen(
         }
     }
 
-    LaunchedEffect(guideManager, onAction, playlistStateHolder) {
+    LaunchedEffect(guideManager) {
         guideManager.actions.collect { action ->
             when (action) {
-                GuideAction.ADD_IMAGES -> playlistStateHolder.addImages()
-                GuideAction.REFRESH_DEVICES -> onAction(EmitterAction.RefreshDevices)
-                GuideAction.SEND -> onAction(
-                    EmitterAction.SendToSelected(playlistStateHolder.currentPlaylist())
+                GuideAction.ADD_IMAGES -> currentOnAddImages()
+                GuideAction.REFRESH_DEVICES -> currentOnAction(EmitterAction.RefreshDevices)
+                GuideAction.SEND -> currentOnAction(
+                    EmitterAction.SendToSelected(currentPlaylist)
                 )
             }
         }
@@ -210,14 +200,10 @@ fun EmitterScreen(
                         modifier = Modifier.weight(0.42f).fillMaxHeight(),
                     )
                     Spacer(Modifier.width(Space.lg))
-                    PlaylistPanel(
-                        stateHolder = playlistStateHolder,
-                        state = editorState,
-                        mediaRepository = mediaRepository,
-                        fillHeight = true,
-                        onRequestRemove = { removeTarget = it },
-                        modifier = Modifier.weight(0.58f).fillMaxHeight(),
-                    )
+                    playlistPanel(
+                        Modifier.weight(0.58f).fillMaxHeight(),
+                        true,
+                    ) { removeTarget = it }
                 }
             } else {
                 Column(
@@ -243,14 +229,7 @@ fun EmitterScreen(
                             modifier = Modifier.fillMaxSize(),
                         )
                     } else {
-                        PlaylistPanel(
-                            stateHolder = playlistStateHolder,
-                            state = editorState,
-                            mediaRepository = mediaRepository,
-                            fillHeight = true,
-                            onRequestRemove = { removeTarget = it },
-                            modifier = Modifier.fillMaxSize(),
-                        )
+                        playlistPanel(Modifier.fillMaxSize(), true) { removeTarget = it }
                     }
                 }
             }
@@ -267,10 +246,10 @@ fun EmitterScreen(
                 sendDisabledReason = if (canSend) null else sendHint,
                 syncDisabledReason = if (canSync) null else Strings.PLAYBACK_SYNC_NO_SCREENS,
                 onSend = {
-                    onAction(EmitterAction.SendToSelected(playlistStateHolder.currentPlaylist()))
+                    onAction(EmitterAction.SendToSelected(playlist))
                 },
                 onProject = {
-                    onAction(EmitterAction.RequestProjection(playlistStateHolder.currentPlaylist()))
+                    onAction(EmitterAction.RequestProjection(playlist))
                 },
                 onSync = { onAction(EmitterAction.SynchronizePlayback) },
             )
@@ -320,47 +299,6 @@ fun EmitterScreen(
             onResetRecovery = { onAction(EmitterAction.ResetRecoveryPhrase) },
             onChangePassword = { onAction(EmitterAction.OpenChangePasswordDialog) },
             onDismiss = { onAction(EmitterAction.DismissSecurityDialog) },
-        )
-    }
-
-    editorState.nameDialogMode?.let { mode ->
-        PlaylistNameDialog(
-            mode = mode,
-            draft = editorState.nameDraft,
-            error = editorState.nameError,
-            onDraftChange = { playlistStateHolder.dispatch(PlaylistEditorAction.UpdateNameDraft(it)) },
-            onConfirm = { playlistStateHolder.dispatch(PlaylistEditorAction.ConfirmNameDialog) },
-            onDismiss = { playlistStateHolder.dispatch(PlaylistEditorAction.DismissNameDialog) },
-        )
-    }
-
-    if (editorState.showDeleteDialog) {
-        AppDialog(
-            title = Strings.PLAYLIST_DELETE_TITLE,
-            icon = AppIcon.DELETE,
-            onDismissRequest = { playlistStateHolder.dispatch(PlaylistEditorAction.DismissDeleteDialog) },
-            content = {
-                Text(
-                    text = "${Strings.PLAYLIST_DELETE_CONFIRM}\n\n${editorState.playlist.name}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = colors.onSurfaceVariant,
-                )
-            },
-            actions = {
-                AppButton(
-                    text = Strings.CANCEL_BUTTON,
-                    onClick = { playlistStateHolder.dispatch(PlaylistEditorAction.DismissDeleteDialog) },
-                    variant = AppButtonVariant.TEXT,
-                    size = AppButtonSize.SMALL,
-                )
-                AppButton(
-                    text = Strings.PLAYLIST_DELETE,
-                    onClick = { playlistStateHolder.dispatch(PlaylistEditorAction.ConfirmDeletePlaylist) },
-                    variant = AppButtonVariant.DANGER,
-                    size = AppButtonSize.SMALL,
-                    icon = AppIcon.DELETE,
-                )
-            },
         )
     }
 
@@ -450,37 +388,5 @@ fun EmitterScreen(
         )
     }
 
-    removeTarget?.let { item ->
-        AppDialog(
-            title = Strings.REMOVE_ITEM_TITLE,
-            icon = AppIcon.DELETE,
-            onDismissRequest = { removeTarget = null },
-            content = {
-                Text(
-                    text = "${Strings.REMOVE_ITEM_CONFIRM}\n\n${item.fileName}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = colors.onSurfaceVariant,
-                )
-            },
-            actions = {
-                AppButton(
-                    text = Strings.CANCEL_BUTTON,
-                    onClick = { removeTarget = null },
-                    variant = AppButtonVariant.TEXT,
-                    size = AppButtonSize.SMALL,
-                )
-                AppButton(
-                    text = Strings.REMOVE_ITEM,
-                    onClick = {
-                        val index = editorState.playlist.items.indexOfFirst { it.mediaId == item.mediaId }
-                        if (index >= 0) playlistStateHolder.dispatch(PlaylistEditorAction.RemoveItem(index))
-                        removeTarget = null
-                    },
-                    variant = AppButtonVariant.DANGER,
-                    size = AppButtonSize.SMALL,
-                    icon = AppIcon.DELETE,
-                )
-            },
-        )
-    }
+    playlistDialogs(removeTarget) { removeTarget = null }
 }

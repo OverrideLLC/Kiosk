@@ -3,9 +3,9 @@ package app.kiosksync.feature.sync.data
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.EmitterPairedDevice
 import app.kiosksync.core.KioskLockConfig
-import app.kiosksync.core.PlaylistRejectedException
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.emitter.domain.EmitterClient
+import app.kiosksync.feature.emitter.domain.PlaylistRejectedException
 import app.kiosksync.feature.sync.domain.EmitterSyncRepository
 import app.kiosksync.feature.sync.domain.LocalMediaMissingException
 import app.kiosksync.feature.sync.domain.SyncProgress

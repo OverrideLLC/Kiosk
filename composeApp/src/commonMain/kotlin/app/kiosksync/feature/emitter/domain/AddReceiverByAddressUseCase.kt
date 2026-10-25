@@ -31,7 +31,7 @@ class AddReceiverByAddressUseCase(
             if (error is CancellationException) throw error
             throw ReceiverAddressException(ReceiverAddressFailure.UNREACHABLE, error)
         }
-        if (info.role != "receiver") {
+        if (!info.isReceiver) {
             throw ReceiverAddressException(ReceiverAddressFailure.NOT_A_RECEIVER)
         }
 
@@ -41,7 +41,7 @@ class AddReceiverByAddressUseCase(
                 deviceName = info.deviceName,
                 host = host,
                 port = port,
-                paired = info.paired,
+                paired = info.isPaired,
                 appVersion = info.appVersion,
             ),
             skippedUpdateVersion = info.skippedUpdateVersion,

@@ -1,8 +1,8 @@
 package app.kiosksync.feature.emitter.presentation.components
 
-import app.kiosksync.feature.emitter.presentation.state.EmitterDeviceUi
-import app.kiosksync.feature.emitter.presentation.state.EmitterPendingAction
-import app.kiosksync.feature.emitter.presentation.state.KioskPasswordDialogUi
+import app.kiosksync.feature.emitter.presentation.EmitterDeviceUi
+import app.kiosksync.feature.emitter.presentation.EmitterPendingAction
+import app.kiosksync.feature.emitter.presentation.KioskPasswordDialogUi
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -36,7 +36,6 @@ import app.kiosksync.core.ui.components.AppTextField
 import app.kiosksync.core.ui.theme.KioskColors
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
-import app.kiosksync.feature.playlist.presentation.PlaylistNameDialogMode
 
 @Composable
 internal fun SettingsDialog(
@@ -131,47 +130,6 @@ internal fun SettingsDialog(
                 onClick = onDismiss,
                 variant = AppButtonVariant.TEXT,
                 size = AppButtonSize.SMALL,
-            )
-        },
-    )
-}
-
-@Composable
-internal fun PlaylistNameDialog(
-    mode: PlaylistNameDialogMode,
-    draft: String,
-    error: String?,
-    onDraftChange: (String) -> Unit,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val creating = mode == PlaylistNameDialogMode.CREATE
-
-    AppDialog(
-        title = if (creating) Strings.PLAYLIST_NEW_TITLE else Strings.PLAYLIST_RENAME_TITLE,
-        icon = if (creating) AppIcon.PLAYLIST_ADD else AppIcon.EDIT,
-        onDismissRequest = onDismiss,
-        content = {
-            AppTextField(
-                value = draft,
-                onValueChange = onDraftChange,
-                label = Strings.PLAYLIST_NAME_FIELD,
-                placeholder = Strings.PLAYLIST_NAME_HINT,
-                error = error,
-            )
-        },
-        actions = {
-            AppButton(
-                text = Strings.CANCEL_BUTTON,
-                onClick = onDismiss,
-                variant = AppButtonVariant.TEXT,
-                size = AppButtonSize.SMALL,
-            )
-            AppButton(
-                text = Strings.SAVE_BUTTON,
-                onClick = onConfirm,
-                size = AppButtonSize.SMALL,
-                icon = AppIcon.CHECK,
             )
         },
     )

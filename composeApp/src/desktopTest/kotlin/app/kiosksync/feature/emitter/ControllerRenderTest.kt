@@ -2,32 +2,39 @@ package app.kiosksync.feature.emitter
 
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.unit.Density
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Modifier
 import app.kiosksync.FakeRepositories
+import app.kiosksync.FakeUpdatePackageProvider
 import app.kiosksync.NoOpLogger
 import app.kiosksync.feature.emitter.presentation.actions.EmitterAction
-import app.kiosksync.feature.emitter.presentation.screen.EmitterScreen
-import app.kiosksync.feature.emitter.presentation.viewmodel.EmitterViewModel
+import app.kiosksync.feature.emitter.presentation.EmitterScreen
+import app.kiosksync.feature.emitter.presentation.EmitterViewModel
+import app.kiosksync.feature.emitter.data.EmitterServiceImpl
 import app.kiosksync.feature.guide.domain.GuideManager
 import app.kiosksync.core.AppTheme
-import app.kiosksync.core.DeviceInfo
 import app.kiosksync.core.DiscoveredDevice
 import app.kiosksync.core.EmitterPairedDevice
 import app.kiosksync.core.KioskLockConfig
-import app.kiosksync.core.MediaUploadResponse
-import app.kiosksync.core.PairResponse
-import app.kiosksync.core.PlaylistApplyResponse
-import app.kiosksync.core.ReceiverStatusResponse
-import app.kiosksync.core.SyncStateResponse
-import app.kiosksync.core.UpdateUploadResponse
 import app.kiosksync.core.ui.theme.KioskTheme
+import app.kiosksync.feature.kiosk.domain.KioskLockConfigurationUseCases
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorStateHolder
+import app.kiosksync.feature.playlist.presentation.PlaylistEditorDialogs
+import app.kiosksync.feature.playlist.presentation.PlaylistPanel
 import app.kiosksync.feature.playlist.domain.PlaylistItem
 import app.kiosksync.feature.playlist.domain.PlaylistLibrary
 import app.kiosksync.feature.projection.presentation.ProjectionController
 import app.kiosksync.feature.pairing.domain.DeviceDiscovery
 import app.kiosksync.feature.emitter.domain.EmitterClient
+import app.kiosksync.feature.emitter.domain.ReceiverInfo
+import app.kiosksync.feature.emitter.domain.ReceiverPairingCredential
+import app.kiosksync.feature.emitter.domain.ReceiverStatus
+import app.kiosksync.feature.emitter.domain.PlaylistApplyResult
+import app.kiosksync.feature.emitter.domain.RemoteSyncState
+import app.kiosksync.feature.emitter.domain.UpdateUploadResult
 import java.io.File
 import kotlin.test.Test
 import kotlinx.coroutines.CoroutineScope
@@ -91,25 +98,36 @@ class ControllerRenderTest {
                     DiscoveredDevice("rx-bodega", "Bodega", "192.168.1.42", 8765, false),
                 )
             )
-            val holder = EmitterViewModel(
+            val service = EmitterServiceImpl(
                 discovery = discovery,
                 client = FakeEmitterClient(),
                 screensRepository = storage,
                 kioskLockRepository = storage,
                 syncRepository = storage,
                 logger = NoOpLogger(),
+                serviceScope = scope,
+                backgroundDispatcher = Dispatchers.Unconfined,
+                updatePackageProvider = FakeUpdatePackageProvider(),
+            )
+            val lockManager = KioskLockManager(
+                logger = NoOpLogger(),
+                passwordHasher = { it },
+                scope = scope,
+                platformLockAvailable = false,
+            )
+            val holder = EmitterViewModel(
+                service = service,
+                kioskLockConfigurationUseCases = KioskLockConfigurationUseCases(
+                    repository = storage,
+                    manager = lockManager,
+                    passwordHasher = { it },
+                ),
+                logger = NoOpLogger(),
                 emitterId = "tx-1",
                 emitterName = "Caja principal",
                 scope = scope,
-                serviceScope = scope,
-                kioskLockManager = KioskLockManager(
-                    logger = NoOpLogger(),
-                    passwordHasher = { it },
-                    scope = scope,
-                    platformLockAvailable = false,
-                ),
+                kioskLockManager = lockManager,
                 projectionController = ProjectionController(),
-                passwordHasher = { it },
                 backgroundDispatcher = Dispatchers.Unconfined,
             )
             holder.start()
@@ -126,85 +144,31 @@ class ControllerRenderTest {
             val guideManager = GuideManager(NoOpLogger())
 
             render(output, "controller-dark", AppTheme.DARK, 1280, 800) {
-                EmitterScreen(
-                    state = holder.state.value,
-                    onAction = holder::onAction,
-                    playlistStateHolder = editor,
-                    mediaRepository = storage,
-                    guideManager = guideManager,
-                    onExitRequested = {},
-                    onRoleReset = {},
-                    theme = AppTheme.DARK,
-                )
+                renderEmitterScreen(holder, editor, storage, guideManager, AppTheme.DARK)
             }
 
             render(output, "controller-light", AppTheme.LIGHT, 1280, 800) {
-                EmitterScreen(
-                    state = holder.state.value,
-                    onAction = holder::onAction,
-                    playlistStateHolder = editor,
-                    mediaRepository = storage,
-                    guideManager = guideManager,
-                    onExitRequested = {},
-                    onRoleReset = {},
-                    theme = AppTheme.LIGHT,
-                )
+                renderEmitterScreen(holder, editor, storage, guideManager, AppTheme.LIGHT)
             }
 
             render(output, "controller-compact", AppTheme.DARK, 900, 650) {
-                EmitterScreen(
-                    state = holder.state.value,
-                    onAction = holder::onAction,
-                    playlistStateHolder = editor,
-                    mediaRepository = storage,
-                    guideManager = guideManager,
-                    onExitRequested = {},
-                    onRoleReset = {},
-                    theme = AppTheme.DARK,
-                )
+                renderEmitterScreen(holder, editor, storage, guideManager, AppTheme.DARK)
             }
 
             render(output, "controller-fullhd", AppTheme.DARK, 1920, 1080) {
-                EmitterScreen(
-                    state = holder.state.value,
-                    onAction = holder::onAction,
-                    playlistStateHolder = editor,
-                    mediaRepository = storage,
-                    guideManager = guideManager,
-                    onExitRequested = {},
-                    onRoleReset = {},
-                    theme = AppTheme.DARK,
-                )
+                renderEmitterScreen(holder, editor, storage, guideManager, AppTheme.DARK)
             }
 
             holder.onAction(EmitterAction.OpenSecurityDialog)
             render(output, "controller-security", AppTheme.DARK, 1280, 800) {
-                EmitterScreen(
-                    state = holder.state.value,
-                    onAction = holder::onAction,
-                    playlistStateHolder = editor,
-                    mediaRepository = storage,
-                    guideManager = guideManager,
-                    onExitRequested = {},
-                    onRoleReset = {},
-                    theme = AppTheme.DARK,
-                )
+                renderEmitterScreen(holder, editor, storage, guideManager, AppTheme.DARK)
             }
             holder.onAction(EmitterAction.DismissSecurityDialog)
 
             val unpaired = holder.state.value.devices.first { !it.isPairedToThisEmitter }
             holder.onAction(EmitterAction.OpenPairDialog(unpaired))
             render(output, "controller-pair", AppTheme.DARK, 1280, 800) {
-                EmitterScreen(
-                    state = holder.state.value,
-                    onAction = holder::onAction,
-                    playlistStateHolder = editor,
-                    mediaRepository = storage,
-                    guideManager = guideManager,
-                    onExitRequested = {},
-                    onRoleReset = {},
-                    theme = AppTheme.DARK,
-                )
+                renderEmitterScreen(holder, editor, storage, guideManager, AppTheme.DARK)
             }
 
             holder.stop()
@@ -247,6 +211,45 @@ class ControllerRenderTest {
     }
 }
 
+@Composable
+private fun renderEmitterScreen(
+    viewModel: EmitterViewModel,
+    editor: PlaylistEditorStateHolder,
+    storage: FakeRepositories,
+    guideManager: GuideManager,
+    theme: AppTheme,
+) {
+    val editorState = editor.uiState.collectAsState().value
+    EmitterScreen(
+        state = viewModel.state.value,
+        onAction = viewModel::onAction,
+        playlist = editorState.playlist,
+        onAddImages = editor::addImages,
+        playlistPanel = { modifier, fillHeight, onRequestRemove ->
+            PlaylistPanel(
+                stateHolder = editor,
+                state = editorState,
+                mediaRepository = storage,
+                fillHeight = fillHeight,
+                onRequestRemove = onRequestRemove,
+                modifier = modifier,
+            )
+        },
+        playlistDialogs = { removeTarget, onDismissRemove ->
+            PlaylistEditorDialogs(
+                stateHolder = editor,
+                state = editorState,
+                removeTarget = removeTarget,
+                onDismissRemove = onDismissRemove,
+            )
+        },
+        guideManager = guideManager,
+        onExitRequested = {},
+        onRoleReset = {},
+        theme = theme,
+    )
+}
+
 private class FakeDiscovery(devices: List<DiscoveredDevice>) : DeviceDiscovery {
     override val discoveredDevices = MutableStateFlow(devices)
     override fun startDiscovery() {}
@@ -257,7 +260,7 @@ private class FakeDiscovery(devices: List<DiscoveredDevice>) : DeviceDiscovery {
 }
 
 private class FakeEmitterClient : EmitterClient {
-    override suspend fun getInfo(host: String, port: Int): Result<DeviceInfo> =
+    override suspend fun getInfo(host: String, port: Int): Result<ReceiverInfo> =
         Result.failure(UnsupportedOperationException())
 
     override suspend fun pair(
@@ -266,7 +269,7 @@ private class FakeEmitterClient : EmitterClient {
         emitterId: String,
         emitterName: String,
         code: String,
-    ): Result<PairResponse> = Result.failure(UnsupportedOperationException())
+    ): Result<ReceiverPairingCredential> = Result.failure(UnsupportedOperationException())
 
     override suspend fun unpair(
         host: String,
@@ -280,7 +283,9 @@ private class FakeEmitterClient : EmitterClient {
         port: Int,
         emitterId: String,
         token: String,
-    ): Result<ReceiverStatusResponse> = Result.success(ReceiverStatusResponse(playlistVersion = 3))
+    ): Result<ReceiverStatus> = Result.success(
+        ReceiverStatus(appVersion = "1.0.0", skippedUpdateVersion = null)
+    )
 
     override suspend fun synchronizePlayback(
         host: String,
@@ -295,7 +300,7 @@ private class FakeEmitterClient : EmitterClient {
         port: Int,
         emitterId: String,
         token: String,
-    ): Result<SyncStateResponse> = Result.success(SyncStateResponse())
+    ): Result<RemoteSyncState> = Result.success(RemoteSyncState(playlistVersion = 0, media = emptyList()))
 
     override suspend fun uploadMedia(
         host: String,
@@ -305,7 +310,7 @@ private class FakeEmitterClient : EmitterClient {
         mediaId: String,
         sha256: String,
         bytes: ByteArray,
-    ): Result<MediaUploadResponse> = Result.failure(UnsupportedOperationException())
+    ): Result<Unit> = Result.failure(UnsupportedOperationException())
 
     override suspend fun uploadUpdate(
         host: String,
@@ -315,7 +320,7 @@ private class FakeEmitterClient : EmitterClient {
         version: String,
         sha256: String,
         bytes: ByteArray,
-    ): Result<UpdateUploadResponse> = Result.failure(UnsupportedOperationException())
+    ): Result<UpdateUploadResult> = Result.failure(UnsupportedOperationException())
 
     override suspend fun putPlaylist(
         host: String,
@@ -324,7 +329,9 @@ private class FakeEmitterClient : EmitterClient {
         token: String,
         playlist: Playlist,
         lock: KioskLockConfig?,
-    ): Result<PlaylistApplyResponse> = Result.success(PlaylistApplyResponse(applied = true))
+    ): Result<PlaylistApplyResult> = Result.success(
+        PlaylistApplyResult(applied = true, version = 0, missingMediaIds = emptyList())
+    )
 
     override suspend fun putLock(
         host: String,

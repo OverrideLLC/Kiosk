@@ -5,6 +5,7 @@ import app.kiosksync.core.AppLogger
 import app.kiosksync.core.AppRole
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.kiosk.domain.KioskLockRepository
+import app.kiosksync.feature.kiosk.domain.KioskLockConfigurationUseCases
 import app.kiosksync.feature.emitter.domain.EmitterScreensRepository
 import app.kiosksync.feature.pairing.domain.PairingManager
 import app.kiosksync.feature.playback.domain.ReceiverPlaybackSyncBridge
@@ -17,6 +18,7 @@ import app.kiosksync.feature.playlist.domain.PlaylistRepository
 import app.kiosksync.feature.sync.domain.EmitterSyncRepository
 import app.kiosksync.feature.pairing.domain.DeviceDiscovery
 import app.kiosksync.feature.emitter.domain.EmitterClient
+import app.kiosksync.feature.emitter.domain.EmitterService
 import app.kiosksync.feature.kiosk.domain.KioskKeyboardGuard
 import app.kiosksync.feature.kiosk.domain.KioskMouseGuard
 import app.kiosksync.feature.media.domain.MediaRepository
@@ -48,8 +50,10 @@ class AppContainer(
     val screensRepository: EmitterScreensRepository,
     val playlistRepository: PlaylistRepository,
     val kioskLockRepository: KioskLockRepository,
+    val kioskLockConfigurationUseCases: KioskLockConfigurationUseCases,
     val mediaRepository: MediaRepository,
     val emitterSyncRepository: EmitterSyncRepository,
+    val emitterService: EmitterService,
     val receiverDataResetter: ReceiverDataResetter,
     val configStore: AppConfigStore,
     val initialConfig: AppConfig?,
@@ -74,9 +78,9 @@ class AppContainer(
     private val closePersistence: () -> Unit,
     private val closeServiceDispatcher: () -> Unit = {},
     val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
-    val serviceDispatcher: CoroutineDispatcher = backgroundDispatcher
+    val serviceDispatcher: CoroutineDispatcher = backgroundDispatcher,
+    val serviceScope: CoroutineScope = CoroutineScope(SupervisorJob() + serviceDispatcher),
 ) {
-    val serviceScope: CoroutineScope = CoroutineScope(SupervisorJob() + serviceDispatcher)
     private val shutdownStarted = MutableStateFlow(false)
     private val _activeRole = MutableStateFlow(args.role ?: initialConfig?.role)
     val activeRole: StateFlow<AppRole?> = _activeRole.asStateFlow()
@@ -94,6 +98,8 @@ class AppContainer(
         runCatching { kioskKeyboardGuard.stop() }
         runCatching { kioskMouseGuard.stop() }
         serviceScope.launch {
+            runCatching { emitterService.stop() }
+                .onFailure { logger.warn("Could not stop Emitter service during shutdown", it) }
             runCatching { discovery.unregisterService() }
                 .onFailure { logger.warn("Could not unregister mDNS service during shutdown", it) }
             runCatching { discovery.stopDiscovery() }

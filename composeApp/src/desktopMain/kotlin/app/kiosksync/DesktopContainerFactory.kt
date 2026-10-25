@@ -6,6 +6,7 @@ import app.kiosksync.data.local.RoomRepositories
 import app.kiosksync.data.local.migration.LegacyJsonMigrator
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.kiosk.domain.KioskKeyEvent
+import app.kiosksync.feature.kiosk.domain.KioskLockConfigurationUseCases
 import app.kiosksync.feature.pairing.domain.PairingManager
 import app.kiosksync.feature.playback.domain.ReceiverPlaybackSyncBridge
 import app.kiosksync.feature.playback.domain.ReceiverPlaylistBridge
@@ -17,6 +18,7 @@ import app.kiosksync.feature.playlist.data.DesktopFilePicker
 import app.kiosksync.feature.update.data.FileReceiverUpdateManager
 import app.kiosksync.feature.pairing.data.JmDnsDiscovery
 import app.kiosksync.feature.emitter.data.KtorEmitterClient
+import app.kiosksync.feature.emitter.data.EmitterServiceImpl
 import app.kiosksync.feature.sync.data.EmitterSyncRepositoryImpl
 import app.kiosksync.feature.receiver.data.KtorReceiverServer
 import app.kiosksync.feature.update.data.LocalUpdatePackageProvider
@@ -95,6 +97,11 @@ suspend fun createDesktopAppContainer(
             platformLockAvailable = kioskLockAvailable,
         )
         kioskLockManager.setConfig(createdRepositories.kioskLock.load())
+        val kioskLockConfigurationUseCases = KioskLockConfigurationUseCases(
+            repository = createdRepositories.kioskLock,
+            manager = kioskLockManager,
+            passwordHasher = passwordHasher,
+        )
         // App.kt engages the lock only after the Receiver is paired and has
         // received its password; the role picker and pairing code stay usable.
 
@@ -144,6 +151,18 @@ suspend fun createDesktopAppContainer(
             Thread(runnable, "OverrideKiosk-services").apply { isDaemon = true }
         }.asCoroutineDispatcher()
         serviceDispatcher = createdServiceDispatcher
+        val serviceScope = CoroutineScope(SupervisorJob() + createdServiceDispatcher)
+        val emitterService = EmitterServiceImpl(
+            discovery = discovery,
+            client = emitterClient,
+            screensRepository = createdRepositories.emitterScreens,
+            kioskLockRepository = createdRepositories.kioskLock,
+            syncRepository = emitterSyncRepository,
+            logger = logger,
+            serviceScope = serviceScope,
+            backgroundDispatcher = Dispatchers.IO,
+            updatePackageProvider = updatePackageProvider,
+        )
 
         return AppContainer(
             args = appArgs,
@@ -152,8 +171,10 @@ suspend fun createDesktopAppContainer(
             screensRepository = createdRepositories.emitterScreens,
             playlistRepository = createdRepositories.playlists,
             kioskLockRepository = createdRepositories.kioskLock,
+            kioskLockConfigurationUseCases = kioskLockConfigurationUseCases,
             mediaRepository = createdRepositories.media,
             emitterSyncRepository = emitterSyncRepository,
+            emitterService = emitterService,
             receiverDataResetter = createdRepositories.receiverDataResetter,
             configStore = configStore,
             initialConfig = existingConfig,
@@ -179,6 +200,7 @@ suspend fun createDesktopAppContainer(
             closeServiceDispatcher = { createdServiceDispatcher.close() },
             backgroundDispatcher = Dispatchers.IO,
             serviceDispatcher = createdServiceDispatcher,
+            serviceScope = serviceScope,
         )
     } catch (error: Throwable) {
         configStore.close()
