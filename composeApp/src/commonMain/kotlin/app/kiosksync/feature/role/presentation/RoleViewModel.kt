@@ -10,10 +10,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 
-sealed interface RoleEffect {
-    data class RoleConfirmed(val role: AppRole) : RoleEffect
-}
-
 /** Owns role selection state and emits the selected role when the person confirms. */
 class RoleViewModel(
     private val logger: AppLogger,

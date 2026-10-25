@@ -7,3 +7,7 @@ sealed interface RoleAction {
     data object ConfirmRole : RoleAction
     data object ResetSelection : RoleAction
 }
+
+sealed interface RoleEffect {
+    data class RoleConfirmed(val role: AppRole) : RoleEffect
+}

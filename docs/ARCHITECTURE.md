@@ -309,11 +309,11 @@ cuando afectan a una acción del usuario.
 - Todos los textos visibles están en `core/Strings.kt`.
 - La guía interactiva vive en `feature/guide/presentation`: `GuideViewModel`
   mantiene la máquina de estados y emite efectos tipados; `GuideStep`, el modelo
-  del flujo, vive en `feature/guide/domain`. Su carpeta
-  `components` contiene `GuideOverlay`, el diálogo de rol, la tarjeta y el
-  contenido de los pasos. Las pantallas reportan playlist, vinculación,
-  contraseña y contenido para que avance al completar cada paso. Ver
-  [GUIDE.md](GUIDE.md).
+  del flujo, vive en `feature/guide/domain`. `GuideScreen` es la entrada de
+  presentación y delega el overlay, el diálogo de rol, la tarjeta y el contenido
+  de los pasos a `presentation/components`. Las pantallas reportan playlist,
+  vinculación, contraseña y contenido para que avance al completar cada paso.
+  Ver [GUIDE.md](GUIDE.md).
 - El Controlador usa un layout de dos paneles en anchos ≥1100 dp y pestañas
   Pantallas/Playlist en anchos menores.
 

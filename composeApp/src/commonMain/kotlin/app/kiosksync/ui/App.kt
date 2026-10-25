@@ -27,7 +27,7 @@ import app.kiosksync.feature.emitter.presentation.components.EmitterDialogs
 import app.kiosksync.feature.emitter.presentation.components.SettingsDialog
 import app.kiosksync.feature.guide.presentation.GuideAction
 import app.kiosksync.feature.guide.presentation.GuideEffect
-import app.kiosksync.feature.guide.presentation.components.GuideOverlay
+import app.kiosksync.feature.guide.presentation.GuideScreen
 import app.kiosksync.feature.guide.presentation.GuideViewModel
 import app.kiosksync.feature.guide.domain.GuideStep
 import app.kiosksync.feature.emitter.presentation.EmitterViewModel
@@ -419,7 +419,7 @@ fun App(
                     !receiverUpdateState.isVisible &&
                     guideMatchesScreen
                 ) {
-                    GuideOverlay(
+                    GuideScreen(
                         state = guideState,
                         onChooseRole = { role ->
                             roleViewModel.onAction(RoleAction.SelectRole(role))
