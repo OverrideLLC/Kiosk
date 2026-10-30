@@ -19,6 +19,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,19 +39,28 @@ import app.kiosksync.core.ui.components.AppSelectableCard
 import app.kiosksync.core.ui.theme.KioskShape
 import app.kiosksync.core.ui.components.OverrideFooter
 import app.kiosksync.core.ui.components.OverrideLogo
+import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
  * First-run role choice. Two large cards, arrow-key navigation and a single
  * primary action. Every colour, size and shape comes from the design system.
  */
 @Composable
+fun RoleRoot(viewModel: RoleViewModel) {
+    val state by viewModel.state.collectAsState()
+    RoleSelectionScreen(
+        state = state,
+        onAction = viewModel::onAction,
+    )
+}
+
+@Composable
 fun RoleSelectionScreen(
-    state: RoleUiState,
+    state: RoleState,
     onAction: (RoleAction) -> Unit,
-    onExitRequested: () -> Unit = {},
-    onOpenGuide: () -> Unit = {}
 ) {
     val colors = MaterialTheme.colorScheme
     val selectedRole = state.selectedRole
@@ -68,10 +79,7 @@ fun RoleSelectionScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Column(modifier = Modifier.widthIn(max = Sizes.contentMaxWidth).fillMaxWidth()) {
-                BrandHeader(
-                    onExitRequested = onExitRequested,
-                    onOpenGuide = onOpenGuide
-                )
+                BrandHeader(onAction = onAction)
 
                 Spacer(Modifier.height(Space.huge))
 
@@ -159,10 +167,20 @@ fun RoleSelectionScreen(
     }
 }
 
+@Preview
+@Composable
+private fun RoleSelectionScreenPreview() {
+    KioskTheme {
+        RoleSelectionScreen(
+            state = RoleState(),
+            onAction = {},
+        )
+    }
+}
+
 @Composable
 private fun BrandHeader(
-    onExitRequested: () -> Unit,
-    onOpenGuide: () -> Unit
+    onAction: (RoleAction) -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
 
@@ -197,14 +215,14 @@ private fun BrandHeader(
         }
         AppButton(
             text = Strings.GUIDE_BUTTON,
-            onClick = onOpenGuide,
+            onClick = { onAction(RoleAction.OpenGuide) },
             variant = AppButtonVariant.TEXT,
             size = AppButtonSize.SMALL,
             icon = AppIcon.HELP,
         )
         AppButton(
             text = Strings.EXIT_APP,
-            onClick = onExitRequested,
+            onClick = { onAction(RoleAction.Exit) },
             variant = AppButtonVariant.TEXT,
             size = AppButtonSize.SMALL,
             icon = AppIcon.LOGOUT,

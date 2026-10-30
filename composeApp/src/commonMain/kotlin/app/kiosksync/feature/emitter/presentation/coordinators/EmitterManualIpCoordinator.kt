@@ -4,7 +4,7 @@ import app.kiosksync.core.Strings
 import app.kiosksync.feature.emitter.domain.ReceiverAddressException
 import app.kiosksync.feature.emitter.domain.ReceiverAddressFailure
 import app.kiosksync.feature.emitter.domain.EmitterService
-import app.kiosksync.feature.emitter.presentation.EmitterUiState
+import app.kiosksync.feature.emitter.presentation.EmitterState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 
 /** Adapts the manual-address use case result to the MVI state. */
 internal class EmitterManualIpCoordinator(
-    private val uiState: MutableStateFlow<EmitterUiState>,
+    private val uiState: MutableStateFlow<EmitterState>,
     private val service: EmitterService,
     private val scope: CoroutineScope,
 ) {

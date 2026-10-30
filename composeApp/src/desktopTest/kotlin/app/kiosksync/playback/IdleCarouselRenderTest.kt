@@ -2,7 +2,7 @@ package app.kiosksync.playback
 
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.unit.Density
-import app.kiosksync.feature.playback.presentation.screen.DefaultIdleCarousel
+import app.kiosksync.feature.playback.presentation.components.DefaultIdleCarousel
 import kotlin.test.Test
 
 /**

@@ -1,7 +1,7 @@
 package app.kiosksync.feature.update.data
 
 import app.kiosksync.NoOpLogger
-import app.kiosksync.data.security.Sha256
+import app.kiosksync.core.security.Sha256
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.zip.ZipEntry

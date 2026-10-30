@@ -4,9 +4,6 @@ import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.domain.PlaylistItem
 import app.kiosksync.feature.playlist.domain.PlaylistLibrary
 import app.kiosksync.feature.playlist.domain.PlaylistRepository
-import app.kiosksync.data.local.room.KioskDao
-import app.kiosksync.data.local.room.PlaylistEntity
-import app.kiosksync.data.local.room.PlaylistItemEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -15,32 +12,32 @@ import kotlinx.coroutines.withContext
 
 
 
-internal class RoomPlaylistRepository(private val dao: KioskDao) : PlaylistRepository {
+internal class RoomPlaylistRepository(private val dao: PlaylistDao) : PlaylistRepository {
     override fun observeReceiverPlaylist(): Flow<Playlist?> = combine(
-        dao.observePlaylists(KioskDao.OWNER_RECEIVER),
-        dao.observePlaylistItems(KioskDao.RECEIVER_PLAYLIST_KEY),
+        dao.observePlaylists(PlaylistDao.OWNER_RECEIVER),
+        dao.observePlaylistItems(PlaylistDao.RECEIVER_PLAYLIST_KEY),
     ) { playlists, items ->
-        playlists.firstOrNull { it.playlistKey == KioskDao.RECEIVER_PLAYLIST_KEY }
+        playlists.firstOrNull { it.playlistKey == PlaylistDao.RECEIVER_PLAYLIST_KEY }
             ?.let { it.toPlaylist(items) }
     }
 
     override fun observeEmitterPlaylistLibrary(): Flow<PlaylistLibrary?> = combine(
-        dao.observePlaylists(KioskDao.OWNER_EMITTER),
+        dao.observePlaylists(PlaylistDao.OWNER_EMITTER),
         dao.observeAllPlaylistItems(),
     ) { entities, items ->
         entities.toPlaylistLibrary(items)
     }
 
     override suspend fun loadReceiverPlaylist(): Playlist? = withContext(Dispatchers.IO) {
-        dao.getPlaylist(KioskDao.RECEIVER_PLAYLIST_KEY)?.let { entity ->
+        dao.getPlaylist(PlaylistDao.RECEIVER_PLAYLIST_KEY)?.let { entity ->
             entity.toPlaylist(dao.getPlaylistItems(entity.playlistKey))
         }
     }
 
     override suspend fun saveReceiverPlaylist(playlist: Playlist) = withContext(Dispatchers.IO) {
         val entity = playlist.toEntity(
-            playlistKey = KioskDao.RECEIVER_PLAYLIST_KEY,
-            owner = KioskDao.OWNER_RECEIVER,
+            playlistKey = PlaylistDao.RECEIVER_PLAYLIST_KEY,
+            owner = PlaylistDao.OWNER_RECEIVER,
             position = 0,
             active = true,
         )
@@ -48,7 +45,7 @@ internal class RoomPlaylistRepository(private val dao: KioskDao) : PlaylistRepos
     }
 
     override suspend fun loadEmitterPlaylistLibrary(): PlaylistLibrary? = withContext(Dispatchers.IO) {
-        val entities = dao.getPlaylists(KioskDao.OWNER_EMITTER)
+        val entities = dao.getPlaylists(PlaylistDao.OWNER_EMITTER)
         val rows = entities.flatMap { entity -> dao.getPlaylistItems(entity.playlistKey) }
         entities.toPlaylistLibrary(rows)
     }
@@ -58,7 +55,7 @@ internal class RoomPlaylistRepository(private val dao: KioskDao) : PlaylistRepos
         val entities = library.playlists.mapIndexed { index, playlist ->
             playlist.toEntity(
                 playlistKey = playlist.id,
-                owner = KioskDao.OWNER_EMITTER,
+                owner = PlaylistDao.OWNER_EMITTER,
                 position = index,
                 active = playlist.id == activeId,
             )

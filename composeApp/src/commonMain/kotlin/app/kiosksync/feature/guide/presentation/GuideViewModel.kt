@@ -12,9 +12,25 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 
 /** Owns the guide's multi-step UI flow and adapts progress reports to its state. */
-class GuideViewModel(private val logger: AppLogger) {
-    private val _uiState = MutableStateFlow(GuideUiState())
-    val state: StateFlow<GuideUiState> = _uiState.asStateFlow()
+class GuideViewModel(
+    private val logger: AppLogger,
+    onChooseRole: (AppRole) -> Unit = {},
+    onStopped: () -> Unit = {},
+) {
+    private var chooseRole: (AppRole) -> Unit = onChooseRole
+    private var stopped: () -> Unit = onStopped
+
+    /** Refreshes host callbacks that close over composition state. */
+    fun updateHost(
+        onChooseRole: (AppRole) -> Unit,
+        onStopped: () -> Unit,
+    ) {
+        chooseRole = onChooseRole
+        stopped = onStopped
+    }
+
+    private val _state = MutableStateFlow(GuideState())
+    val state: StateFlow<GuideState> = _state.asStateFlow()
 
     private val effectChannel = Channel<GuideEffect>(Channel.BUFFERED)
     val effects: Flow<GuideEffect> = effectChannel.receiveAsFlow()
@@ -24,6 +40,7 @@ class GuideViewModel(private val logger: AppLogger) {
             is GuideAction.Start -> if (action.role == null) start() else start(action.role)
             GuideAction.Stop -> stop()
             is GuideAction.RoleConfirmed -> onRoleConfirmed(action.role)
+            is GuideAction.ChooseRole -> chooseRole(action.role)
             is GuideAction.ReportEmitterProgress -> updateEmitter(
                 action.playlistItems,
                 action.pairedScreens,
@@ -45,7 +62,7 @@ class GuideViewModel(private val logger: AppLogger) {
 
     /** Starts at the role question. Used on the role screen and from its button. */
     private fun start() {
-        _uiState.update {
+        _state.update {
             it.copy(
                 isActive = true,
                 role = null,
@@ -62,7 +79,7 @@ class GuideViewModel(private val logger: AppLogger) {
      * what still needs attention instead of always starting at the beginning.
      */
     private fun start(role: AppRole) {
-        _uiState.update { state ->
+        _state.update { state ->
             state.copy(
                 isActive = true,
                 role = role,
@@ -74,9 +91,10 @@ class GuideViewModel(private val logger: AppLogger) {
     }
 
     private fun stop() {
-        if (!_uiState.value.isActive) return
-        _uiState.update { it.copy(isActive = false) }
+        if (!_state.value.isActive) return
+        _state.update { it.copy(isActive = false) }
         logger.info("Interactive guide closed")
+        stopped()
     }
 
     /**
@@ -85,7 +103,7 @@ class GuideViewModel(private val logger: AppLogger) {
      * the first step and lets the real screen report what is already done.
      */
     private fun onRoleConfirmed(role: AppRole) {
-        _uiState.update { state ->
+        _state.update { state ->
             if (!state.isActive) return@update state
             val fresh = when (role) {
                 AppRole.EMITTER -> state.copy(
@@ -125,7 +143,7 @@ class GuideViewModel(private val logger: AppLogger) {
         hasPassword: Boolean,
         sendSucceeded: Boolean,
     ) {
-        _uiState.update { state ->
+        _state.update { state ->
             val updated = state.copy(
                 playlistItems = playlistItems,
                 pairedScreens = pairedScreens,
@@ -150,7 +168,7 @@ class GuideViewModel(private val logger: AppLogger) {
         hasPassword: Boolean,
         hasContent: Boolean,
     ) {
-        _uiState.update { state ->
+        _state.update { state ->
             val updated = state.copy(
                 receiverPaired = paired,
                 receiverHasPassword = hasPassword,
@@ -169,14 +187,14 @@ class GuideViewModel(private val logger: AppLogger) {
     }
 
     private fun next() {
-        _uiState.update { state ->
+        _state.update { state ->
             if (!state.isActive) return@update state
             state.copy(step = nextStep(state))
         }
     }
 
     private fun back() {
-        _uiState.update { state ->
+        _state.update { state ->
             if (!state.isActive) return@update state
             // Going back is a manual review. Do not let the next state report
             // pull the card forward again.
@@ -189,7 +207,7 @@ class GuideViewModel(private val logger: AppLogger) {
 
     /** Replays the guide for the current role from its first step. */
     private fun restart() {
-        _uiState.update { state ->
+        _state.update { state ->
             val role = state.role ?: return@update state
             state.copy(
                 isActive = true,
@@ -200,11 +218,11 @@ class GuideViewModel(private val logger: AppLogger) {
     }
 
     private fun requestEffect(effect: GuideEffect) {
-        if (!_uiState.value.isActive) return
+        if (!_state.value.isActive) return
         effectChannel.trySend(effect)
     }
 
-    private fun initialStep(role: AppRole, state: GuideUiState): GuideStep = when (role) {
+    private fun initialStep(role: AppRole, state: GuideState): GuideStep = when (role) {
         AppRole.EMITTER -> when {
             state.playlistItems == 0 -> GuideStep.EMITTER_PLAYLIST
             state.pairedScreens == 0 -> GuideStep.EMITTER_SCREENS
@@ -230,7 +248,7 @@ class GuideViewModel(private val logger: AppLogger) {
      * Keeps moving while the next condition is also true, so a screen that
      * already has content can skip several steps in a single report.
      */
-    private fun advanceEmitter(step: GuideStep, state: GuideUiState): GuideStep {
+    private fun advanceEmitter(step: GuideStep, state: GuideState): GuideStep {
         var current = step
         while (true) {
             val next = when (current) {
@@ -257,7 +275,7 @@ class GuideViewModel(private val logger: AppLogger) {
         }
     }
 
-    private fun advanceReceiver(step: GuideStep, state: GuideUiState): GuideStep {
+    private fun advanceReceiver(step: GuideStep, state: GuideState): GuideStep {
         var current = step
         while (true) {
             val next = when (current) {
@@ -277,7 +295,7 @@ class GuideViewModel(private val logger: AppLogger) {
         }
     }
 
-    private fun nextStep(state: GuideUiState): GuideStep = when (state.step) {
+    private fun nextStep(state: GuideState): GuideStep = when (state.step) {
         GuideStep.ROLE -> GuideStep.ROLE
         GuideStep.EMITTER_PLAYLIST -> GuideStep.EMITTER_SCREENS
         GuideStep.EMITTER_SCREENS ->
@@ -291,7 +309,7 @@ class GuideViewModel(private val logger: AppLogger) {
         GuideStep.RECEIVER_DONE -> GuideStep.RECEIVER_DONE
     }
 
-    private fun previousStep(state: GuideUiState): GuideStep = when (state.step) {
+    private fun previousStep(state: GuideState): GuideStep = when (state.step) {
         GuideStep.ROLE -> GuideStep.ROLE
         GuideStep.EMITTER_PLAYLIST -> GuideStep.EMITTER_PLAYLIST
         GuideStep.EMITTER_SCREENS -> GuideStep.EMITTER_PLAYLIST

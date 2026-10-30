@@ -3,7 +3,7 @@ package app.kiosksync.feature.receiver.data
 import app.kiosksync.FakeRepositories
 import app.kiosksync.FakeReceiverUpdateManager
 import app.kiosksync.NoOpLogger
-import app.kiosksync.data.security.Sha256
+import app.kiosksync.core.security.Sha256
 import app.kiosksync.core.APP_VERSION
 import app.kiosksync.core.ReceiverStatusResponse
 import app.kiosksync.feature.emitter.domain.PlaylistRejectedException

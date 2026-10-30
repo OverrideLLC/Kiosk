@@ -3,8 +3,6 @@ package app.kiosksync.feature.media.data
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.ImageFormat
 import app.kiosksync.core.MAX_IMAGE_SIZE_BYTES
-import app.kiosksync.data.local.room.KioskDao
-import app.kiosksync.data.local.room.MediaEntity
 import app.kiosksync.feature.media.domain.MediaImportError
 import app.kiosksync.feature.media.domain.MediaImportResult
 import app.kiosksync.feature.media.domain.MediaRepository
@@ -14,7 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 internal class RoomMediaRepository(
-    private val dao: KioskDao,
+    private val dao: MediaDao,
     private val mediaStore: FileMediaStore,
     private val logger: AppLogger,
 ) : MediaRepository {

@@ -32,7 +32,17 @@ class PairingViewModel(
     private val serviceDispatcher: CoroutineDispatcher,
     private val deviceName: String,
     localIpAddress: String?,
+    private val onExit: () -> Unit = {},
+    private val onOpenGuide: () -> Unit = {},
+    onChangeRole: () -> Unit = {},
 ) {
+    private var changeRole: () -> Unit = onChangeRole
+
+    /** Refreshes the role-change callback once the host dialog state exists. */
+    fun updateHost(onChangeRole: () -> Unit) {
+        changeRole = onChangeRole
+    }
+
     private val _state = MutableStateFlow(PairingUiState(receiverIp = localIpAddress))
     val state: StateFlow<PairingUiState> = _state.asStateFlow()
 
@@ -60,9 +70,9 @@ class PairingViewModel(
             is PairingAction.AdminActionsChanged ->
                 _state.update { it.copy(showAdminActions = action.visible) }
             PairingAction.Unpair -> unpair()
-            PairingAction.OpenGuide -> effectChannel.trySend(PairingEffect.OpenGuide)
-            PairingAction.ExitRequested -> effectChannel.trySend(PairingEffect.ExitRequested)
-            PairingAction.ChangeRoleRequested -> effectChannel.trySend(PairingEffect.ChangeRoleRequested)
+            PairingAction.OpenGuide -> onOpenGuide()
+            PairingAction.ExitRequested -> onExit()
+            PairingAction.ChangeRoleRequested -> changeRole()
         }
     }
 

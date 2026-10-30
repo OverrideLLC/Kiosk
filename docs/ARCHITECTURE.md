@@ -53,27 +53,27 @@ composeApp/src/
 │   ├── core/            # APP_NAME, constantes, Strings.kt, modelos, DTOs
 │   ├── core/ui/         # tema M3, tipografía, iconos y componentes compartidos
 │   ├── feature/
-│   │   ├── role/{domain,presentation}/
-│   │   ├── pairing/{domain,presentation}/
+│   │   ├── role/{domain,data,presentation}/
+│   │   ├── pairing/{domain,data,presentation}/
 │   │   ├── emitter/{domain,data,presentation/{components,coordinators}}/
-│   │   ├── media/domain/
-│   │   ├── playlist/{domain,presentation}/
+│   │   ├── media/{domain,data}/
+│   │   ├── playlist/{domain,data,presentation}/
 │   │   ├── sync/domain/
 │   │   ├── playback/{domain,presentation}/
-│   │   ├── kiosk/{domain,presentation}/
-│   │   ├── receiver/domain/
+│   │   ├── kiosk/{domain,data,presentation}/
+│   │   ├── receiver/{domain,data}/
 │   │   ├── projection/domain/
 │   │   ├── guide/{domain,presentation/{components}}/
 │   │   └── update/{domain,presentation}/
-│   ├── data/local/room/ # esquema Room compartido: entidades, DAO y base de datos
+│   ├── local/           # KioskDatabase: une los DAO de cada feature
+│   ├── migration/       # importación transaccional de JSON heredado
 │   ├── ui/              # App.kt, navegación y pantallas por rol
 │   └── AppContainer.kt  # inyección manual
 └── desktopMain/kotlin/app/kiosksync/
     ├── feature/*/data/  # Room, DataStore, red y adaptadores propios de cada feature
-    ├── data/local/      # composición Room, migración y adaptadores compartidos
-    ├── data/security/   # hash y protección compartida de secretos
-    ├── data/local/migration/ # importación transaccional de JSON heredado a Room
-    ├── data/local/room/ # builder SQLite Desktop
+    ├── local/           # builder SQLite y composición de repositorios
+    ├── migration/       # importación de JSON heredado a Room
+    ├── core/security/   # hash y protección compartida de secretos
     ├── platform/        # logger y servicios compartidos del host
     ├── Desktop*.kt      # fábrica del contenedor y ciclo de ventanas
     └── Main.kt          # argumentos, logger y punto de entrada
@@ -81,10 +81,13 @@ composeApp/src/
 
 Las dependencias apuntan hacia contratos y modelos del dominio por feature. Las
 implementaciones de repositorio, Room, DataStore, red y operaciones de datos viven
-en `data` junto a la feature que las posee. El esquema Room compartido vive en
-`commonMain/data/local/room` por compatibilidad KMP; `desktopMain/data/local`
-conserva la composición de Room, las migraciones heredadas y el ensamblado de
-adaptadores compartidos. Sus DAOs y entidades son detalles de persistencia:
+en `data` junto a la feature que las posee. Cada feature declara sus entidades y
+su DAO. `app.kiosksync.local.KioskDatabase` solo los reúne en una base; el
+builder y `RoomRepositories` viven en el mismo paquete, en `desktopMain`. La
+importación del JSON heredado vive en `app.kiosksync.migration` porque escribe
+varias features en una transacción. Hash y protección de secretos viven en
+`app.kiosksync.core.security`. Los DAOs y las entidades son detalles de
+persistencia:
 presentación y dominio no los consumen. La app mantiene un módulo Gradle, un
 `AppContainer` manual y la navegación existente.
 

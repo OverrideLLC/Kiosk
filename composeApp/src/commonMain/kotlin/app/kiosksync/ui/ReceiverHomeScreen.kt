@@ -1,28 +1,24 @@
 package app.kiosksync.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import app.kiosksync.feature.pairing.presentation.PairingRoot
+import app.kiosksync.feature.pairing.presentation.PairingViewModel
+import app.kiosksync.feature.playback.presentation.CarouselRoot
+import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
 import app.kiosksync.feature.receiver.presentation.WaitingForPasswordScreen
-import app.kiosksync.feature.pairing.presentation.PairingAction
-import app.kiosksync.feature.pairing.presentation.PairingCodeScreen
-import app.kiosksync.feature.pairing.presentation.PairingUiState
-import app.kiosksync.feature.playback.presentation.screen.CarouselScreen
-import app.kiosksync.feature.playback.presentation.state.PlaybackUiState
 
 @Composable
 fun ReceiverHomeScreen(
-    pairingState: PairingUiState,
-    playbackState: PlaybackUiState,
+    pairingViewModel: PairingViewModel,
+    playbackStateHolder: PlaybackStateHolder,
     hasKioskPassword: Boolean,
-    onPairingAction: (PairingAction) -> Unit,
 ) {
+    val pairingState by pairingViewModel.state.collectAsState()
     when {
-        !pairingState.pairing.isPaired -> PairingCodeScreen(
-            state = pairingState,
-            onAction = onPairingAction,
-        )
-
+        !pairingState.pairing.isPaired -> PairingRoot(viewModel = pairingViewModel)
         !hasKioskPassword -> WaitingForPasswordScreen()
-
-        else -> CarouselScreen(state = playbackState)
+        else -> CarouselRoot(holder = playbackStateHolder)
     }
 }

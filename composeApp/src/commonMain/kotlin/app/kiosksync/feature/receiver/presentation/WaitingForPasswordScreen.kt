@@ -18,8 +18,10 @@ import app.kiosksync.core.Strings
 import app.kiosksync.core.ui.components.AppLoadingIndicator
 import app.kiosksync.core.ui.theme.KioskDisplayType
 import app.kiosksync.core.ui.theme.KioskScreenColors
+import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
  * Shown after pairing while the screen still has no blocking password. The
@@ -60,5 +62,13 @@ fun WaitingForPasswordScreen() {
                 textAlign = TextAlign.Center,
             )
         }
+    }
+}
+
+@Preview
+@Composable
+private fun WaitingForPasswordScreenPreview() {
+    KioskTheme {
+        WaitingForPasswordScreen()
     }
 }

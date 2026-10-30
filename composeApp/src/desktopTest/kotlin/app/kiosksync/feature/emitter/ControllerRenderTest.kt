@@ -4,13 +4,11 @@ import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.unit.Density
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.Modifier
 import app.kiosksync.FakeRepositories
 import app.kiosksync.FakeUpdatePackageProvider
 import app.kiosksync.NoOpLogger
 import app.kiosksync.feature.emitter.presentation.EmitterAction
 import app.kiosksync.feature.emitter.presentation.EmitterScreen
-import app.kiosksync.feature.emitter.presentation.EmitterScreenAction
 import app.kiosksync.feature.emitter.presentation.EmitterViewModel
 import app.kiosksync.feature.emitter.data.EmitterServiceImpl
 import app.kiosksync.core.AppTheme
@@ -22,8 +20,7 @@ import app.kiosksync.feature.kiosk.domain.KioskLockConfigurationUseCases
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorViewModel
-import app.kiosksync.feature.playlist.presentation.PlaylistEditorDialogs
-import app.kiosksync.feature.playlist.presentation.PlaylistPanel
+import app.kiosksync.feature.playlist.presentation.components.PlaylistEditorDialogs
 import app.kiosksync.feature.playlist.domain.PlaylistItem
 import app.kiosksync.feature.playlist.domain.PlaylistLibrary
 import app.kiosksync.feature.projection.domain.ProjectionController
@@ -218,20 +215,9 @@ private fun renderEmitterScreen(
     viewModel.onAction(EmitterAction.PlaylistChanged(editorState.playlist))
     EmitterScreen(
         state = viewModel.state.value,
-        onAction = { action ->
-            when (action) {
-                is EmitterScreenAction.Emitter -> viewModel.onAction(action.action)
-                EmitterScreenAction.ExitRequested,
-                EmitterScreenAction.RoleResetConfirmed -> Unit
-            }
-        },
-        playlistPanel = { modifier ->
-            PlaylistPanel(
-                state = editorState,
-                onAction = editor::onAction,
-                modifier = modifier,
-            )
-        },
+        onAction = viewModel::onAction,
+        playlistState = editorState,
+        onPlaylistAction = editor::onAction,
     )
     PlaylistEditorDialogs(state = editorState, onAction = editor::onAction)
 }

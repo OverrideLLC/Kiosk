@@ -1,9 +1,9 @@
 package app.kiosksync.feature.emitter.presentation.coordinators
 
-import app.kiosksync.feature.emitter.presentation.EmitterPendingAction
-import app.kiosksync.feature.emitter.presentation.EmitterUiState
-import app.kiosksync.feature.emitter.presentation.KioskPasswordDialogUi
-import app.kiosksync.feature.emitter.presentation.SecurityDialogUi
+import app.kiosksync.feature.emitter.domain.models.EmitterPendingAction
+import app.kiosksync.feature.emitter.presentation.EmitterState
+import app.kiosksync.feature.emitter.domain.models.KioskPasswordDialogUi
+import app.kiosksync.feature.emitter.domain.models.SecurityDialogUi
 
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.DEFAULT_UNLOCK_SEQUENCE
@@ -25,7 +25,7 @@ import kotlinx.coroutines.withContext
 
 /** Owns controller-side kiosk password and recovery configuration workflows. */
 internal class EmitterSecurityCoordinator(
-    private val uiState: MutableStateFlow<EmitterUiState>,
+    private val uiState: MutableStateFlow<EmitterState>,
     private val loadConfiguration: suspend () -> KioskLockConfig?,
     private val scope: CoroutineScope,
     private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.IO,

@@ -17,6 +17,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,14 +35,25 @@ import app.kiosksync.core.ui.theme.KioskDisplayType
 import app.kiosksync.core.ui.theme.KioskScreenColors
 import app.kiosksync.core.ui.theme.KioskShape
 import app.kiosksync.core.ui.components.OverrideLogo
+import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
  * Receiver pairing screen, designed to be read from several metres: a huge
  * grouped code, one instruction, the renewal countdown and a clear lockout
  * message. Pure black background regardless of the selected theme.
  */
+@Composable
+fun PairingRoot(viewModel: PairingViewModel) {
+    val state by viewModel.state.collectAsState()
+    PairingCodeScreen(
+        state = state,
+        onAction = viewModel::onAction,
+    )
+}
+
 @Composable
 fun PairingCodeScreen(
     state: PairingUiState,
@@ -274,5 +287,16 @@ private fun LockoutMessage(title: String, message: String) {
                 color = KioskScreenColors.error,
             )
         }
+    }
+}
+
+@Preview
+@Composable
+private fun PairingCodeScreenPreview() {
+    KioskTheme {
+        PairingCodeScreen(
+            state = PairingUiState(),
+            onAction = {},
+        )
     }
 }

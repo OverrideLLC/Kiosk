@@ -11,7 +11,7 @@ import app.kiosksync.core.UPDATE_PACKAGE_FORMAT
 import app.kiosksync.core.UpdatePackageManifest
 import app.kiosksync.core.UpdateUrgency
 import app.kiosksync.core.isValidAppVersion
-import app.kiosksync.data.security.Sha256
+import app.kiosksync.core.security.Sha256
 import app.kiosksync.feature.update.domain.ReceiverUpdateManager
 import app.kiosksync.feature.update.domain.ReceiverUpdateError
 import app.kiosksync.feature.update.domain.ReceiverUpdateState

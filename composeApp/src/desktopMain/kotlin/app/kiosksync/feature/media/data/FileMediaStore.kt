@@ -8,7 +8,7 @@ import app.kiosksync.core.MAX_IMAGE_SIZE_BYTES
 import app.kiosksync.feature.media.domain.MediaImportError
 import app.kiosksync.feature.media.domain.MediaImportResult
 import app.kiosksync.feature.media.domain.StoredMedia
-import app.kiosksync.data.security.Sha256
+import app.kiosksync.core.security.Sha256
 import java.io.File
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files

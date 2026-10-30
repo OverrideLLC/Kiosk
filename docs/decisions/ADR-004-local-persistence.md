@@ -25,12 +25,12 @@ Receptor debe conservar una copia local reproducible entre reinicios y sin red.
   su scope.
 - **Room 3 sobre SQLite** guarda playlists y sus ítems ordenados, metadatos/hash
   de medios, emparejamientos y datos estructurados de kiosco. Las actualizaciones
-  de playlist y catálogo usan transacciones. El esquema compartido (base, entidades
-  y DAO) vive en `commonMain/data/local/room`; las implementaciones de repositorio
-  están en `desktopMain/feature/<nombre>/data` cuando pertenecen a una feature. Los
-  adaptadores compartidos de medios y limpieza viven en `desktopMain/data/local`;
-  la migración JSON vive en `desktopMain/data/local/migration`. Los DAOs no salen
-  de la capa `data` ni del root de composición.
+  de playlist y catálogo usan transacciones. Cada feature declara sus entidades y
+  su DAO en `commonMain/feature/<nombre>/data`; las implementaciones de repositorio
+  están en `desktopMain/feature/<nombre>/data`. `KioskDatabase` y `RoomRepositories`
+  viven en `app.kiosksync.local` y solo componen esos DAO. La migración JSON vive
+  en `app.kiosksync.migration`. Los DAOs no salen de la capa `data` de su feature
+  ni del root de composición.
 - **Archivos** guardan imágenes, logs, paquetes de actualización y copias JSON
   heredadas. Los bytes de imagen no se guardan como BLOB en Room; se validan en un
   archivo temporal y se renombran antes de aplicar sus referencias en la base.
@@ -53,7 +53,7 @@ Receptor debe conservar una copia local reproducible entre reinicios y sin red.
 
 - Hay que incluir DataStore, Room 3, KSP y el driver SQLite bundled; los esquemas
   versionados se guardan en el repositorio en
-  `composeApp/schemas/app.kiosksync.data.local.room.KioskDatabase/`.
+  `composeApp/schemas/app.kiosksync.local.KioskDatabase/`.
 - `DesktopContainerFactory` es el único punto de creación de DataStore y Room por
   proceso/directorio. `AppContainer.shutdown()` cierra la persistencia; ningún
   consumidor de UI, state holder o ruta HTTP accede directamente a un DAO ni usa

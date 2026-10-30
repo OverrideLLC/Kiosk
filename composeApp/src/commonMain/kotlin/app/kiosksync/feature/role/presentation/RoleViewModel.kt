@@ -14,9 +14,11 @@ import kotlinx.coroutines.flow.update
 class RoleViewModel(
     private val logger: AppLogger,
     initialRole: AppRole? = null,
+    private val onExit: () -> Unit = {},
+    private val onOpenGuide: () -> Unit = {},
 ) {
-    private val _state = MutableStateFlow(RoleUiState(selectedRole = initialRole))
-    val state: StateFlow<RoleUiState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(RoleState(selectedRole = initialRole))
+    val state: StateFlow<RoleState> = _state.asStateFlow()
 
     private val effectChannel = Channel<RoleEffect>(Channel.BUFFERED)
     val effects: Flow<RoleEffect> = effectChannel.receiveAsFlow()
@@ -28,7 +30,9 @@ class RoleViewModel(
                 logger.info("Role confirmed: $role")
                 effectChannel.trySend(RoleEffect.RoleConfirmed(role))
             }
-            RoleAction.ResetSelection -> _state.value = RoleUiState()
+            RoleAction.ResetSelection -> _state.value = RoleState()
+            RoleAction.Exit -> onExit()
+            RoleAction.OpenGuide -> onOpenGuide()
         }
     }
 }

@@ -37,12 +37,12 @@ import app.kiosksync.core.ui.theme.KioskShape
 import app.kiosksync.core.ui.theme.Space
 import app.kiosksync.feature.guide.presentation.GuideAction
 import app.kiosksync.feature.guide.presentation.GuideEffect
-import app.kiosksync.feature.guide.presentation.GuideUiState
+import app.kiosksync.feature.guide.presentation.GuideState
 import app.kiosksync.feature.guide.domain.GuideStep
 
 @Composable
 internal fun GuideCoachCard(
-    state: GuideUiState,
+    state: GuideState,
     onAction: (GuideAction) -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -186,7 +186,7 @@ internal fun GuideCoachCard(
 
 @Composable
 private fun GuideActionButton(
-    state: GuideUiState,
+    state: GuideState,
     onAction: (GuideAction) -> Unit,
 ) {
     when (state.step) {

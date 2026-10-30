@@ -20,6 +20,7 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.ui)
             implementation(compose.components.resources)
+            implementation(compose.components.uiToolingPreview)
             implementation(libs.material.kolor)
             implementation(libs.room3.runtime)
             implementation(libs.sqlite.bundled)

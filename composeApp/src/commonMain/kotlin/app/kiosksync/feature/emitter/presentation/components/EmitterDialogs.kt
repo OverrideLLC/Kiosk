@@ -1,8 +1,8 @@
 package app.kiosksync.feature.emitter.presentation.components
 
-import app.kiosksync.feature.emitter.presentation.EmitterDeviceUi
-import app.kiosksync.feature.emitter.presentation.EmitterPendingAction
-import app.kiosksync.feature.emitter.presentation.KioskPasswordDialogUi
+import app.kiosksync.feature.emitter.domain.models.EmitterDeviceUi
+import app.kiosksync.feature.emitter.domain.models.EmitterPendingAction
+import app.kiosksync.feature.emitter.domain.models.KioskPasswordDialogUi
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,8 +37,7 @@ import app.kiosksync.core.ui.theme.KioskColors
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
 import app.kiosksync.feature.emitter.presentation.EmitterAction
-import app.kiosksync.feature.emitter.presentation.EmitterScreenAction
-import app.kiosksync.feature.emitter.presentation.EmitterUiState
+import app.kiosksync.feature.emitter.presentation.EmitterState
 
 @Composable
 internal fun SettingsDialog(
@@ -349,18 +348,17 @@ internal fun KioskPasswordDialog(
 
 @Composable
 fun EmitterDialogs(
-    state: EmitterUiState,
-    onAction: (EmitterScreenAction) -> Unit,
+    state: EmitterState,
+    onAction: (EmitterAction) -> Unit,
 ) {
-    val emit: (EmitterAction) -> Unit = { onAction(EmitterScreenAction.Emitter(it)) }
 
     state.passwordDialog?.let { dialog ->
         KioskPasswordDialog(
             dialog = dialog,
-            onDraftChange = { emit(EmitterAction.UpdatePasswordDraft(it)) },
-            onConfirmDraftChange = { emit(EmitterAction.UpdatePasswordConfirmDraft(it)) },
-            onConfirm = { emit(EmitterAction.ConfirmPassword) },
-            onDismiss = { emit(EmitterAction.DismissPasswordDialog) },
+            onDraftChange = { onAction(EmitterAction.UpdatePasswordDraft(it)) },
+            onConfirmDraftChange = { onAction(EmitterAction.UpdatePasswordConfirmDraft(it)) },
+            onConfirm = { onAction(EmitterAction.ConfirmPassword) },
+            onDismiss = { onAction(EmitterAction.DismissPasswordDialog) },
         )
     }
 
@@ -368,18 +366,18 @@ fun EmitterDialogs(
         SecurityDialog(
             dialog = dialog,
             hasPassword = state.hasKioskPassword,
-            onAddKey = { emit(EmitterAction.AppendUnlockKey(it)) },
-            onRemoveLast = { emit(EmitterAction.RemoveLastUnlockKey) },
-            onResetSequence = { emit(EmitterAction.ResetUnlockSequence) },
-            onSaveSequence = { emit(EmitterAction.SaveUnlockSequence) },
-            onToggleRecovery = { emit(EmitterAction.ToggleRecoveryEditor) },
-            onAcceptedChange = { emit(EmitterAction.SetRecoveryAccepted(it)) },
-            onRecoveryChange = { emit(EmitterAction.UpdateRecoveryDraft(it)) },
-            onRecoveryConfirmChange = { emit(EmitterAction.UpdateRecoveryConfirmDraft(it)) },
-            onSaveRecovery = { emit(EmitterAction.SaveRecoveryPhrase) },
-            onResetRecovery = { emit(EmitterAction.ResetRecoveryPhrase) },
-            onChangePassword = { emit(EmitterAction.OpenChangePasswordDialog) },
-            onDismiss = { emit(EmitterAction.DismissSecurityDialog) },
+            onAddKey = { onAction(EmitterAction.AppendUnlockKey(it)) },
+            onRemoveLast = { onAction(EmitterAction.RemoveLastUnlockKey) },
+            onResetSequence = { onAction(EmitterAction.ResetUnlockSequence) },
+            onSaveSequence = { onAction(EmitterAction.SaveUnlockSequence) },
+            onToggleRecovery = { onAction(EmitterAction.ToggleRecoveryEditor) },
+            onAcceptedChange = { onAction(EmitterAction.SetRecoveryAccepted(it)) },
+            onRecoveryChange = { onAction(EmitterAction.UpdateRecoveryDraft(it)) },
+            onRecoveryConfirmChange = { onAction(EmitterAction.UpdateRecoveryConfirmDraft(it)) },
+            onSaveRecovery = { onAction(EmitterAction.SaveRecoveryPhrase) },
+            onResetRecovery = { onAction(EmitterAction.ResetRecoveryPhrase) },
+            onChangePassword = { onAction(EmitterAction.OpenChangePasswordDialog) },
+            onDismiss = { onAction(EmitterAction.DismissSecurityDialog) },
         )
     }
 
@@ -387,7 +385,7 @@ fun EmitterDialogs(
         AppDialog(
             title = Strings.CHANGE_ROLE,
             icon = AppIcon.SWAP_HORIZ,
-            onDismissRequest = { emit(EmitterAction.DismissRoleReset) },
+            onDismissRequest = { onAction(EmitterAction.DismissRoleReset) },
             content = {
                 Text(
                     text = Strings.CHANGE_ROLE_CONFIRM,
@@ -398,13 +396,13 @@ fun EmitterDialogs(
             actions = {
                 AppButton(
                     text = Strings.CANCEL_BUTTON,
-                    onClick = { emit(EmitterAction.DismissRoleReset) },
+                    onClick = { onAction(EmitterAction.DismissRoleReset) },
                     variant = AppButtonVariant.TEXT,
                     size = AppButtonSize.SMALL,
                 )
                 AppButton(
                     text = Strings.CHANGE_ROLE,
-                    onClick = { onAction(EmitterScreenAction.RoleResetConfirmed) },
+                    onClick = { onAction(EmitterAction.ConfirmRoleReset) },
                     variant = AppButtonVariant.TONAL,
                     size = AppButtonSize.SMALL,
                     icon = AppIcon.SWAP_HORIZ,
@@ -419,9 +417,9 @@ fun EmitterDialogs(
             code = state.pairingCode,
             error = state.pairingError,
             isPairing = state.isPairing,
-            onCodeChange = { emit(EmitterAction.UpdatePairingCode(it)) },
-            onConfirm = { emit(EmitterAction.ConfirmPair) },
-            onDismiss = { emit(EmitterAction.DismissPairDialog) },
+            onCodeChange = { onAction(EmitterAction.UpdatePairingCode(it)) },
+            onConfirm = { onAction(EmitterAction.ConfirmPair) },
+            onDismiss = { onAction(EmitterAction.DismissPairDialog) },
         )
     }
 
@@ -429,7 +427,7 @@ fun EmitterDialogs(
         AppDialog(
             title = Strings.UNPAIR_DIALOG_TITLE,
             icon = AppIcon.LINK,
-            onDismissRequest = { emit(EmitterAction.DismissUnpairDialog) },
+            onDismissRequest = { onAction(EmitterAction.DismissUnpairDialog) },
             content = {
                 Text(
                     text = "${Strings.UNPAIR_DIALOG_CONFIRM}\n\n${device.deviceName}",
@@ -440,13 +438,13 @@ fun EmitterDialogs(
             actions = {
                 AppButton(
                     text = Strings.CANCEL_BUTTON,
-                    onClick = { emit(EmitterAction.DismissUnpairDialog) },
+                    onClick = { onAction(EmitterAction.DismissUnpairDialog) },
                     variant = AppButtonVariant.TEXT,
                     size = AppButtonSize.SMALL,
                 )
                 AppButton(
                     text = Strings.UNPAIR_BUTTON,
-                    onClick = { emit(EmitterAction.ConfirmUnpair) },
+                    onClick = { onAction(EmitterAction.ConfirmUnpair) },
                     variant = AppButtonVariant.DANGER,
                     size = AppButtonSize.SMALL,
                     icon = AppIcon.LINK,
@@ -460,9 +458,9 @@ fun EmitterDialogs(
             value = state.manualIpInput,
             error = state.manualIpError,
             isLoading = state.isManualIpLoading,
-            onValueChange = { emit(EmitterAction.UpdateManualIp(it)) },
-            onConfirm = { emit(EmitterAction.ConfirmManualIp) },
-            onDismiss = { emit(EmitterAction.DismissManualIpDialog) },
+            onValueChange = { onAction(EmitterAction.UpdateManualIp(it)) },
+            onConfirm = { onAction(EmitterAction.ConfirmManualIp) },
+            onDismiss = { onAction(EmitterAction.DismissManualIpDialog) },
         )
     }
 }

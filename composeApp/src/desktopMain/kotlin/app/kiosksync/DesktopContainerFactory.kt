@@ -2,8 +2,8 @@ package app.kiosksync
 
 import app.kiosksync.core.AppArgs
 import app.kiosksync.core.AppLogger
-import app.kiosksync.data.local.RoomRepositories
-import app.kiosksync.data.local.migration.LegacyJsonMigrator
+import app.kiosksync.local.RoomRepositories
+import app.kiosksync.migration.LegacyJsonMigrator
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.kiosk.domain.KioskKeyEvent
 import app.kiosksync.feature.kiosk.domain.KioskLockConfigurationUseCases
@@ -22,13 +22,13 @@ import app.kiosksync.feature.emitter.data.EmitterServiceImpl
 import app.kiosksync.feature.sync.data.EmitterSyncRepositoryImpl
 import app.kiosksync.feature.receiver.data.KtorReceiverServer
 import app.kiosksync.feature.update.data.LocalUpdatePackageProvider
-import app.kiosksync.data.security.Sha256
+import app.kiosksync.core.security.Sha256
 import app.kiosksync.feature.kiosk.data.createKioskKeyboardGuard
 import app.kiosksync.feature.kiosk.data.createKioskMouseGuard
-import app.kiosksync.data.local.room.KioskDatabase
-import app.kiosksync.data.local.room.buildKioskDatabase
+import app.kiosksync.local.KioskDatabase
+import app.kiosksync.local.buildKioskDatabase
 import app.kiosksync.feature.pairing.data.detectLocalIpv4Address
-import app.kiosksync.data.security.SecretProtectorFactory
+import app.kiosksync.core.security.SecretProtectorFactory
 import java.io.File
 import java.net.InetAddress
 import java.util.UUID

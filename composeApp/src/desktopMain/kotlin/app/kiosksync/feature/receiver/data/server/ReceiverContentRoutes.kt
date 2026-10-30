@@ -12,7 +12,7 @@ import app.kiosksync.core.PlaylistApplyResponse
 import app.kiosksync.core.SyncStateResponse
 import app.kiosksync.core.isValidUnlockSequence
 import app.kiosksync.core.PlaylistUpdateRequest
-import app.kiosksync.data.security.Sha256
+import app.kiosksync.core.security.Sha256
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.response.respond

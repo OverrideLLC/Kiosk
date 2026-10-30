@@ -13,8 +13,5 @@ sealed interface PairingAction {
 }
 
 sealed interface PairingEffect {
-    data object OpenGuide : PairingEffect
-    data object ExitRequested : PairingEffect
-    data object ChangeRoleRequested : PairingEffect
     data object Unpaired : PairingEffect
 }

@@ -45,7 +45,7 @@ internal fun Route.registerReceiverUpdateRoutes(context: ReceiverRouteContext) {
             return@put
         }
 
-        val actualHash = app.kiosksync.data.security.Sha256.hex(bytes)
+        val actualHash = app.kiosksync.core.security.Sha256.hex(bytes)
         if (!actualHash.equals(expectedHash, ignoreCase = true)) {
             call.respond(HttpStatusCode.BadRequest, ErrorResponse("hash_mismatch"))
             return@put

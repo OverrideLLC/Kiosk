@@ -128,33 +128,33 @@ composeApp/src/
 │   ├── core/            # APP_NAME, constantes, Strings.kt, modelos compartidos, DTOs del protocolo
 │   ├── core/ui/         # tema, tokens y componentes realmente compartidos
 │   ├── feature/
-│   │   ├── role/{domain,presentation}/
-│   │   ├── pairing/{domain,presentation}/
+│   │   ├── role/{domain,data,presentation}/
+│   │   ├── pairing/{domain,data,presentation}/
 │   │   ├── emitter/{domain,data,presentation/{components,coordinators}}/
-│   │   ├── media/domain/
-│   │   ├── playlist/{domain,presentation}/
+│   │   ├── media/{domain,data}/
+│   │   ├── playlist/{domain,data,presentation}/
 │   │   ├── sync/domain/
 │   │   ├── playback/{domain,presentation}/
-│   │   ├── kiosk/{domain,presentation}/
-│   │   ├── receiver/domain/
+│   │   ├── kiosk/{domain,data,presentation}/
+│   │   ├── receiver/{domain,data}/
 │   │   ├── projection/domain/
 │   │   ├── guide/{domain,presentation/{components}}/
 │   │   └── update/{domain,presentation}/
-│   ├── data/local/room/ # entidades, DAO y esquema Room compartido
+│   ├── local/           # KioskDatabase: une los DAO de cada feature
+│   ├── migration/       # importación transaccional de JSON heredado
 │   ├── ui/              # App.kt, navegación y pantallas por rol
 │   └── AppContainer.kt  # DI manual
 └── desktopMain/kotlin/app/kiosksync/
     ├── feature/*/data/  # Room, DataStore, red y adaptadores propios de cada feature
-    ├── data/local/      # composición Room, migración y adaptadores compartidos
-    ├── data/security/   # hash y protección compartida de secretos
-    ├── data/local/migration/ # importación transaccional de JSON heredado a Room
-    ├── data/local/room/ # builder SQLite Desktop
+    ├── local/           # builder SQLite y composición de repositorios
+    ├── migration/       # importación de JSON heredado a Room
+    ├── core/security/   # hash y protección compartida de secretos
     ├── platform/        # logger y servicios compartidos del host
     ├── Desktop*.kt      # fábrica del contenedor y ciclo de ventanas
     └── Main.kt          # argumentos de línea de comandos y punto de entrada
 ```
 
-Dentro de cada `feature/<nombre>/` crea capas solo cuando contengan responsabilidades reales. En `feature/emitter/presentation`, `EmitterAction`, `EmitterUiState`, `EmitterViewModel` y `EmitterScreen` viven directamente en el paquete raíz; el ViewModel aplica las transiciones de estado y coordina los efectos. No añadas un reducer mecánico ni un Route wrapper si `App.kt` ya compone el ViewModel, gestiona su ciclo de vida y conecta el Screen. Los coordinadores que adapten operaciones a estado de UI viven en `presentation/coordinators`; los componentes exclusivos viven en `presentation/components`. Los servicios operativos y adaptadores concretos viven en `data`. La pantalla recibe estado y emite acciones; el ViewModel consume contratos y casos de uso del dominio, nunca DAOs ni implementaciones. Los contratos y modelos pertenecen al `domain`; Room, DataStore, red, operaciones de datos y repositorios concretos pertenecen a `data`, junto a la feature que los usa. Solo la composición de servicios compartidos, el esquema Room y las migraciones permanecen en `data/local`; las entidades Room nunca son modelos de protocolo. Comparte un componente `core.ui` cuando tenga consumidores reales en más de una feature; los componentes exclusivos permanecen en su feature. Mantén un solo módulo Gradle y el `AppContainer` manual. DataStore Preferences almacena preferencias pequeñas; Room 3 datos estructurados; archivos, imágenes, logs y paquetes.
+Dentro de cada `feature/<nombre>/` crea capas solo cuando contengan responsabilidades reales. En `feature/emitter/presentation`, `EmitterAction`, `EmitterUiState`, `EmitterViewModel` y `EmitterScreen` viven directamente en el paquete raíz; el ViewModel aplica las transiciones de estado y coordina los efectos. No añadas un reducer mecánico ni un Route wrapper si `App.kt` ya compone el ViewModel, gestiona su ciclo de vida y conecta el Screen. Los coordinadores que adapten operaciones a estado de UI viven en `presentation/coordinators`; los componentes exclusivos viven en `presentation/components`. Los servicios operativos y adaptadores concretos viven en `data`. La pantalla recibe estado y emite acciones; el ViewModel consume contratos y casos de uso del dominio, nunca DAOs ni implementaciones. Los contratos y modelos pertenecen al `domain`; Room, DataStore, red, operaciones de datos y repositorios concretos pertenecen a `data`, junto a la feature que los usa. `KioskDatabase` y `RoomRepositories` viven en `app.kiosksync.local` y solo componen los DAO de cada feature. La importación del JSON heredado vive en `app.kiosksync.migration`. Hash y protección de secretos viven en `app.kiosksync.core.security`. Las entidades Room nunca son modelos de protocolo. Comparte un componente `core.ui` cuando tenga consumidores reales en más de una feature; los componentes exclusivos permanecen en su feature. Mantén un solo módulo Gradle y el `AppContainer` manual. DataStore Preferences almacena preferencias pequeñas; Room 3 datos estructurados; archivos, imágenes, logs y paquetes.
 
 ---
 
@@ -357,7 +357,7 @@ Cada fase tiene: **objetivo**, **entregable**, **criterios de aceptación** y **
 La persona autorizó ejecutar las fases de arquitectura consecutivamente. Las fases 7–17 están completadas; se conservaron los commits por fase en `codex/architecture-improvements`. El plan unificado define los detalles de las fases 13–18. En la fase 18, Linux y el runner hospedado de Windows (`windows-2025-vs2026`) pasaron build, tests y smoke checks; sigue pendiente la validación manual en Windows 11 real, incluida la experiencia de escritorio. No declares completa la validación de Windows hasta ejecutar `.\gradlew.bat build` y los recorridos manuales en Windows 11.
 
 - **Fases 7–12, completadas:** arquitectura por capas ligeras, DataStore + Room 3 + archivos, `core.ui`/Material Kolor, MVI selectivo, migración y adaptación Desktop.
-- **Fases 13–14, completadas:** arranque según rol y esquema Room dentro de `data/local/room`.
+- **Fases 13–14, completadas:** arranque según rol y esquema Room. Las entidades y los DAO viven en la feature dueña; `KioskDatabase` los reúne en `app.kiosksync.local`.
 - **Fase 15, completada:** paquetes feature-first y adaptadores de persistencia junto a sus features.
 - **Fase 16, completada:** tokens UI verificados y render test de ambos temas con contraste 4.5:1.
 - **Fase 17, completada:** `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/DESIGN_SYSTEM.md`, `docs/KNOWN_LIMITATIONS.md` y ADR-004 coinciden con los paquetes y la persistencia vigentes.

@@ -6,9 +6,9 @@ import app.kiosksync.feature.emitter.domain.EmitterDeliveryResult
 import app.kiosksync.feature.emitter.domain.EmitterLocalMediaMissingException
 import app.kiosksync.feature.emitter.domain.EmitterService
 import app.kiosksync.feature.emitter.domain.PlaylistRejectedException
-import app.kiosksync.feature.emitter.presentation.DeviceSyncUi
-import app.kiosksync.feature.emitter.presentation.EmitterUiState
-import app.kiosksync.feature.emitter.presentation.SyncUiStatus
+import app.kiosksync.feature.emitter.domain.models.DeviceSyncUi
+import app.kiosksync.feature.emitter.presentation.EmitterState
+import app.kiosksync.feature.emitter.domain.models.SyncUiStatus
 import app.kiosksync.feature.playlist.domain.Playlist
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
 
 /** Maps Controller service outcomes to the editor's delivery and sync UI state. */
 internal class EmitterDeliveryCoordinator(
-    private val uiState: MutableStateFlow<EmitterUiState>,
+    private val uiState: MutableStateFlow<EmitterState>,
     private val service: EmitterService,
     private val emitterId: String,
     private val scope: CoroutineScope,

@@ -24,11 +24,11 @@ import app.kiosksync.core.AppRole
 import app.kiosksync.feature.kiosk.domain.KioskKeyEvent
 import app.kiosksync.feature.kiosk.domain.KioskKeyKind
 import app.kiosksync.feature.kiosk.presentation.KioskAction
-import app.kiosksync.feature.kiosk.presentation.KioskUiState
+import app.kiosksync.feature.kiosk.presentation.KioskState
 import app.kiosksync.feature.kiosk.presentation.KioskViewModel
 import app.kiosksync.feature.playlist.domain.Playlist
-import app.kiosksync.feature.playback.presentation.viewmodel.PlaybackStateHolder
-import app.kiosksync.feature.update.presentation.viewmodel.ReceiverUpdateViewModel
+import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
+import app.kiosksync.feature.update.presentation.ReceiverUpdateViewModel
 import app.kiosksync.ui.App
 import app.kiosksync.ui.ProjectionScreen
 import java.awt.Cursor
@@ -47,7 +47,14 @@ internal fun DesktopWindowHost(
         KioskViewModel(container.kioskLockManager, scope)
     }
     val receiverUpdateViewModel = remember(container, scope) {
-        ReceiverUpdateViewModel(container.receiverUpdateManager, scope)
+        ReceiverUpdateViewModel(
+            manager = container.receiverUpdateManager,
+            scope = scope,
+            onExit = {
+                container.shutdown()
+                onExit()
+            },
+        )
     }
     val activeRole by container.activeRole.collectAsState()
     val appFullscreen = !args.windowed
@@ -201,7 +208,7 @@ internal fun DesktopWindowHost(
 private fun ProjectionPlayback(
     playlist: Playlist,
     container: AppContainer,
-    lockState: KioskUiState,
+    lockState: KioskState,
 ) {
     val scope = rememberCoroutineScope()
     val playbackStateHolder = remember(playlist.id, playlist.version, container) {
@@ -215,7 +222,7 @@ private fun ProjectionPlayback(
             loadFromStorage = false,
         )
     }
-    val playbackState by playbackStateHolder.uiState.collectAsState()
+    val playbackState by playbackStateHolder.state.collectAsState()
 
     LaunchedEffect(playbackStateHolder, playlist) {
         playbackStateHolder.updatePlaylist(playlist)

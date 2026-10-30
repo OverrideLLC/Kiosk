@@ -16,6 +16,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,8 +31,10 @@ import app.kiosksync.core.ui.components.AppIcon
 import app.kiosksync.core.ui.theme.KioskDisplayType
 import app.kiosksync.core.ui.theme.KioskShape
 import app.kiosksync.core.ui.theme.KioskScreenColors
+import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
  * Small overlay shown while the keyboard is locked. The carousel keeps playing
@@ -42,7 +46,13 @@ import app.kiosksync.core.ui.theme.Space
  * the project manual and shown in the controller's "Seguridad" dialog.
  */
 @Composable
-fun KioskUnlockOverlay(state: KioskUiState) {
+fun KioskRoot(viewModel: KioskViewModel) {
+    val state by viewModel.state.collectAsState()
+    KioskScreen(state = state)
+}
+
+@Composable
+fun KioskScreen(state: KioskState) {
     if (!state.isLocked) return
     if (!state.showUnlockHint && state.feedback == null && state.lockoutRemainingSec == 0) return
 
@@ -143,5 +153,15 @@ private fun TypedDots(count: Int, color: Color) {
                     .background(color),
             )
         }
+    }
+}
+
+@Preview
+@Composable
+private fun KioskScreenPreview() {
+    KioskTheme {
+        KioskScreen(
+            state = KioskState(isLocked = true, showUnlockHint = true, typedLength = 2),
+        )
     }
 }

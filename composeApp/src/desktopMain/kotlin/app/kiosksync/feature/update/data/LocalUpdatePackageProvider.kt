@@ -6,7 +6,7 @@ import app.kiosksync.core.APP_VERSION
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.UPDATE_PACKAGE_FORMAT
 import app.kiosksync.core.UpdatePackageManifest
-import app.kiosksync.data.security.Sha256
+import app.kiosksync.core.security.Sha256
 import app.kiosksync.feature.update.domain.UpdatePackage
 import app.kiosksync.feature.update.domain.UpdatePackageProvider
 import kotlinx.coroutines.Dispatchers

@@ -1,8 +1,8 @@
 package app.kiosksync.feature.emitter.presentation.coordinators
 
-import app.kiosksync.feature.emitter.presentation.EmitterDeviceUi
-import app.kiosksync.feature.emitter.presentation.EmitterPendingAction
-import app.kiosksync.feature.emitter.presentation.EmitterUiState
+import app.kiosksync.feature.emitter.domain.models.EmitterDeviceUi
+import app.kiosksync.feature.emitter.domain.models.EmitterPendingAction
+import app.kiosksync.feature.emitter.presentation.EmitterState
 
 import app.kiosksync.core.AppLogger
 import app.kiosksync.core.KioskLockConfig
@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 
 /** Owns the asynchronous pairing and unpairing workflows for discovered screens. */
 internal class EmitterPairingCoordinator(
-    private val uiState: MutableStateFlow<EmitterUiState>,
+    private val uiState: MutableStateFlow<EmitterState>,
     private val service: EmitterService,
     private val logger: AppLogger,
     private val emitterId: String,

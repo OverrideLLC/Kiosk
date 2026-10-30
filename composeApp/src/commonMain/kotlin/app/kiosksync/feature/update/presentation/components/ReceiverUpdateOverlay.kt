@@ -29,7 +29,8 @@ import app.kiosksync.core.ui.components.AppLoadingIndicator
 import app.kiosksync.core.ui.theme.KioskShape
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
-import app.kiosksync.feature.update.presentation.state.ReceiverUpdateUiState
+import app.kiosksync.feature.update.presentation.ReceiverUpdateAction
+import app.kiosksync.feature.update.presentation.ReceiverUpdateState
 
 /**
  * Update prompt shown inside the receiver's fullscreen window. Keeping it in
@@ -37,10 +38,8 @@ import app.kiosksync.feature.update.presentation.state.ReceiverUpdateUiState
  */
 @Composable
 fun ReceiverUpdateOverlay(
-    state: ReceiverUpdateUiState,
-    onUpdate: () -> Unit,
-    onDecline: () -> Unit,
-    onDismissError: () -> Unit,
+    state: ReceiverUpdateState,
+    onAction: (ReceiverUpdateAction) -> Unit,
 ) {
     val version = state.version ?: return
     val colors = MaterialTheme.colorScheme
@@ -114,7 +113,7 @@ fun ReceiverUpdateOverlay(
                         Spacer(Modifier.height(Space.sm))
                         AppButton(
                             text = Strings.SECURITY_CLOSE,
-                            onClick = onDismissError,
+                            onClick = { onAction(ReceiverUpdateAction.DismissError) },
                             variant = AppButtonVariant.TEXT,
                             size = AppButtonSize.SMALL,
                         )
@@ -129,7 +128,7 @@ fun ReceiverUpdateOverlay(
                         if (!state.forced) {
                             AppButton(
                                 text = Strings.UPDATE_LATER,
-                                onClick = onDecline,
+                                onClick = { onAction(ReceiverUpdateAction.Decline) },
                                 variant = AppButtonVariant.OUTLINED,
                                 size = AppButtonSize.LARGE,
                             )
@@ -137,7 +136,7 @@ fun ReceiverUpdateOverlay(
                         }
                         AppButton(
                             text = Strings.UPDATE_NOW,
-                            onClick = onUpdate,
+                            onClick = { onAction(ReceiverUpdateAction.Accept) },
                             variant = AppButtonVariant.FILLED,
                             size = AppButtonSize.LARGE,
                             icon = AppIcon.UPLOAD,

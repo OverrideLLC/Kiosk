@@ -12,12 +12,12 @@ class KioskViewModel(
     private val manager: KioskLockManager,
     scope: CoroutineScope,
 ) {
-    val state: StateFlow<KioskUiState> = manager.state
-        .map { it.toUiState() }
+    val state: StateFlow<KioskState> = manager.state
+        .map { it.toState() }
         .stateIn(
             scope = scope,
             started = SharingStarted.Eagerly,
-            initialValue = manager.state.value.toUiState(),
+            initialValue = manager.state.value.toState(),
         )
 
     fun onAction(action: KioskAction) {

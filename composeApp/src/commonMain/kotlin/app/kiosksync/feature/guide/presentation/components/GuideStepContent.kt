@@ -3,7 +3,7 @@ package app.kiosksync.feature.guide.presentation.components
 import app.kiosksync.core.AppRole
 import app.kiosksync.core.Strings
 import app.kiosksync.core.ui.components.AppIcon
-import app.kiosksync.feature.guide.presentation.GuideUiState
+import app.kiosksync.feature.guide.presentation.GuideState
 import app.kiosksync.feature.guide.domain.GuideStep
 
 internal data class GuideStepContent(
@@ -12,7 +12,7 @@ internal data class GuideStepContent(
     val icon: AppIcon,
 )
 
-internal fun guideContent(state: GuideUiState): GuideStepContent = when (state.step) {
+internal fun guideContent(state: GuideState): GuideStepContent = when (state.step) {
     GuideStep.EMITTER_PLAYLIST -> GuideStepContent(
         title = Strings.GUIDE_EMITTER_PLAYLIST_TITLE,
         body = Strings.GUIDE_EMITTER_PLAYLIST_BODY,
@@ -74,7 +74,7 @@ internal fun guideContent(state: GuideUiState): GuideStepContent = when (state.s
     )
 }
 
-internal fun guideProgress(state: GuideUiState): Pair<Int, Int>? {
+internal fun guideProgress(state: GuideState): Pair<Int, Int>? {
     val steps = when (state.role) {
         AppRole.EMITTER -> listOf(
             GuideStep.EMITTER_PLAYLIST,

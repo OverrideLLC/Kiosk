@@ -1,7 +1,7 @@
 package app.kiosksync.feature.emitter.presentation.components
 
 import app.kiosksync.feature.emitter.presentation.EmitterAction
-import app.kiosksync.feature.emitter.presentation.EmitterUiState
+import app.kiosksync.feature.emitter.presentation.EmitterState
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -62,7 +62,7 @@ import app.kiosksync.core.ui.theme.Space
 @Composable
 internal fun ScreensPanel(
     onAction: (EmitterAction) -> Unit,
-    state: EmitterUiState,
+    state: EmitterState,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {

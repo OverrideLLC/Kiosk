@@ -6,6 +6,8 @@ sealed interface RoleAction {
     data class SelectRole(val role: AppRole) : RoleAction
     data object ConfirmRole : RoleAction
     data object ResetSelection : RoleAction
+    data object Exit : RoleAction
+    data object OpenGuide : RoleAction
 }
 
 sealed interface RoleEffect {

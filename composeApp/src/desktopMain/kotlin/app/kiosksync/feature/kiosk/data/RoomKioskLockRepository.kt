@@ -2,9 +2,7 @@ package app.kiosksync.feature.kiosk.data
 
 import app.kiosksync.core.KioskLockConfig
 import app.kiosksync.feature.kiosk.domain.KioskLockRepository
-import app.kiosksync.data.local.room.KioskDao
-import app.kiosksync.data.local.room.KioskLockEntity
-import app.kiosksync.data.security.SecretProtector
+import app.kiosksync.core.security.SecretProtector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -13,7 +11,7 @@ import kotlinx.coroutines.withContext
 
 
 internal class RoomKioskLockRepository(
-    private val dao: KioskDao,
+    private val dao: KioskLockDao,
     private val secretProtector: SecretProtector,
 ) : KioskLockRepository {
     override val config: Flow<KioskLockConfig?> = dao.observeKioskLock(KioskLockEntity.SINGLETON_ID)

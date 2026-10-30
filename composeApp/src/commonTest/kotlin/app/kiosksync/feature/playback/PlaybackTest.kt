@@ -7,7 +7,7 @@ import app.kiosksync.core.MAX_DURATION_SEC
 import app.kiosksync.core.MIN_DURATION_SEC
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.domain.PlaylistItem
-import app.kiosksync.feature.playback.presentation.viewmodel.PlaybackStateHolder
+import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceTimeBy
@@ -98,7 +98,7 @@ class PlaybackTest {
         runCurrent()
 
         // It should skip "damaged" and display "healthy"
-        val state = stateHolder.uiState.value
+        val state = stateHolder.state.value
         assertTrue(state.hasItems)
         assertEquals("healthy", state.currentItem?.mediaId)
         assertEquals(dummyBitmap, state.currentBitmap)
@@ -133,14 +133,14 @@ class PlaybackTest {
         stateHolder.start()
         runCurrent()
 
-        val firstBitmap = stateHolder.uiState.value.currentBitmap
+        val firstBitmap = stateHolder.state.value.currentBitmap
         assertEquals(1, storage.loadMediaBitmapCount)
 
         advanceTimeBy(3_000)
         runCurrent()
 
-        assertEquals("second", stateHolder.uiState.value.currentItem?.mediaId)
-        assertSame(firstBitmap, stateHolder.uiState.value.currentBitmap)
+        assertEquals("second", stateHolder.state.value.currentItem?.mediaId)
+        assertSame(firstBitmap, stateHolder.state.value.currentBitmap)
         assertEquals(1, storage.loadMediaBitmapCount)
 
         stateHolder.stop()

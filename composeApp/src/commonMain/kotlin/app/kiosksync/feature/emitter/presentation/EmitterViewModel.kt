@@ -6,6 +6,10 @@ import app.kiosksync.core.Strings
 import app.kiosksync.feature.emitter.domain.EmitterService
 import app.kiosksync.feature.emitter.domain.EmitterServiceDevice
 import app.kiosksync.feature.emitter.domain.EmitterServiceState
+import app.kiosksync.feature.emitter.domain.models.EmitterDeviceUi
+import app.kiosksync.feature.emitter.domain.models.EmitterPendingAction
+import app.kiosksync.feature.emitter.domain.models.KioskPasswordDialogUi
+import app.kiosksync.feature.emitter.domain.models.SecurityDialogUi
 import app.kiosksync.feature.emitter.presentation.coordinators.EmitterDeliveryCoordinator
 import app.kiosksync.feature.emitter.presentation.coordinators.EmitterManualIpCoordinator
 import app.kiosksync.feature.emitter.presentation.coordinators.EmitterPairingCoordinator
@@ -39,24 +43,26 @@ class EmitterViewModel(
     private val scope: CoroutineScope,
     private val kioskLockManager: KioskLockManager,
     private val projectionController: ProjectionService,
+    private val onExit: () -> Unit = {},
+    private val onRoleReset: () -> Unit = {},
     backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
-    private val _uiState = MutableStateFlow(EmitterUiState())
-    val state: StateFlow<EmitterUiState> = _uiState.asStateFlow()
+    private val _state = MutableStateFlow(EmitterState())
+    val state: StateFlow<EmitterState> = _state.asStateFlow()
 
     private val selectedIds = mutableSetOf<String>()
     private val jobs = mutableListOf<Job>()
     private var started = false
 
     private val deliveryCoordinator = EmitterDeliveryCoordinator(
-        uiState = _uiState,
+        uiState = _state,
         service = service,
         emitterId = emitterId,
         scope = scope,
     )
 
     private val securityCoordinator = EmitterSecurityCoordinator(
-        uiState = _uiState,
+        uiState = _state,
         loadConfiguration = { kioskLockConfigurationUseCases.load() },
         scope = scope,
         backgroundDispatcher = backgroundDispatcher,
@@ -76,7 +82,7 @@ class EmitterViewModel(
     )
 
     private val pairingCoordinator = EmitterPairingCoordinator(
-        uiState = _uiState,
+        uiState = _state,
         service = service,
         logger = logger,
         emitterId = emitterId,
@@ -88,7 +94,7 @@ class EmitterViewModel(
         },
         onUnpaired = { deviceId ->
             selectedIds -= deviceId
-            _uiState.update { it.copy(syncByDevice = it.syncByDevice - deviceId) }
+            _state.update { it.copy(syncByDevice = it.syncByDevice - deviceId) }
             rebuild(service.state.value)
         },
         openPairLockDialog = { deviceId ->
@@ -101,122 +107,89 @@ class EmitterViewModel(
     )
 
     private val manualIpCoordinator = EmitterManualIpCoordinator(
-        uiState = _uiState,
+        uiState = _state,
         service = service,
         scope = scope,
     )
 
     fun onAction(action: EmitterAction) {
-        if (action == EmitterAction.DismissPairDialog && _uiState.value.isPairing) return
-        if (action == EmitterAction.DismissManualIpDialog && _uiState.value.isManualIpLoading) return
+        if (action == EmitterAction.DismissPairDialog && _state.value.isPairing) return
+        if (action == EmitterAction.DismissManualIpDialog && _state.value.isManualIpLoading) return
         when (action) {
             EmitterAction.RefreshDevices -> refreshDevices()
-            EmitterAction.OpenManualIp -> _uiState.update {
+            EmitterAction.OpenManualIp -> _state.update {
                 it.copy(showManualIpDialog = true, manualIpInput = "", manualIpError = null)
             }
-            EmitterAction.DismissManualIpDialog -> _uiState.update {
+            EmitterAction.DismissManualIpDialog -> _state.update {
                 it.copy(showManualIpDialog = false, manualIpInput = "", manualIpError = null)
             }
-            is EmitterAction.UpdateManualIp -> _uiState.update {
+            is EmitterAction.UpdateManualIp -> _state.update {
                 it.copy(manualIpInput = action.value, manualIpError = null)
             }
-            EmitterAction.DismissStatusMessage -> _uiState.update {
-                it.copy(statusMessage = null, statusIsError = false)
+            EmitterAction.DismissStatusMessage -> clearStatus()
+            EmitterAction.OpenSettings -> _state.update { it.copy(isSettingsOpen = true) }
+            EmitterAction.DismissSettings -> _state.update { it.copy(isSettingsOpen = false) }
+            EmitterAction.RequestRoleReset -> _state.update { it.copy(isRoleResetConfirmationOpen = true) }
+            EmitterAction.DismissRoleReset -> _state.update { it.copy(isRoleResetConfirmationOpen = false) }
+            EmitterAction.ConfirmRoleReset -> {
+                _state.update { it.copy(isRoleResetConfirmationOpen = false) }
+                onRoleReset()
             }
-            EmitterAction.OpenSettings -> _uiState.update { it.copy(isSettingsOpen = true) }
-            EmitterAction.DismissSettings -> _uiState.update { it.copy(isSettingsOpen = false) }
-            EmitterAction.RequestRoleReset -> _uiState.update { it.copy(isRoleResetConfirmationOpen = true) }
-            EmitterAction.DismissRoleReset -> _uiState.update { it.copy(isRoleResetConfirmationOpen = false) }
-            is EmitterAction.SelectPanel -> _uiState.update { it.copy(selectedPanel = action.panel) }
-            is EmitterAction.SetProjectionActive -> _uiState.update { it.copy(isProjecting = action.active) }
-            is EmitterAction.PlaylistChanged -> _uiState.update { it.copy(playlist = action.playlist) }
-            is EmitterAction.OpenPairDialog -> _uiState.update {
+            EmitterAction.Exit -> onExit()
+            is EmitterAction.SelectPanel -> _state.update { it.copy(selectedPanel = action.panel) }
+            is EmitterAction.SetProjectionActive -> _state.update { it.copy(isProjecting = action.active) }
+            is EmitterAction.PlaylistChanged -> _state.update { it.copy(playlist = action.playlist) }
+            is EmitterAction.OpenPairDialog -> _state.update {
                 it.copy(pairingDevice = action.device, pairingCode = "", pairingError = null)
             }
-            EmitterAction.DismissPairDialog -> _uiState.update {
+            EmitterAction.DismissPairDialog -> _state.update {
                 it.copy(pairingDevice = null, pairingCode = "", pairingError = null)
             }
-            is EmitterAction.UpdatePairingCode -> _uiState.update {
+            is EmitterAction.UpdatePairingCode -> _state.update {
                 it.copy(pairingCode = action.value.filter(Char::isDigit).take(6), pairingError = null)
             }
-            is EmitterAction.RequestUnpair -> _uiState.update { it.copy(unpairDevice = action.device) }
-            EmitterAction.DismissUnpairDialog -> _uiState.update { it.copy(unpairDevice = null) }
-            is EmitterAction.UpdatePasswordDraft -> _uiState.update { state ->
-                state.copy(
-                    passwordDialog = state.passwordDialog?.copy(draft = action.value.take(64), error = null)
-                )
+            is EmitterAction.RequestUnpair -> _state.update { it.copy(unpairDevice = action.device) }
+            EmitterAction.DismissUnpairDialog -> _state.update { it.copy(unpairDevice = null) }
+            is EmitterAction.UpdatePasswordDraft -> updatePassword {
+                it.copy(draft = action.value.take(64), error = null)
             }
-            is EmitterAction.UpdatePasswordConfirmDraft -> _uiState.update { state ->
-                state.copy(
-                    passwordDialog = state.passwordDialog?.copy(
-                        confirmDraft = action.value.take(64),
-                        error = null,
-                    )
-                )
+            is EmitterAction.UpdatePasswordConfirmDraft -> updatePassword {
+                it.copy(confirmDraft = action.value.take(64), error = null)
             }
-            EmitterAction.DismissPasswordDialog -> _uiState.update { it.copy(passwordDialog = null) }
-            is EmitterAction.AppendUnlockKey -> _uiState.update { state ->
-                state.copy(
-                    securityDialog = state.securityDialog?.let { dialog ->
-                        if (dialog.sequence.size >= MAX_UNLOCK_SEQUENCE_LENGTH) dialog
-                        else dialog.copy(sequence = dialog.sequence + action.key, sequenceError = null)
-                    }
-                )
+            EmitterAction.DismissPasswordDialog -> _state.update { it.copy(passwordDialog = null) }
+            is EmitterAction.AppendUnlockKey -> updateSecurity { dialog ->
+                if (dialog.sequence.size >= MAX_UNLOCK_SEQUENCE_LENGTH) dialog
+                else dialog.copy(sequence = dialog.sequence + action.key, sequenceError = null)
             }
-            EmitterAction.RemoveLastUnlockKey -> _uiState.update { state ->
-                state.copy(
-                    securityDialog = state.securityDialog?.let { dialog ->
-                        if (dialog.sequence.isEmpty()) dialog
-                        else dialog.copy(sequence = dialog.sequence.dropLast(1), sequenceError = null)
-                    }
-                )
+            EmitterAction.RemoveLastUnlockKey -> updateSecurity { dialog ->
+                if (dialog.sequence.isEmpty()) dialog
+                else dialog.copy(sequence = dialog.sequence.dropLast(1), sequenceError = null)
             }
-            EmitterAction.ResetUnlockSequence -> _uiState.update { state ->
-                state.copy(
-                    securityDialog = state.securityDialog?.copy(
-                        sequence = DEFAULT_UNLOCK_SEQUENCE,
-                        sequenceError = null,
-                    )
-                )
+            EmitterAction.ResetUnlockSequence -> updateSecurity {
+                it.copy(sequence = DEFAULT_UNLOCK_SEQUENCE, sequenceError = null)
             }
             is EmitterAction.ToggleSelection -> toggleSelection(action.deviceId)
             is EmitterAction.RequestUpdate -> service.requestUpdate(action.deviceId, emitterId)
             EmitterAction.OpenSecurityDialog -> securityCoordinator.openSecurityDialog()
-            EmitterAction.DismissSecurityDialog -> _uiState.update { it.copy(securityDialog = null) }
-            EmitterAction.ToggleRecoveryEditor -> _uiState.update { state ->
-                state.copy(
-                    securityDialog = state.securityDialog?.let { dialog ->
-                        dialog.copy(showRecoveryEditor = !dialog.showRecoveryEditor, recoveryError = null)
-                    }
-                )
+            EmitterAction.DismissSecurityDialog -> _state.update { it.copy(securityDialog = null) }
+            EmitterAction.ToggleRecoveryEditor -> updateSecurity { dialog ->
+                dialog.copy(showRecoveryEditor = !dialog.showRecoveryEditor, recoveryError = null)
             }
-            is EmitterAction.SetRecoveryAccepted -> _uiState.update { state ->
-                state.copy(
-                    securityDialog = state.securityDialog?.copy(
-                        recoveryAccepted = action.accepted,
-                        recoveryError = null,
-                    )
-                )
+            is EmitterAction.SetRecoveryAccepted -> updateSecurity {
+                it.copy(recoveryAccepted = action.accepted, recoveryError = null)
             }
-            is EmitterAction.UpdateRecoveryDraft -> _uiState.update { state ->
-                state.copy(
-                    securityDialog = state.securityDialog?.copy(
-                        recoveryDraft = action.value.take(MAX_RECOVERY_PHRASE_LENGTH),
-                        recoveryError = null,
-                    )
-                )
+            is EmitterAction.UpdateRecoveryDraft -> updateSecurity {
+                it.copy(recoveryDraft = action.value.take(MAX_RECOVERY_PHRASE_LENGTH), recoveryError = null)
             }
-            is EmitterAction.UpdateRecoveryConfirmDraft -> _uiState.update { state ->
-                state.copy(
-                    securityDialog = state.securityDialog?.copy(
-                        recoveryConfirmDraft = action.value.take(MAX_RECOVERY_PHRASE_LENGTH),
-                        recoveryError = null,
-                    )
+            is EmitterAction.UpdateRecoveryConfirmDraft -> updateSecurity {
+                it.copy(
+                    recoveryConfirmDraft = action.value.take(MAX_RECOVERY_PHRASE_LENGTH),
+                    recoveryError = null,
                 )
             }
 
-            EmitterAction.SendToSelected -> sendToSelected(_uiState.value.playlist)
-            EmitterAction.RequestProjection -> requestProjection(_uiState.value.playlist)
+            EmitterAction.SendToSelected -> sendToSelected(_state.value.playlist)
+            EmitterAction.RequestProjection -> requestProjection(_state.value.playlist)
             EmitterAction.SynchronizePlayback -> deliveryCoordinator.synchronizePlayback()
             EmitterAction.ConfirmPassword -> securityCoordinator.confirmPassword()
             EmitterAction.SaveUnlockSequence -> securityCoordinator.saveUnlockSequence()
@@ -241,14 +214,7 @@ class EmitterViewModel(
             }
         }
         jobs += scope.launch {
-            service.loadKioskLock().fold(
-                onSuccess = { lock -> _uiState.update { it.copy(hasKioskPassword = lock != null) } },
-                onFailure = {
-                    _uiState.update {
-                        it.copy(statusMessage = Strings.SECURITY_STORAGE_ERROR, statusIsError = true)
-                    }
-                },
-            )
+            loadLock { lock -> _state.update { it.copy(hasKioskPassword = lock != null) } }
         }
     }
 
@@ -260,31 +226,31 @@ class EmitterViewModel(
     }
 
     private fun refreshDevices() {
-        if (_uiState.value.isRefreshing) return
-        _uiState.update { it.copy(isRefreshing = true) }
+        if (_state.value.isRefreshing) return
+        _state.update { it.copy(isRefreshing = true) }
         service.refresh()
         scope.launch {
             delay(1_500)
-            _uiState.update { it.copy(isRefreshing = false) }
+            _state.update { it.copy(isRefreshing = false) }
         }
     }
 
     private fun toggleSelection(deviceId: String) {
-        val device = _uiState.value.devices.firstOrNull { it.deviceId == deviceId } ?: return
+        val device = _state.value.devices.firstOrNull { it.deviceId == deviceId } ?: return
         if (!device.isPairedToThisEmitter) return
         if (!selectedIds.add(deviceId)) selectedIds.remove(deviceId)
         rebuild(service.state.value)
     }
 
     private fun sendToSelected(playlist: Playlist) {
-        val state = _uiState.value
+        val state = _state.value
         if (state.isSending || state.isSyncing) return
         if (playlist.items.isEmpty()) {
-            _uiState.update { it.copy(statusMessage = Strings.SEND_EMPTY_PLAYLIST, statusIsError = true) }
+            showStatus(Strings.SEND_EMPTY_PLAYLIST)
             return
         }
         if (state.devices.none { it.isSelected && it.isPairedToThisEmitter }) {
-            _uiState.update { it.copy(statusMessage = Strings.SEND_NO_SCREENS, statusIsError = true) }
+            showStatus(Strings.SEND_NO_SCREENS)
             return
         }
 
@@ -294,9 +260,9 @@ class EmitterViewModel(
     }
 
     private fun requestProjection(playlist: Playlist) {
-        if (_uiState.value.isSending || _uiState.value.isSyncing || projectionController.isProjecting) return
+        if (_state.value.isSending || _state.value.isSyncing || projectionController.isProjecting) return
         if (playlist.items.isEmpty()) {
-            _uiState.update { it.copy(statusMessage = Strings.PROJECT_NO_PLAYLIST, statusIsError = true) }
+            showStatus(Strings.PROJECT_NO_PLAYLIST)
             return
         }
 
@@ -311,16 +277,18 @@ class EmitterViewModel(
         onLockAvailable: (KioskLockConfig) -> Unit,
     ) {
         scope.launch {
-            service.loadKioskLock().fold(
-                onSuccess = { lock ->
-                    if (lock == null) securityCoordinator.openPasswordDialog(action, playlist)
-                    else onLockAvailable(lock)
-                },
-                onFailure = {
-                    _uiState.update { it.copy(statusMessage = Strings.SECURITY_STORAGE_ERROR, statusIsError = true) }
-                },
-            )
+            loadLock { lock ->
+                if (lock == null) securityCoordinator.openPasswordDialog(action, playlist)
+                else onLockAvailable(lock)
+            }
         }
+    }
+
+    private suspend fun loadLock(onSuccess: (KioskLockConfig?) -> Unit) {
+        service.loadKioskLock().fold(
+            onSuccess = onSuccess,
+            onFailure = { showStatus(Strings.SECURITY_STORAGE_ERROR) },
+        )
     }
 
     private fun startProjection(playlist: Playlist, lock: KioskLockConfig) {
@@ -332,13 +300,33 @@ class EmitterViewModel(
 
     private fun rebuild(serviceState: EmitterServiceState) {
         val devices = serviceState.devices.map { it.toUiDevice() }.sortedBy { it.deviceName.lowercase() }
-        _uiState.update {
+        _state.update {
             it.copy(
                 devices = devices,
                 isSearching = serviceState.isSearching,
                 updateByDevice = serviceState.updateByDevice,
             )
         }
+    }
+
+    private fun updatePassword(transform: (KioskPasswordDialogUi) -> KioskPasswordDialogUi) {
+        _state.update { state ->
+            state.copy(passwordDialog = state.passwordDialog?.let(transform))
+        }
+    }
+
+    private fun updateSecurity(transform: (SecurityDialogUi) -> SecurityDialogUi) {
+        _state.update { state ->
+            state.copy(securityDialog = state.securityDialog?.let(transform))
+        }
+    }
+
+    private fun showStatus(message: String) {
+        _state.update { it.copy(statusMessage = message, statusIsError = true) }
+    }
+
+    private fun clearStatus() {
+        _state.update { it.copy(statusMessage = null, statusIsError = false) }
     }
 
     private fun EmitterServiceDevice.toUiDevice() = EmitterDeviceUi(

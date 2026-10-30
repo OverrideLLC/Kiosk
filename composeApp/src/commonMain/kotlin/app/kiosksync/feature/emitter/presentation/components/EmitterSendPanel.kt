@@ -16,7 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import app.kiosksync.feature.emitter.presentation.EmitterAction
-import app.kiosksync.feature.emitter.presentation.EmitterUiState
+import app.kiosksync.feature.emitter.presentation.EmitterState
 import app.kiosksync.core.Strings
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppButtonSize
@@ -28,7 +28,7 @@ import app.kiosksync.core.ui.theme.Space
 
 @Composable
 internal fun SendPanel(
-    state: EmitterUiState,
+    state: EmitterState,
     onAction: (EmitterAction) -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme

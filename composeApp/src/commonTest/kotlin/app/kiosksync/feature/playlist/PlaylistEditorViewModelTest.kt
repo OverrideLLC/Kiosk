@@ -8,7 +8,7 @@ import app.kiosksync.feature.playlist.domain.PlaylistLibrary
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorAction
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorEffect
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorViewModel
-import app.kiosksync.feature.playlist.presentation.PlaylistNameDialogMode
+import app.kiosksync.feature.playlist.domain.models.PlaylistNameDialogMode
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

@@ -20,39 +20,35 @@ import app.kiosksync.core.AppTheme
 import app.kiosksync.core.DEFAULT_PORT
 import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.feature.emitter.presentation.EmitterAction
-import app.kiosksync.feature.emitter.presentation.EmitterPanel
-import app.kiosksync.feature.emitter.presentation.EmitterScreen
-import app.kiosksync.feature.emitter.presentation.EmitterScreenAction
+import app.kiosksync.feature.emitter.domain.models.EmitterPanel
+import app.kiosksync.feature.emitter.presentation.EmitterRoot
 import app.kiosksync.feature.emitter.presentation.components.EmitterDialogs
 import app.kiosksync.feature.emitter.presentation.components.SettingsDialog
 import app.kiosksync.feature.guide.presentation.GuideAction
 import app.kiosksync.feature.guide.presentation.GuideEffect
-import app.kiosksync.feature.guide.presentation.GuideScreen
+import app.kiosksync.feature.guide.presentation.GuideRoot
 import app.kiosksync.feature.guide.presentation.GuideViewModel
 import app.kiosksync.feature.guide.domain.GuideStep
 import app.kiosksync.feature.emitter.presentation.EmitterViewModel
-import app.kiosksync.feature.emitter.presentation.SyncUiStatus
-import app.kiosksync.feature.kiosk.presentation.KioskUnlockOverlay
+import app.kiosksync.feature.emitter.domain.models.SyncUiStatus
+import app.kiosksync.feature.kiosk.presentation.KioskRoot
 import app.kiosksync.feature.kiosk.presentation.KioskAction
 import app.kiosksync.feature.kiosk.presentation.KioskViewModel
 import app.kiosksync.feature.pairing.presentation.PairingAction
 import app.kiosksync.feature.pairing.presentation.PairingEffect
 import app.kiosksync.feature.pairing.presentation.PairingViewModel
-import app.kiosksync.feature.playback.presentation.viewmodel.PlaybackStateHolder
+import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorAction
-import app.kiosksync.feature.playlist.presentation.PlaylistEditorDialogs
+import app.kiosksync.feature.playlist.presentation.components.PlaylistEditorDialogs
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorEffect
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorViewModel
-import app.kiosksync.feature.playlist.presentation.PlaylistPanel
 import app.kiosksync.feature.role.domain.AppConfig
 import app.kiosksync.feature.role.presentation.RoleAction
 import app.kiosksync.feature.role.presentation.RoleEffect
-import app.kiosksync.feature.role.presentation.RoleSelectionScreen
+import app.kiosksync.feature.role.presentation.RoleRoot
 import app.kiosksync.feature.role.presentation.RoleViewModel
-import app.kiosksync.feature.update.presentation.actions.ReceiverUpdateAction
-import app.kiosksync.feature.update.presentation.actions.ReceiverUpdateEffect
-import app.kiosksync.feature.update.presentation.components.ReceiverUpdateOverlay
-import app.kiosksync.feature.update.presentation.viewmodel.ReceiverUpdateViewModel
+import app.kiosksync.feature.update.presentation.ReceiverUpdateRoot
+import app.kiosksync.feature.update.presentation.ReceiverUpdateViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -71,6 +67,7 @@ fun App(
     val initialDeviceId = remember { existingConfig?.deviceId ?: container.newDeviceId() }
     val effectivePort = container.args.port ?: existingConfig?.port ?: DEFAULT_PORT
     val pairingManager = container.pairingManager
+    val guideViewModel = remember { GuideViewModel(container.logger) }
     val pairingViewModel = remember(container, coroutineScope) {
         PairingViewModel(
             pairingManager = pairingManager,
@@ -81,9 +78,10 @@ fun App(
             serviceDispatcher = container.serviceDispatcher,
             deviceName = container.deviceName,
             localIpAddress = container.localIpAddress,
+            onExit = onExitRequested,
+            onOpenGuide = { guideViewModel.onAction(GuideAction.Start(AppRole.RECEIVER)) },
         )
     }
-    val guideViewModel = remember { GuideViewModel(container.logger) }
     val guideState by guideViewModel.state.collectAsState()
 
     // Determine initial screen based on CLI args and saved config
@@ -166,11 +164,11 @@ fun App(
     val roleViewModel = remember {
         RoleViewModel(
             logger = container.logger,
-            initialRole = container.args.role ?: existingConfig?.role
+            initialRole = container.args.role ?: existingConfig?.role,
+            onExit = onExitRequested,
+            onOpenGuide = { guideViewModel.onAction(GuideAction.Start()) },
         )
     }
-    val roleUiState by roleViewModel.state.collectAsState()
-
     LaunchedEffect(roleViewModel) {
         roleViewModel.effects.collect { effect ->
             when (effect) {
@@ -241,11 +239,12 @@ fun App(
 
     val pairingState by pairingViewModel.state.collectAsState()
     val lockState by kioskViewModel.state.collectAsState()
-    val receiverPlaybackState by playbackStateHolder.uiState.collectAsState()
+    val receiverPlaybackState by playbackStateHolder.state.collectAsState()
     val receiverUpdateState by receiverUpdateViewModel.state.collectAsState()
     var showReceiverOptions by remember { mutableStateOf(false) }
     var showUnpairConfirm by remember { mutableStateOf(false) }
     var showChangeRoleConfirm by remember { mutableStateOf(false) }
+    pairingViewModel.updateHost { showChangeRoleConfirm = true }
     var isResettingRole by remember { mutableStateOf(false) }
     var roleResetFailed by remember { mutableStateOf(false) }
     var wasLocked by remember { mutableStateOf(lockState.isLocked) }
@@ -276,20 +275,7 @@ fun App(
     LaunchedEffect(pairingViewModel) {
         pairingViewModel.effects.collect { effect ->
             when (effect) {
-                PairingEffect.OpenGuide -> guideViewModel.onAction(GuideAction.Start(AppRole.RECEIVER))
-                PairingEffect.ExitRequested -> onExitRequested()
-                PairingEffect.ChangeRoleRequested -> showChangeRoleConfirm = true
-                PairingEffect.Unpaired -> {
-                    showUnpairConfirm = false
-                }
-            }
-        }
-    }
-
-    LaunchedEffect(receiverUpdateViewModel) {
-        receiverUpdateViewModel.effects.collect { effect ->
-            when (effect) {
-                ReceiverUpdateEffect.ExitRequested -> onExitRequested()
+                PairingEffect.Unpaired -> showUnpairConfirm = false
             }
         }
     }
@@ -312,6 +298,14 @@ fun App(
         showReceiverOptions = false
         relockReceiverIfNeeded()
     }
+
+    guideViewModel.updateHost(
+        onChooseRole = { role ->
+            roleViewModel.onAction(RoleAction.SelectRole(role))
+            roleViewModel.onAction(RoleAction.ConfirmRole)
+        },
+        onStopped = { relockReceiverIfNeeded() },
+    )
 
     fun resetRole() {
         if (isResettingRole) return
@@ -441,12 +435,7 @@ fun App(
             Box(modifier = Modifier.fillMaxSize()) {
                 when (val screen = currentScreen) {
                     is Screen.RoleSelection -> {
-                        RoleSelectionScreen(
-                            state = roleUiState,
-                            onAction = roleViewModel::onAction,
-                            onExitRequested = onExitRequested,
-                            onOpenGuide = { guideViewModel.onAction(GuideAction.Start()) }
-                        )
+                        RoleRoot(viewModel = roleViewModel)
                     }
 
                     is Screen.EmitterHome -> {
@@ -465,15 +454,14 @@ fun App(
 
                     is Screen.ReceiverHome -> {
                         ReceiverHomeScreen(
-                            pairingState = pairingState,
-                            playbackState = receiverPlaybackState,
+                            pairingViewModel = pairingViewModel,
+                            playbackStateHolder = playbackStateHolder,
                             hasKioskPassword = lockState.hasPassword,
-                            onPairingAction = pairingViewModel::onAction,
                         )
                     }
                 }
 
-                KioskUnlockOverlay(lockState)
+                KioskRoot(viewModel = kioskViewModel)
 
                 val guideMatchesScreen = when (guideState.step) {
                     GuideStep.ROLE -> currentScreen is Screen.RoleSelection
@@ -489,32 +477,11 @@ fun App(
                     !receiverUpdateState.isVisible &&
                     guideMatchesScreen
                 ) {
-                    GuideScreen(
-                        state = guideState,
-                        onChooseRole = { role ->
-                            roleViewModel.onAction(RoleAction.SelectRole(role))
-                            roleViewModel.onAction(RoleAction.ConfirmRole)
-                        },
-                        onAction = { action ->
-                            guideViewModel.onAction(action)
-                            if (action == GuideAction.Stop) relockReceiverIfNeeded()
-                        },
-                    )
+                    GuideRoot(viewModel = guideViewModel)
                 }
 
-                if (currentScreen is Screen.ReceiverHome && receiverUpdateState.isVisible) {
-                    ReceiverUpdateOverlay(
-                        state = receiverUpdateState,
-                        onUpdate = {
-                            receiverUpdateViewModel.onAction(ReceiverUpdateAction.Accept)
-                        },
-                        onDecline = {
-                            receiverUpdateViewModel.onAction(ReceiverUpdateAction.Decline)
-                        },
-                        onDismissError = {
-                            receiverUpdateViewModel.onAction(ReceiverUpdateAction.DismissError)
-                        },
-                    )
+                if (currentScreen is Screen.ReceiverHome) {
+                    ReceiverUpdateRoot(viewModel = receiverUpdateViewModel)
                 }
             }
         }
@@ -590,6 +557,8 @@ private fun EmitterWorkspace(
             scope = scope,
             kioskLockManager = container.kioskLockManager,
             projectionController = container.projectionController,
+            onExit = onExitRequested,
+            onRoleReset = onRoleReset,
             backgroundDispatcher = container.backgroundDispatcher,
         )
     }
@@ -695,29 +664,11 @@ private fun EmitterWorkspace(
         }
     }
 
-    val dispatch: (EmitterScreenAction) -> Unit = { action ->
-        when (action) {
-            is EmitterScreenAction.Emitter -> viewModel.onAction(action.action)
-            EmitterScreenAction.ExitRequested -> onExitRequested()
-            EmitterScreenAction.RoleResetConfirmed -> {
-                viewModel.onAction(EmitterAction.DismissRoleReset)
-                onRoleReset()
-            }
-        }
-    }
-
-    EmitterScreen(
-        state = emitterState,
-        onAction = dispatch,
-        playlistPanel = { modifier ->
-            PlaylistPanel(
-                state = playlistEditorState,
-                onAction = playlistViewModel::onAction,
-                modifier = modifier,
-            )
-        },
+    EmitterRoot(
+        viewModel = viewModel,
+        playlistViewModel = playlistViewModel,
     )
-    EmitterDialogs(state = emitterState, onAction = dispatch)
+    EmitterDialogs(state = emitterState, onAction = viewModel::onAction)
     PlaylistEditorDialogs(state = playlistEditorState, onAction = playlistViewModel::onAction)
     if (emitterState.isSettingsOpen) {
         SettingsDialog(

@@ -11,8 +11,8 @@ import app.kiosksync.NoOpLogger
 import app.kiosksync.core.AppTheme
 import app.kiosksync.core.ui.theme.KioskScreenColors
 import app.kiosksync.core.ui.theme.KioskTheme
-import app.kiosksync.feature.kiosk.presentation.KioskUiState
-import app.kiosksync.feature.kiosk.presentation.KioskUnlockOverlay
+import app.kiosksync.feature.kiosk.presentation.KioskState
+import app.kiosksync.feature.kiosk.presentation.KioskScreen
 import app.kiosksync.feature.pairing.presentation.PairingCodeScreen
 import app.kiosksync.feature.pairing.presentation.PairingUiState
 import app.kiosksync.feature.pairing.domain.PairingManager
@@ -57,8 +57,8 @@ class ReceiverRenderTest {
                     .fillMaxSize()
                     .background(KioskScreenColors.background),
             ) {
-                KioskUnlockOverlay(
-                    KioskUiState(
+                KioskScreen(
+                    KioskState(
                         isLocked = true,
                         showUnlockHint = true,
                         typedLength = 4,

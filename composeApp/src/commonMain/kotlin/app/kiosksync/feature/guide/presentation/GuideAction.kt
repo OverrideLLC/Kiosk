@@ -6,6 +6,7 @@ sealed interface GuideAction {
     data class Start(val role: AppRole? = null) : GuideAction
     data object Stop : GuideAction
     data class RoleConfirmed(val role: AppRole) : GuideAction
+    data class ChooseRole(val role: AppRole) : GuideAction
     data class ReportEmitterProgress(
         val playlistItems: Int,
         val pairedScreens: Int,

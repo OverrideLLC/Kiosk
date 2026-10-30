@@ -30,7 +30,7 @@ class GuideRenderTest {
             output = output,
             name = "guide-emitter-send-dark",
             theme = AppTheme.DARK,
-            state = GuideUiState(
+            state = GuideState(
                 isActive = true,
                 role = AppRole.EMITTER,
                 step = GuideStep.EMITTER_SEND,
@@ -45,7 +45,7 @@ class GuideRenderTest {
             output = output,
             name = "guide-receiver-code-light",
             theme = AppTheme.LIGHT,
-            state = GuideUiState(
+            state = GuideState(
                 isActive = true,
                 role = AppRole.RECEIVER,
                 step = GuideStep.RECEIVER_CODE,
@@ -56,7 +56,7 @@ class GuideRenderTest {
             output = output,
             name = "guide-emitter-done-dark",
             theme = AppTheme.DARK,
-            state = GuideUiState(
+            state = GuideState(
                 isActive = true,
                 role = AppRole.EMITTER,
                 step = GuideStep.EMITTER_DONE,
@@ -73,7 +73,7 @@ class GuideRenderTest {
         output: File,
         name: String,
         theme: AppTheme,
-        state: GuideUiState,
+        state: GuideState,
     ) {
         val scene = ImageComposeScene(
             width = 1280,
@@ -88,7 +88,6 @@ class GuideRenderTest {
                 ) {
                     GuideScreen(
                         state = state,
-                        onChooseRole = {},
                         onAction = {},
                     )
                 }
