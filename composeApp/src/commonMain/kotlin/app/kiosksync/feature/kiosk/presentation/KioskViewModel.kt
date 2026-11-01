@@ -1,5 +1,7 @@
 package app.kiosksync.feature.kiosk.presentation
 
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -10,8 +12,9 @@ import kotlinx.coroutines.flow.stateIn
 /** Presentation boundary for kiosk actions; the domain manager owns key handling and timers. */
 class KioskViewModel(
     private val manager: KioskLockManager,
-    scope: CoroutineScope,
-) {
+    parentScope: CoroutineScope? = null,
+) : ViewModel() {
+    private val scope = parentScope ?: viewModelScope
     val state: StateFlow<KioskState> = manager.state
         .map { it.toState() }
         .stateIn(

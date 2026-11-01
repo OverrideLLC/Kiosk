@@ -43,7 +43,7 @@ class PlaylistEditorViewModelTest {
                 playlistRepository = storage,
                 mediaRepository = storage,
                 logger = NoOpLogger(),
-                scope = scope,
+                parentScope = scope,
                 newPlaylistId = { "new" },
                 ioDispatcher = Dispatchers.Unconfined,
             )
@@ -82,7 +82,7 @@ class PlaylistEditorViewModelTest {
                 playlistRepository = storage,
                 mediaRepository = storage,
                 logger = NoOpLogger(),
-                scope = scope,
+                parentScope = scope,
                 newPlaylistId = { "new" },
                 ioDispatcher = Dispatchers.Unconfined,
             )
@@ -105,7 +105,7 @@ class PlaylistEditorViewModelTest {
                 playlistRepository = storage,
                 mediaRepository = storage,
                 logger = NoOpLogger(),
-                scope = scope,
+                parentScope = scope,
                 newPlaylistId = { "new" },
                 ioDispatcher = Dispatchers.Unconfined,
             )

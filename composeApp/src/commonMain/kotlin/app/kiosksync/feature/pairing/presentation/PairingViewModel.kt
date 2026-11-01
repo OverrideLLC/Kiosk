@@ -1,5 +1,7 @@
 package app.kiosksync.feature.pairing.presentation
 
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import app.kiosksync.core.common.app.AppLogger
 import app.kiosksync.core.ui.Strings
 import app.kiosksync.feature.pairing.domain.DeviceDiscovery
@@ -28,14 +30,15 @@ class PairingViewModel(
     private val receiverServer: ReceiverServer,
     private val discovery: DeviceDiscovery,
     private val logger: AppLogger,
-    private val scope: CoroutineScope,
+    parentScope: CoroutineScope? = null,
     private val serviceDispatcher: CoroutineDispatcher,
     private val deviceName: String,
     localIpAddress: String?,
     private val onExit: () -> Unit = {},
     private val onOpenGuide: () -> Unit = {},
     onChangeRole: () -> Unit = {},
-) {
+) : ViewModel() {
+    private val scope = parentScope ?: viewModelScope
     private var changeRole: () -> Unit = onChangeRole
 
     /** Refreshes the role-change callback once the host dialog state exists. */

@@ -12,13 +12,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import app.kiosksync.app.di.AppSession
 import app.kiosksync.app.di.DeviceIdFactory
-import app.kiosksync.app.di.rememberInjected
-import app.kiosksync.app.navigation.AppDestinationContext
 import app.kiosksync.app.navigation.AppNavHost
-import app.kiosksync.app.navigation.AppRoute
-import app.kiosksync.app.navigation.currentRoute
-import app.kiosksync.app.navigation.rememberAppBackStack
-import app.kiosksync.app.navigation.startupRoute
+import app.kiosksync.app.navigation.role.RoleNavigator
+import app.kiosksync.app.navigation.routes.AppRoute
+import app.kiosksync.app.navigation.session.AppCommands
+import app.kiosksync.app.navigation.session.SessionNavigator
+import app.kiosksync.app.navigation.session.rememberSessionBackStack
+import app.kiosksync.app.navigation.session.sessionViewModel
 import app.kiosksync.app.session.AppGuideOverlay
 import app.kiosksync.app.session.BindGuide
 import app.kiosksync.app.session.BindKioskPolicy
@@ -30,6 +30,7 @@ import app.kiosksync.app.session.ReceiverDialogs
 import app.kiosksync.app.session.rememberReceiverPlayback
 import app.kiosksync.app.session.rememberRoleSession
 import app.kiosksync.app.shell.AppPreferences
+import app.kiosksync.app.shell.AppPreferencesRef
 import app.kiosksync.app.shell.PersistForcedRole
 import app.kiosksync.app.shell.startupConfig
 import app.kiosksync.core.common.app.AppLogger
@@ -41,12 +42,10 @@ import app.kiosksync.feature.guide.presentation.GuideViewModel
 import app.kiosksync.feature.kiosk.presentation.KioskRoot
 import app.kiosksync.feature.kiosk.presentation.KioskViewModel
 import app.kiosksync.feature.pairing.presentation.PairingViewModel
-import app.kiosksync.feature.pairing.presentation.PairingViewModelHost
 import app.kiosksync.feature.role.domain.AppConfigStore
 import app.kiosksync.feature.update.presentation.ReceiverUpdateRoot
 import app.kiosksync.feature.update.presentation.ReceiverUpdateViewModel
 import org.koin.compose.koinInject
-import org.koin.core.parameter.parametersOf
 
 @Composable
 fun App(
@@ -64,11 +63,14 @@ fun App(
     val existingConfig = session.initialConfig
     val deviceId = remember { existingConfig?.deviceId ?: deviceIds.create() }
     val port = session.args.port ?: existingConfig?.port ?: DEFAULT_PORT
+    session.publishDeviceId(deviceId)
     val initialConfig = remember { startupConfig(session, deviceId, port) }
-    val backStack = rememberAppBackStack(startupRoute(initialConfig?.role))
-    val route = currentRoute(backStack)
-    val destination = koinInject<AppDestinationContext>()
-    destination.backStack = backStack
+    val roleNavigator = koinInject<RoleNavigator>()
+    val sessionNavigator = koinInject<SessionNavigator>()
+    val backStack = rememberSessionBackStack(roleNavigator.start(initialConfig?.role))
+    sessionNavigator.attach(backStack)
+    val route = sessionNavigator.current
+    val commands = koinInject<AppCommands>()
     val preferences = remember {
         AppPreferences(
             initial = initialConfig,
@@ -77,17 +79,13 @@ fun App(
             scope = scope,
         )
     }
+    koinInject<AppPreferencesRef>().value = preferences
     val dialogs = remember { ReceiverDialogs() }
-    val guideViewModel = rememberInjected<GuideViewModel>()
-    val pairingViewModel = rememberInjected<PairingViewModel>(scope) {
-        parametersOf(
-            PairingViewModelHost(
-                scope = scope,
-                onExit = onExitRequested,
-                onOpenGuide = { guideViewModel.onAction(GuideAction.Start(AppRole.RECEIVER)) },
-            ),
-        )
-    }
+    val guideViewModel = sessionViewModel<GuideViewModel>()
+    val pairingViewModel = sessionViewModel<PairingViewModel>()
+    commands.onExit = onExitRequested
+    commands.onOpenGuide = { guideViewModel.onAction(GuideAction.Start()) }
+    commands.onOpenReceiverGuide = { guideViewModel.onAction(GuideAction.Start(AppRole.RECEIVER)) }
     val role = rememberRoleSession(
         scope = scope,
         guideViewModel = guideViewModel,
@@ -96,10 +94,10 @@ fun App(
         dialogs = dialogs,
         deviceId = deviceId,
         port = port,
-        onExitRequested = onExitRequested,
-        onRoleConfirmed = { destination.replace(startupRoute(it.role)) },
+        onRoleConfirmed = { roleNavigator.confirm(it.role) },
     )
-    val playback = rememberReceiverPlayback(scope, route)
+    commands.onRoleReset = { role.reset(sessionNavigator.current) { roleNavigator.show() } }
+    val playback = rememberReceiverPlayback(route)
     val guideState by guideViewModel.state.collectAsState()
     val pairingState by pairingViewModel.state.collectAsState()
     val lockState by kioskViewModel.state.collectAsState()
@@ -124,19 +122,12 @@ fun App(
     BindGuide(
         guideViewModel = guideViewModel,
         roleViewModel = role.viewModel,
-        route = { currentRoute(backStack) },
+        route = { sessionNavigator.current },
         pairing = { pairingState },
         lock = { lockState },
         kioskViewModel = kioskViewModel,
     )
     BindKioskPolicy(route, pairingState, lockState, kioskViewModel)
-    destination.role = role
-    destination.preferences = preferences
-    destination.guideViewModel = guideViewModel
-    destination.pairingViewModel = pairingViewModel
-    destination.playback = playback
-    destination.hasKioskPassword = lockState.hasPassword
-    destination.onExitRequested = onExitRequested
 
     KioskTheme(theme = preferences.theme, reduceMotion = preferences.reduceMotion) {
         Box(
@@ -145,7 +136,7 @@ fun App(
                 .background(MaterialTheme.colorScheme.surface),
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                AppNavHost(backStack = backStack)
+                AppNavHost()
                 KioskRoot(viewModel = kioskViewModel)
                 AppGuideOverlay(
                     guideViewModel = guideViewModel,
@@ -170,7 +161,7 @@ fun App(
             kioskViewModel = kioskViewModel,
             guideViewModel = guideViewModel,
             onExitRequested = onExitRequested,
-            onResetRole = destination::resetRole,
+            onResetRole = { commands.onRoleReset() },
         )
     }
 }

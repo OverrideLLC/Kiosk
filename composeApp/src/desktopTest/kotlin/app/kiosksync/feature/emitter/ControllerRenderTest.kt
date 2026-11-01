@@ -122,7 +122,7 @@ class ControllerRenderTest {
                 logger = NoOpLogger(),
                 emitterId = "tx-1",
                 emitterName = "Caja principal",
-                scope = scope,
+                parentScope = scope,
                 kioskLockManager = lockManager,
                 projectionController = ProjectionController(),
                 backgroundDispatcher = Dispatchers.Unconfined,
@@ -135,7 +135,7 @@ class ControllerRenderTest {
                 playlistRepository = storage,
                 mediaRepository = storage,
                 logger = NoOpLogger(),
-                scope = scope,
+                parentScope = scope,
                 newPlaylistId = { "new" },
             )
             render(output, "controller-dark", AppTheme.DARK, 1280, 800) {

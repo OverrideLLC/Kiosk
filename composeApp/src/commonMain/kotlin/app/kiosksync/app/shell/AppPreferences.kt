@@ -60,6 +60,11 @@ internal class AppPreferences(
     }
 }
 
+/** Preferences created with the window and read by destinations. */
+internal class AppPreferencesRef {
+    var value: AppPreferences? = null
+}
+
 @Composable
 internal fun PersistForcedRole(config: AppConfig?) {
     val session = koinInject<AppSession>()

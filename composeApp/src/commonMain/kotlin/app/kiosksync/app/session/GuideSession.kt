@@ -2,7 +2,7 @@ package app.kiosksync.app.session
 
 import androidx.compose.runtime.Composable
 import app.kiosksync.app.di.AppSession
-import app.kiosksync.app.navigation.AppRoute
+import app.kiosksync.app.navigation.routes.AppRoute
 import androidx.compose.runtime.LaunchedEffect
 import app.kiosksync.core.common.app.AppRole
 import app.kiosksync.feature.guide.domain.GuideStep

@@ -77,7 +77,7 @@ class ScreenRenderTest {
                 playlistRepository = storage,
                 mediaRepository = storage,
                 logger = NoOpLogger(),
-                scope = scope,
+                parentScope = scope,
                 backgroundDispatcher = Dispatchers.Unconfined,
             )
             holder.start()

@@ -18,12 +18,18 @@ class AppSession(
         private set
     var localIpAddress: String? = null
         private set
+    var deviceId: String? = null
+        private set
 
     private val _activeRole = MutableStateFlow<AppRole?>(null)
     val activeRole: StateFlow<AppRole?> = _activeRole.asStateFlow()
 
     fun updateActiveRole(role: AppRole?) {
         _activeRole.value = role
+    }
+
+    fun publishDeviceId(deviceId: String) {
+        this.deviceId = deviceId
     }
 
     internal fun publishStartup(config: AppConfig?, address: String?) {

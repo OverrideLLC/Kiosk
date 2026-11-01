@@ -1,5 +1,7 @@
 package app.kiosksync.feature.playlist.presentation
 
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import app.kiosksync.core.common.app.AppLogger
 import app.kiosksync.core.common.playlist.DEFAULT_DURATION_SEC
 import app.kiosksync.core.common.playlist.MAX_DURATION_SEC
@@ -30,10 +32,11 @@ class PlaylistEditorViewModel(
     private val playlistRepository: PlaylistRepository,
     private val mediaRepository: MediaRepository,
     private val logger: AppLogger,
-    private val scope: CoroutineScope,
+    parentScope: CoroutineScope? = null,
     private val newPlaylistId: () -> String,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-) {
+) : ViewModel() {
+    private val scope = parentScope ?: viewModelScope
     private val _state = MutableStateFlow(PlaylistEditorState())
     val state: StateFlow<PlaylistEditorState> = _state.asStateFlow()
     private val loadingThumbnails = mutableSetOf<String>()

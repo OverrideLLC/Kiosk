@@ -1,5 +1,6 @@
 package app.kiosksync.feature.guide.presentation
 
+import androidx.lifecycle.ViewModel
 import app.kiosksync.core.common.app.AppLogger
 import app.kiosksync.core.common.app.AppRole
 import app.kiosksync.feature.guide.domain.GuideStep
@@ -16,7 +17,7 @@ class GuideViewModel(
     private val logger: AppLogger,
     onChooseRole: (AppRole) -> Unit = {},
     onStopped: () -> Unit = {},
-) {
+) : ViewModel() {
     private var chooseRole: (AppRole) -> Unit = onChooseRole
     private var stopped: () -> Unit = onStopped
 

@@ -3,8 +3,8 @@ package app.kiosksync.app.session
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import app.kiosksync.app.di.AppSession
-import app.kiosksync.app.navigation.AppRoute
-import app.kiosksync.app.navigation.activeRole
+import app.kiosksync.app.navigation.routes.AppRoute
+import app.kiosksync.app.navigation.routes.activeRole
 import app.kiosksync.feature.kiosk.presentation.KioskAction
 import app.kiosksync.feature.kiosk.presentation.KioskState
 import app.kiosksync.feature.kiosk.presentation.KioskViewModel

@@ -91,7 +91,7 @@ class PlaybackTest {
             playlistRepository = storage,
             mediaRepository = storage,
             logger = logger,
-            scope = this,
+            parentScope = this,
             backgroundDispatcher = Dispatchers.Unconfined
         )
         stateHolder.start()
@@ -127,7 +127,7 @@ class PlaybackTest {
             playlistRepository = storage,
             mediaRepository = storage,
             logger = TestLogger(),
-            scope = this,
+            parentScope = this,
             backgroundDispatcher = Dispatchers.Unconfined
         )
         stateHolder.start()

@@ -7,8 +7,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import app.kiosksync.app.di.rememberInjected
-import app.kiosksync.app.navigation.AppRoute
+import app.kiosksync.app.navigation.routes.AppRoute
+import app.kiosksync.app.navigation.session.sessionViewModel
 import app.kiosksync.core.common.app.AppRole
 import app.kiosksync.feature.role.domain.AppConfig
 import app.kiosksync.feature.guide.presentation.GuideAction
@@ -22,15 +22,12 @@ import app.kiosksync.feature.pairing.presentation.PairingUiState
 import app.kiosksync.feature.pairing.presentation.PairingViewModel
 import app.kiosksync.feature.playback.domain.ReceiverPlaybackSyncBridge
 import app.kiosksync.feature.playback.domain.ReceiverPlaylistBridge
-import app.kiosksync.feature.playback.presentation.PlaybackHost
 import app.kiosksync.feature.playback.presentation.PlaybackState
 import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
 import app.kiosksync.feature.receiver.presentation.ReceiverOptionsDialog
 import app.kiosksync.feature.receiver.presentation.ReceiverUnpairDialog
 import app.kiosksync.feature.role.presentation.ChangeRoleDialog
-import kotlinx.coroutines.CoroutineScope
 import org.koin.compose.koinInject
-import org.koin.core.parameter.parametersOf
 
 internal class ReceiverDialogs {
     var showOptions by mutableStateOf(false)
@@ -46,12 +43,9 @@ internal class ReceiverDialogs {
 
 @Composable
 internal fun rememberReceiverPlayback(
-    scope: CoroutineScope,
     route: AppRoute,
 ): PlaybackStateHolder {
-    val holder = rememberInjected<PlaybackStateHolder> {
-        parametersOf(PlaybackHost(scope, trackStatus = true, loadFromStorage = true))
-    }
+    val holder = sessionViewModel<PlaybackStateHolder>()
     val playlistBridge = koinInject<ReceiverPlaylistBridge>()
     val playbackSyncBridge = koinInject<ReceiverPlaybackSyncBridge>()
     DisposableEffect(holder) {

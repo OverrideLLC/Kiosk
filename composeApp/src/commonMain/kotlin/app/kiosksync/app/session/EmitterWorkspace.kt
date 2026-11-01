@@ -5,15 +5,12 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import app.kiosksync.app.di.ImageFilePicker
-import app.kiosksync.app.di.rememberInjected
-import app.kiosksync.app.navigation.AppDestinationContext
+import app.kiosksync.app.navigation.session.sessionViewModel
 import app.kiosksync.core.common.app.AppRole
 import app.kiosksync.feature.emitter.domain.models.EmitterPanel
 import app.kiosksync.feature.emitter.domain.models.SyncUiStatus
 import app.kiosksync.feature.emitter.presentation.EmitterAction
-import app.kiosksync.feature.emitter.presentation.EmitterViewModelHost
 import app.kiosksync.feature.emitter.presentation.EmitterRoot
 import app.kiosksync.feature.emitter.presentation.EmitterViewModel
 import app.kiosksync.feature.emitter.presentation.components.EmitterDialogs
@@ -23,38 +20,22 @@ import app.kiosksync.feature.guide.presentation.GuideAction
 import app.kiosksync.feature.guide.presentation.GuideEffect
 import app.kiosksync.feature.guide.presentation.GuideViewModel
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorAction
-import app.kiosksync.feature.playlist.presentation.PlaylistEditorHost
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorEffect
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorViewModel
 import app.kiosksync.feature.playlist.presentation.components.PlaylistEditorDialogs
 import app.kiosksync.feature.projection.domain.ProjectionController
 import kotlinx.coroutines.CancellationException
 import org.koin.compose.koinInject
-import org.koin.core.parameter.parametersOf
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 internal fun EmitterWorkspace() {
-    val destination = koinInject<AppDestinationContext>()
-    val preferences = checkNotNull(destination.preferences)
-    val config = checkNotNull(preferences.current)
-    val guideViewModel = checkNotNull(destination.guideViewModel)
-    val scope = rememberCoroutineScope()
+    val guideViewModel = sessionViewModel<GuideViewModel>()
     val imagePicker = koinInject<ImageFilePicker>()
     val projectionController = koinInject<ProjectionController>()
-    val viewModel = rememberInjected<EmitterViewModel>(config.deviceId) {
-        parametersOf(
-            EmitterViewModelHost(
-                deviceId = config.deviceId,
-                scope = scope,
-                onExit = destination.onExitRequested,
-                onRoleReset = destination::resetRole,
-            ),
-        )
-    }
+    val viewModel = koinViewModel<EmitterViewModel>()
     val emitterState by viewModel.state.collectAsState()
-    val playlistViewModel = rememberInjected<PlaylistEditorViewModel>(config.deviceId) {
-        parametersOf(PlaylistEditorHost(scope))
-    }
+    val playlistViewModel = koinViewModel<PlaylistEditorViewModel>()
     val playlistEditorState by playlistViewModel.state.collectAsState()
     val guideState by guideViewModel.state.collectAsState()
     val pairedCount = emitterState.devices.count { it.isPairedToThisEmitter }

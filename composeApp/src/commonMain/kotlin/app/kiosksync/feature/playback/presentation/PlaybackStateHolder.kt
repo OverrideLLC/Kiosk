@@ -1,6 +1,8 @@
 package app.kiosksync.feature.playback.presentation
 
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import app.kiosksync.core.common.app.AppLogger
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.domain.PlaylistItem
@@ -34,11 +36,12 @@ class PlaybackStateHolder(
     private val playlistRepository: PlaylistRepository,
     private val mediaRepository: MediaRepository,
     private val logger: AppLogger,
-    private val scope: CoroutineScope,
+    parentScope: CoroutineScope? = null,
     private val statusTracker: ReceiverStatusTracker? = null,
     private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val loadFromStorage: Boolean = true
-) {
+) : ViewModel() {
+    private val scope = parentScope ?: viewModelScope
     private val _state = MutableStateFlow(PlaybackState())
     val state: StateFlow<PlaybackState> = _state.asStateFlow()
 

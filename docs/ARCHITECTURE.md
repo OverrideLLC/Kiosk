@@ -68,7 +68,7 @@ composeApp/src/
 │   │   └── persistence/data/ # base Room, repositorios y migración JSON
 │   └── app/             # arranque de la aplicación, separado por función
 │       ├── App.kt
-│       ├── navigation/  # AppRoute, pila única y NavDisplay
+│       ├── navigation/  # rutas, navegadores por área, pila y NavDisplay
 │       ├── shell/       # arranque y preferencias
 │       ├── session/     # rol, Controlador, Pantalla, kiosco y guía
 │       ├── di/          # AppSession, apagado y agregador de presentación
@@ -95,7 +95,7 @@ entidades son detalles de persistencia: presentación y dominio no los consumen.
 | Aspecto | Elección |
 | --- | --- |
 | UI | Compose Multiplatform Desktop + Material 3 |
-| Navegación | Navigation 3 (`navigation3-ui`) + Koin `koin-compose-navigation3`: una pila, rutas sin configuración, `koinEntryProvider` |
+| Navegación | Navigation 3 (`navigation3-ui`) + Koin `koin-compose-navigation3` y `koin-compose-viewmodel`: una pila, rutas por archivo, `koinEntryProvider` y `koinViewModel` |
 | Preferencias | DataStore Preferences |
 | Datos estructurados | Room 3 + SQLite bundled; KSP genera el código y los esquemas |
 | Tema | Material Kolor Material 3 con semilla de marca `#3D7AF5` |
@@ -287,8 +287,9 @@ cuando afectan a una acción del usuario.
   transiciones y coordina efectos; un reducer puro se añade solo cuando separa
   lógica no trivial. Los efectos de una sola vez usan un canal consumible
   (confirmar rol o abrir el selector de imágenes); las operaciones de red y
-  almacenamiento mantienen su progreso y error en el estado. No hay ViewModels
-  de AndroidX ni framework MVI.
+  almacenamiento mantienen su progreso y error en el estado. Los ViewModel extienden
+  `androidx.lifecycle.ViewModel` y Koin los crea: `koinViewModel` queda atado a la
+  entrada de Navigation 3 y `sessionViewModel` al almacén de la ventana. No hay framework MVI.
 - Rol, guía y editor de playlist mantienen `Action`, `UiState` y `ViewModel` en
   la raíz de su paquete `presentation`, sin subcarpetas MVI ni reducers
   mecánicos. Las pantallas reciben una instantánea de estado y callbacks; los
@@ -314,7 +315,7 @@ cuando afectan a una acción del usuario.
   estado de proyección entre la UI y el host de ventanas sin depender de Compose.
 - `EmitterSyncRepositoryImpl` es una implementación Desktop en `desktopMain`; el
   contrato y `SyncPlanner` puro permanecen en `feature/sync/domain`.
-- Navegación con una sola pila de Navigation 3 en `app/navigation`. `AppRoute` solo nombra el área (`RoleSelection`, `EmitterHome`, `ReceiverHome`); `AppConfig` sigue en preferencias. Cada destino se registra con `navigation<AppRoute>` y `NavDisplay` lo obtiene de `koinEntryProvider`. Confirmar o cambiar el rol reemplaza la raíz y Atrás no la quita. Los paneles del Controlador, los diálogos, la guía, el bloqueo y la proyección no son rutas. El estado guardable es por entrada; los ViewModel siguen creándose con Koin, no con AndroidX.
+- Navegación con una sola pila de Navigation 3 en `app/navigation`. Cada raíz (`AppRoute.RoleSelection`, `AppRoute.EmitterHome`, `AppRoute.ReceiverHome`) vive en la sealed class `AppRoute` y tiene su navegador y su registro de clave. El Controlador y la Pantalla no apilan rutas propias: sus paneles, diálogos, guía, bloqueo y proyección no son destinos. `NavDisplay` obtiene cada pantalla de `koinEntryProvider`. Confirmar o cambiar el rol reemplaza la raíz y Atrás no la quita. `AppConfig` sigue en preferencias. `rememberViewModelStoreNavEntryDecorator` ata el ViewModel de la entrada; los que comparten rol, guía, vinculación, reproducción y kiosco usan el almacén de la ventana.
 - El sistema de diseño compartido está en `core/ui/`: tema claro/oscuro, tipografía
   Sora/Inter, iconos Material Symbols y componentes propios. Ver
   [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md).

@@ -8,8 +8,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import app.kiosksync.app.di.AppQualifiers
 import app.kiosksync.app.di.AppSession
-import app.kiosksync.app.di.rememberInjected
-import app.kiosksync.app.navigation.AppRoute
+import app.kiosksync.app.navigation.routes.AppRoute
+import app.kiosksync.app.navigation.session.sessionViewModel
 import app.kiosksync.app.shell.AppPreferences
 import app.kiosksync.core.common.app.AppLogger
 import app.kiosksync.feature.emitter.domain.EmitterScreensRepository
@@ -28,14 +28,12 @@ import app.kiosksync.feature.role.domain.AppConfigStore
 import app.kiosksync.feature.role.presentation.RoleAction
 import app.kiosksync.feature.role.presentation.RoleEffect
 import app.kiosksync.feature.role.presentation.RoleViewModel
-import app.kiosksync.feature.role.presentation.RoleViewModelHost
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
-import org.koin.core.parameter.parametersOf
 
 internal class RoleSession(
     val viewModel: RoleViewModel,
@@ -109,18 +107,10 @@ internal fun rememberRoleSession(
     dialogs: ReceiverDialogs,
     deviceId: String,
     port: Int,
-    onExitRequested: () -> Unit,
     onRoleConfirmed: (AppConfig) -> Unit,
 ): RoleSession {
     val session = koinInject<AppSession>()
-    val viewModel = rememberInjected<RoleViewModel> {
-        parametersOf(
-            RoleViewModelHost(
-                onExit = onExitRequested,
-                onOpenGuide = { guideViewModel.onAction(GuideAction.Start()) },
-            ),
-        )
-    }
+    val viewModel = sessionViewModel<RoleViewModel>()
     val serviceDispatcher = koinInject<CoroutineDispatcher>(AppQualifiers.serviceDispatcher)
     val discovery = koinInject<DeviceDiscovery>()
     val receiverServer = koinInject<ReceiverServer>()

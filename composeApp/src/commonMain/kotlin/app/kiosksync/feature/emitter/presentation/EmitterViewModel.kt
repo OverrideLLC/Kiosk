@@ -1,5 +1,7 @@
 package app.kiosksync.feature.emitter.presentation
 
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import app.kiosksync.core.common.app.AppLogger
 import app.kiosksync.core.common.kiosk.KioskLockConfig
 import app.kiosksync.core.ui.Strings
@@ -40,13 +42,14 @@ class EmitterViewModel(
     private val logger: AppLogger,
     private val emitterId: String,
     private val emitterName: String,
-    private val scope: CoroutineScope,
+    parentScope: CoroutineScope? = null,
     private val kioskLockManager: KioskLockManager,
     private val projectionController: ProjectionService,
     private val onExit: () -> Unit = {},
     private val onRoleReset: () -> Unit = {},
     backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
-) {
+) : ViewModel() {
+    private val scope = parentScope ?: viewModelScope
     private val _state = MutableStateFlow(EmitterState())
     val state: StateFlow<EmitterState> = _state.asStateFlow()
 

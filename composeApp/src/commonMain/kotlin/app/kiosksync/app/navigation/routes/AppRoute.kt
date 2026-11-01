@@ -1,7 +1,6 @@
-package app.kiosksync.app.navigation
+package app.kiosksync.app.navigation.routes
 
 import androidx.navigation3.runtime.NavKey
-import app.kiosksync.core.common.app.AppRole
 import kotlinx.serialization.Serializable
 
 /**
@@ -11,18 +10,15 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 sealed interface AppRoute : NavKey {
+    /** First screen when this computer has no saved role. */
     @Serializable
     data object RoleSelection : AppRoute
 
+    /** Controller workspace. Panels inside it are state, not routes. */
     @Serializable
     data object EmitterHome : AppRoute
 
+    /** Screen that pairs and plays the local carousel. */
     @Serializable
     data object ReceiverHome : AppRoute
-}
-
-internal fun activeRole(route: AppRoute): AppRole? = when (route) {
-    AppRoute.EmitterHome -> AppRole.EMITTER
-    AppRoute.ReceiverHome -> AppRole.RECEIVER
-    AppRoute.RoleSelection -> null
 }

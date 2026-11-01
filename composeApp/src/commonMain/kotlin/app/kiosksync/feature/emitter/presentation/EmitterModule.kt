@@ -2,31 +2,31 @@ package app.kiosksync.feature.emitter.presentation
 
 import app.kiosksync.app.di.AppQualifiers
 import app.kiosksync.app.di.AppSession
-import kotlinx.coroutines.CoroutineScope
+import app.kiosksync.app.navigation.routes.AppRoute
+import app.kiosksync.app.navigation.session.AppCommands
+import app.kiosksync.app.session.EmitterWorkspace
+import org.koin.core.annotation.KoinExperimentalAPI
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
+import org.koin.dsl.navigation3.navigation
 
-internal class EmitterViewModelHost(
-    val deviceId: String,
-    val scope: CoroutineScope,
-    val onExit: () -> Unit,
-    val onRoleReset: () -> Unit,
-)
-
+@OptIn(KoinExperimentalAPI::class)
 internal val emitterPresentationModule = module {
-    factory { (host: EmitterViewModelHost) ->
+    viewModel {
         val session = get<AppSession>()
+        val commands = get<AppCommands>()
         EmitterViewModel(
             service = get(),
             kioskLockConfigurationUseCases = get(),
             logger = get(),
-            emitterId = host.deviceId,
+            emitterId = checkNotNull(session.deviceId) { "Device id is not published" },
             emitterName = session.deviceName,
-            scope = host.scope,
             kioskLockManager = get(),
             projectionController = get(),
-            onExit = host.onExit,
-            onRoleReset = host.onRoleReset,
+            onExit = { commands.onExit() },
+            onRoleReset = { commands.onRoleReset() },
             backgroundDispatcher = get(AppQualifiers.io),
         )
     }
+    navigation<AppRoute.EmitterHome> { EmitterWorkspace() }
 }

@@ -1,5 +1,6 @@
 package app.kiosksync.feature.role.presentation
 
+import androidx.lifecycle.ViewModel
 import app.kiosksync.core.common.app.AppLogger
 import app.kiosksync.core.common.app.AppRole
 import kotlinx.coroutines.channels.Channel
@@ -16,7 +17,7 @@ class RoleViewModel(
     initialRole: AppRole? = null,
     private val onExit: () -> Unit = {},
     private val onOpenGuide: () -> Unit = {},
-) {
+) : ViewModel() {
     private val _state = MutableStateFlow(RoleState(selectedRole = initialRole))
     val state: StateFlow<RoleState> = _state.asStateFlow()
 

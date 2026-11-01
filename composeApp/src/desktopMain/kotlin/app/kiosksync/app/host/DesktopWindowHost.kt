@@ -1,11 +1,16 @@
 package app.kiosksync.app.host
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -20,8 +25,10 @@ import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.rememberWindowState
 import app.kiosksync.app.App
 import app.kiosksync.app.di.AppShutdown
-import app.kiosksync.app.di.AppSession
 import app.kiosksync.app.di.rememberInjected
+import app.kiosksync.app.di.AppSession
+import app.kiosksync.app.navigation.session.LocalSessionViewModelStoreOwner
+import app.kiosksync.app.navigation.session.sessionViewModel
 import app.kiosksync.core.common.app.APP_NAME
 import app.kiosksync.core.common.app.AppLogger
 import app.kiosksync.core.common.app.AppRole
@@ -30,7 +37,6 @@ import app.kiosksync.feature.kiosk.domain.KioskKeyEvent
 import app.kiosksync.feature.kiosk.domain.KioskKeyKind
 import app.kiosksync.feature.kiosk.domain.KioskMouseGuard
 import app.kiosksync.feature.kiosk.presentation.KioskAction
-import app.kiosksync.feature.kiosk.presentation.KioskViewModelHost
 import app.kiosksync.feature.kiosk.presentation.KioskState
 import app.kiosksync.feature.kiosk.presentation.KioskViewModel
 import app.kiosksync.feature.playlist.domain.Playlist
@@ -40,8 +46,10 @@ import app.kiosksync.feature.update.presentation.ReceiverUpdateHost
 import app.kiosksync.feature.update.presentation.ReceiverUpdateViewModel
 import app.kiosksync.feature.projection.domain.ProjectionController
 import app.kiosksync.feature.projection.presentation.ProjectionScreen
+import org.koin.compose.getKoin
 import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
+import org.koin.core.qualifier.named
 import java.awt.Cursor
 import java.awt.Point
 import java.awt.Toolkit
@@ -59,9 +67,47 @@ internal fun DesktopWindowHost(
     val projectionController = koinInject<ProjectionController>()
     val args = session.args
     val scope = rememberCoroutineScope()
-    val kioskViewModel = rememberInjected<KioskViewModel>(scope) {
-        parametersOf(KioskViewModelHost(scope))
+    val viewModelStore = remember { ViewModelStore() }
+    DisposableEffect(viewModelStore) {
+        onDispose { viewModelStore.clear() }
     }
+    val viewModelOwner = remember(viewModelStore) {
+        object : ViewModelStoreOwner {
+            override val viewModelStore = viewModelStore
+        }
+    }
+    CompositionLocalProvider(
+        LocalViewModelStoreOwner provides viewModelOwner,
+        LocalSessionViewModelStoreOwner provides viewModelOwner,
+    ) {
+        DesktopWindow(
+            session = session,
+            logger = logger,
+            shutdown = shutdown,
+            keyboardGuard = keyboardGuard,
+            mouseGuard = mouseGuard,
+            projectionController = projectionController,
+            onExit = onExit,
+            scope = scope,
+            viewModelOwner = viewModelOwner,
+        )
+    }
+}
+
+@Composable
+private fun DesktopWindow(
+    session: AppSession,
+    logger: AppLogger,
+    shutdown: AppShutdown,
+    keyboardGuard: KioskKeyboardGuard,
+    mouseGuard: KioskMouseGuard,
+    projectionController: ProjectionController,
+    onExit: () -> Unit,
+    scope: kotlinx.coroutines.CoroutineScope,
+    viewModelOwner: ViewModelStoreOwner,
+) {
+    val args = session.args
+    val kioskViewModel = sessionViewModel<KioskViewModel>()
     val receiverUpdateViewModel = rememberInjected<ReceiverUpdateViewModel>(scope) {
         parametersOf(
             ReceiverUpdateHost(
@@ -173,21 +219,26 @@ internal fun DesktopWindowHost(
             }
         },
     ) {
-        window.cursor = if (isReceiverWindow && lockState.isLocked && !updatePromptVisible) {
-            blankCursor()
-        } else {
-            Cursor.getDefaultCursor()
+        CompositionLocalProvider(
+            LocalViewModelStoreOwner provides viewModelOwner,
+            LocalSessionViewModelStoreOwner provides viewModelOwner,
+        ) {
+            window.cursor = if (isReceiverWindow && lockState.isLocked && !updatePromptVisible) {
+                blankCursor()
+            } else {
+                Cursor.getDefaultCursor()
+            }
+            App(
+                kioskViewModel = kioskViewModel,
+                receiverUpdateViewModel = receiverUpdateViewModel,
+                onExitRequested = {
+                    shutdown.shutdown()
+                    onExit()
+                },
+                registerEscHandler = { escHandler = it },
+                registerUnpairHandler = { unpairHandler = it },
+            )
         }
-        App(
-            kioskViewModel = kioskViewModel,
-            receiverUpdateViewModel = receiverUpdateViewModel,
-            onExitRequested = {
-                shutdown.shutdown()
-                onExit()
-            },
-            registerEscHandler = { escHandler = it },
-            registerUnpairHandler = { unpairHandler = it },
-        )
     }
 
     projectionPlaylist?.let { playlist ->
@@ -225,8 +276,11 @@ private fun ProjectionPlayback(
     lockState: KioskState,
 ) {
     val scope = rememberCoroutineScope()
-    val playbackStateHolder = rememberInjected<PlaybackStateHolder>(playlist.id, playlist.version) {
-        parametersOf(PlaybackHost(scope, trackStatus = false, loadFromStorage = false))
+    val koin = getKoin()
+    val playbackStateHolder = remember(playlist.id, playlist.version) {
+        koin.get<PlaybackStateHolder>(named("projectionPlayback")) {
+            parametersOf(PlaybackHost(scope, trackStatus = false, loadFromStorage = false))
+        }
     }
     val playbackState by playbackStateHolder.state.collectAsState()
 
