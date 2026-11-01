@@ -60,6 +60,9 @@ kotlin {
 
                 // Windows low-level keyboard hook (kiosk lock)
                 implementation(libs.jna.platform)
+
+                // Native file dialogs (image picker)
+                implementation(libs.filekit.dialogs)
             }
         }
 
@@ -107,6 +110,11 @@ compose.desktop {
             // Keep the bundled runtime small. java.desktop, java.base,
             // java.logging and java.prefs are added by the Compose plugin.
             modules("java.naming", "jdk.unsupported")
+
+            linux {
+                // FileKit's XDG portal dialogs need this module in the packaged runtime.
+                modules("jdk.security.auth")
+            }
 
             windows {
                 iconFile.set(project.file("src/desktopMain/resources/icon.ico"))

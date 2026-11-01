@@ -6,11 +6,12 @@ datastore = "1.3.0"
 room3 = "3.0.3"
 sqlite = "2.7.1"
 ksp = "2.3.12"
-kotlinx-coroutines = "1.9.0"
+kotlinx-coroutines = "1.11.0"
 kotlinx-serialization = "1.7.3"
 ktor = "3.0.3"
 jmdns = "3.5.9"
-jna = "5.17.0"
+jna = "5.19.1"
+filekit = "0.17.0"
 koin = "4.2.2"
 multiplatform-nav3-ui = "1.1.1"
 lifecycle = "2.10.0"
@@ -32,6 +33,7 @@ ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negoti
 
 jmdns = { module = "org.jmdns:jmdns", version.ref = "jmdns" }
 jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
+filekit-dialogs = { module = "io.github.vinceglb:filekit-dialogs", version.ref = "filekit" }
 material-kolor = { module = "com.materialkolor:material-kolor-material3", version.ref = "material-kolor" }
 datastore-preferences-core = { module = "androidx.datastore:datastore-preferences-core", version.ref = "datastore" }
 room3-runtime = { module = "androidx.room3:room3-runtime", version.ref = "room3" }

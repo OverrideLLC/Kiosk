@@ -104,7 +104,7 @@ entidades son detalles de persistencia: presentación y dominio no los consumen.
 | Asincronía | Coroutines + `StateFlow` |
 | Descubrimiento | JmDNS (mDNS/Zeroconf) |
 | Imágenes | Skia (`org.jetbrains.skia.Image`) → `ImageBitmap` |
-| Selector de archivos | `java.awt.FileDialog` |
+| Selector de archivos | FileKit Dialogs en desktop; el almacén de imágenes sigue en archivos locales |
 | Pruebas | `kotlin.test` + render offscreen con `ImageComposeScene` |
 
 ## Composición de la aplicación

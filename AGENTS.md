@@ -94,7 +94,7 @@ Todo lo demás está fuera del MVP (sección 13).
 | Navegación | Navigation 3 de Compose Multiplatform (`navigation3-ui`) con `koinEntryProvider`; una pila en `commonMain` |
 | Descubrimiento | JmDNS (mDNS/Zeroconf), solo en `desktopMain`, más campo manual de IP como plan B |
 | Imágenes | Decodificación con Skia (`org.jetbrains.skia.Image`) → `ImageBitmap`, sin librerías extra |
-| Selector de archivos | `java.awt.FileDialog` (sin dependencias extra) |
+| Selector de archivos | FileKit Dialogs (`filekit-dialogs`) en `desktopMain` |
 | Tests | `kotlin.test` para lógica pura, reducers, repositorios, migración JSON y persistencia local con DataStore/Room en Desktop |
 | Empaquetado | Plugin de Compose (`jpackage`): `createDistributable` (carpeta portable) y `packageExe` (instalador; requiere WiX Toolset en la máquina de build) |
 

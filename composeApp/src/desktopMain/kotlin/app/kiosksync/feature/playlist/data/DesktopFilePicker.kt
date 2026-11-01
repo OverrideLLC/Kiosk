@@ -3,43 +3,49 @@ package app.kiosksync.feature.playlist.data
 import app.kiosksync.core.common.app.AppLogger
 import app.kiosksync.resources.Res
 import app.kiosksync.resources.add_images
-import java.awt.FileDialog
-import java.awt.Frame
-import javax.swing.SwingUtilities
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.absolutePath
+import io.github.vinceglb.filekit.dialogs.FileKitDialogParent
+import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
+import io.github.vinceglb.filekit.dialogs.FileKitMode
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.openFilePicker
+import java.awt.Window
+import java.util.concurrent.atomic.AtomicReference
 import org.jetbrains.compose.resources.getString
 
 internal object DesktopFilePicker {
-    suspend fun pickImages(logger: AppLogger): List<String> = try {
-        showImagePicker(getString(Res.string.add_images))
-    } catch (error: Exception) {
-        logger.warn("Could not open the image picker: ${error.message}")
-        emptyList()
+    private val parentWindow = AtomicReference<Window?>(null)
+
+    fun bindWindow(window: Window) {
+        parentWindow.set(window)
     }
 
-    private fun showImagePicker(title: String): List<String> {
-        // Do not open a modal picker from Compose's flush dispatcher: its nested
-        // event loop can re-enter rendering and corrupt snapshot continuations.
-        if (SwingUtilities.isEventDispatchThread()) return showImagePickerOnEdt(title)
+    fun unbindWindow(window: Window) {
+        parentWindow.compareAndSet(window, null)
+    }
 
-        var files: List<String> = emptyList()
-        var failure: Throwable? = null
-        SwingUtilities.invokeAndWait {
-            try {
-                files = showImagePickerOnEdt(title)
-            } catch (error: Throwable) {
-                failure = error
-            }
+    suspend fun pickImages(logger: AppLogger): List<String> {
+        val title = getString(Res.string.add_images)
+        val parent = parentWindow.get()
+        return try {
+            open(title, parent)
+        } catch (error: IllegalArgumentException) {
+            if (parent == null) throw error
+            logger.warn("Could not parent the image picker to the app window: ${error.message}")
+            open(title, null)
         }
-        failure?.let { throw it }
-        return files
     }
 
-    private fun showImagePickerOnEdt(title: String): List<String> {
-        val dialog = FileDialog(null as Frame?, title, FileDialog.LOAD)
-        dialog.isMultipleMode = true
-        dialog.file = "*.jpg;*.jpeg;*.png;*.webp"
-        dialog.isVisible = true
-        return dialog.files?.map { it.absolutePath }.orEmpty()
+    private suspend fun open(title: String, parent: Window?): List<String> {
+        val files = FileKit.openFilePicker(
+            type = FileKitType.File("jpg", "jpeg", "png", "webp"),
+            mode = FileKitMode.Multiple(),
+            dialogSettings = FileKitDialogSettings(
+                title = title,
+                parent = parent?.let(FileKitDialogParent::awt),
+            ),
+        )
+        return files.orEmpty().map { it.absolutePath() }
     }
 }
-

@@ -44,6 +44,7 @@ import app.kiosksync.feature.playback.presentation.PlaybackHost
 import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
 import app.kiosksync.feature.update.presentation.ReceiverUpdateHost
 import app.kiosksync.feature.update.presentation.ReceiverUpdateViewModel
+import app.kiosksync.feature.playlist.data.DesktopFilePicker
 import app.kiosksync.feature.projection.domain.ProjectionController
 import app.kiosksync.feature.projection.presentation.ProjectionScreen
 import org.koin.compose.getKoin
@@ -222,6 +223,10 @@ private fun DesktopWindow(
             }
         },
     ) {
+        DisposableEffect(window) {
+            DesktopFilePicker.bindWindow(window)
+            onDispose { DesktopFilePicker.unbindWindow(window) }
+        }
         CompositionLocalProvider(
             LocalViewModelStoreOwner provides viewModelOwner,
             LocalSessionViewModelStoreOwner provides viewModelOwner,
