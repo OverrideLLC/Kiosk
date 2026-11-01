@@ -67,7 +67,7 @@ Todo lo demás está fuera del MVP (sección 13).
 - **100 % offline.** Prohibido cualquier llamada a internet, telemetría o analítica.
 - **Solo LAN.** El Receptor escucha en la red local; el Emisor solo hace conexiones salientes.
 - Persistencia local separada por tipo: DataStore Preferences para configuración pequeña, Room 3 para datos estructurados y archivos para imágenes, logs y paquetes. Los JSON existentes se migran de forma segura y se conservan como respaldo.
-- **Sin librerías de navegación.** La navegación usa una `sealed interface Screen` y un `when`. Toda la inyección de dependencias pasa por Koin.
+- **Navegación con una sola pila.** Navigation 3 (`navigation3-ui`) vive en `app/navigation`. Los destinos se declaran con `navigation<AppRoute>` y `NavDisplay` los resuelve con `koinEntryProvider`. La raíz se reemplaza al confirmar o cambiar el rol. Atrás no vacía la pila. Paneles del Controlador, diálogos, guía y bloqueo no son rutas. Toda la inyección de dependencias pasa por Koin. No uses ViewModel de AndroidX.
 - Una sola dependencia de red en el Receptor (Ktor Server) y una en el Emisor (Ktor Client). Evita agregar librerías que no estén listadas en la sección 5 sin preguntar.
 - La app **nunca debe cerrarse sola** por una excepción: captura errores en los límites (rutas del servidor, tareas en segundo plano) y regístralos en un archivo de log.
 - Todos los textos de UI en **español**, centralizados en un único archivo (`Strings.kt`) para facilitar traducirlos después.
@@ -90,7 +90,8 @@ Todo lo demás está fuera del MVP (sección 13).
 | Red, Emisor | Ktor Client (motor CIO) |
 | Serialización | kotlinx.serialization (JSON) |
 | Asincronía | Kotlin Coroutines + `StateFlow` |
-| Inyección de dependencias | Koin 4 (`koin-core` y `koin-compose`), módulos por feature y arranque en `desktopMain` |
+| Inyección de dependencias | Koin 4 (`koin-core`, `koin-compose` y `koin-compose-navigation3`), módulos por feature y arranque en `desktopMain` |
+| Navegación | Navigation 3 de Compose Multiplatform (`navigation3-ui`) con `koinEntryProvider`; una pila en `commonMain` |
 | Descubrimiento | JmDNS (mDNS/Zeroconf), solo en `desktopMain`, más campo manual de IP como plan B |
 | Imágenes | Decodificación con Skia (`org.jetbrains.skia.Image`) → `ImageBitmap`, sin librerías extra |
 | Selector de archivos | `java.awt.FileDialog` (sin dependencias extra) |
@@ -144,7 +145,8 @@ composeApp/src/
 │   │   └── persistence/data/ # base Room, repositorios y migración JSON
 │   └── app/             # arranque de la aplicación, separado por función
 │       ├── App.kt
-│       ├── shell/       # pantalla activa, arranque y preferencias
+│       ├── navigation/  # AppRoute, pila única y NavDisplay
+│       ├── shell/       # arranque y preferencias
 │       ├── session/     # rol, Controlador, Pantalla, kiosco y guía
 │       ├── di/          # AppSession, apagado y módulos de presentación
 └── desktopMain/kotlin/app/kiosksync/

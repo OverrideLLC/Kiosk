@@ -9,9 +9,8 @@ import androidx.compose.runtime.setValue
 import app.kiosksync.app.di.AppQualifiers
 import app.kiosksync.app.di.AppSession
 import app.kiosksync.app.di.rememberInjected
+import app.kiosksync.app.navigation.AppRoute
 import app.kiosksync.app.shell.AppPreferences
-import app.kiosksync.app.shell.Screen
-import app.kiosksync.app.shell.configScreen
 import app.kiosksync.core.common.app.AppLogger
 import app.kiosksync.feature.emitter.domain.EmitterScreensRepository
 import app.kiosksync.feature.guide.presentation.GuideAction
@@ -61,9 +60,9 @@ internal class RoleSession(
     var failed by mutableStateOf(false)
         private set
 
-    fun reset(screen: Screen, onScreenChange: (Screen) -> Unit) {
+    fun reset(route: AppRoute, onNavigate: (AppRoute) -> Unit) {
         if (isResetting) return
-        val changingFromReceiver = screen is Screen.ReceiverHome
+        val changingFromReceiver = route is AppRoute.ReceiverHome
         isResetting = true
         failed = false
         scope.launch {
@@ -87,7 +86,7 @@ internal class RoleSession(
                 kioskViewModel.onAction(KioskAction.Release)
                 projectionController.stop()
                 dialogs.dismissAll()
-                onScreenChange(Screen.RoleSelection)
+                onNavigate(AppRoute.RoleSelection)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {

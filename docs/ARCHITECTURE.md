@@ -68,7 +68,8 @@ composeApp/src/
 │   │   └── persistence/data/ # base Room, repositorios y migración JSON
 │   └── app/             # arranque de la aplicación, separado por función
 │       ├── App.kt
-│       ├── shell/       # pantalla activa, arranque y preferencias
+│       ├── navigation/  # AppRoute, pila única y NavDisplay
+│       ├── shell/       # arranque y preferencias
 │       ├── session/     # rol, Controlador, Pantalla, kiosco y guía
 │       ├── di/          # AppSession, apagado y agregador de presentación
 └── desktopMain/kotlin/app/kiosksync/
@@ -87,13 +88,14 @@ en `data` junto a la feature que las posee. Cada feature declara sus entidades y
 su DAO. `feature/persistence/data` reúne esa base en `KioskDatabase`,
 compone los repositorios y escribe la migración JSON en una transacción. Hash y
 protección de secretos viven en `app.kiosksync.core.security`. Los DAOs y las
-entidades son detalles de persistencia: presentación y dominio no los consumen. La app mantiene un módulo Gradle, Koin para la inyección de dependencias y la navegación existente.
+entidades son detalles de persistencia: presentación y dominio no los consumen. La app mantiene un módulo Gradle, Koin para la inyección de dependencias y una sola pila de Navigation 3.
 
 ## Dependencias principales
 
 | Aspecto | Elección |
 | --- | --- |
 | UI | Compose Multiplatform Desktop + Material 3 |
+| Navegación | Navigation 3 (`navigation3-ui`) + Koin `koin-compose-navigation3`: una pila, rutas sin configuración, `koinEntryProvider` |
 | Preferencias | DataStore Preferences |
 | Datos estructurados | Room 3 + SQLite bundled; KSP genera el código y los esquemas |
 | Tema | Material Kolor Material 3 con semilla de marca `#3D7AF5` |
@@ -312,7 +314,7 @@ cuando afectan a una acción del usuario.
   estado de proyección entre la UI y el host de ventanas sin depender de Compose.
 - `EmitterSyncRepositoryImpl` es una implementación Desktop en `desktopMain`; el
   contrato y `SyncPlanner` puro permanecen en `feature/sync/domain`.
-- Navegación con `sealed interface Screen` y un `when` en `App.kt`.
+- Navegación con una sola pila de Navigation 3 en `app/navigation`. `AppRoute` solo nombra el área (`RoleSelection`, `EmitterHome`, `ReceiverHome`); `AppConfig` sigue en preferencias. Cada destino se registra con `navigation<AppRoute>` y `NavDisplay` lo obtiene de `koinEntryProvider`. Confirmar o cambiar el rol reemplaza la raíz y Atrás no la quita. Los paneles del Controlador, los diálogos, la guía, el bloqueo y la proyección no son rutas. El estado guardable es por entrada; los ViewModel siguen creándose con Koin, no con AndroidX.
 - El sistema de diseño compartido está en `core/ui/`: tema claro/oscuro, tipografía
   Sora/Inter, iconos Material Symbols y componentes propios. Ver
   [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md).

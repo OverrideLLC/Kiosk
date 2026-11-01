@@ -8,8 +8,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import app.kiosksync.app.di.ImageFilePicker
 import app.kiosksync.app.di.rememberInjected
+import app.kiosksync.app.navigation.AppDestinationContext
 import app.kiosksync.core.common.app.AppRole
-import app.kiosksync.core.common.app.AppTheme
 import app.kiosksync.feature.emitter.domain.models.EmitterPanel
 import app.kiosksync.feature.emitter.domain.models.SyncUiStatus
 import app.kiosksync.feature.emitter.presentation.EmitterAction
@@ -28,22 +28,16 @@ import app.kiosksync.feature.playlist.presentation.PlaylistEditorEffect
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorViewModel
 import app.kiosksync.feature.playlist.presentation.components.PlaylistEditorDialogs
 import app.kiosksync.feature.projection.domain.ProjectionController
-import app.kiosksync.feature.role.domain.AppConfig
 import kotlinx.coroutines.CancellationException
 import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 
 @Composable
-internal fun EmitterWorkspace(
-    config: AppConfig,
-    guideViewModel: GuideViewModel,
-    onExitRequested: () -> Unit,
-    onRoleReset: () -> Unit,
-    theme: AppTheme,
-    reduceMotion: Boolean,
-    onThemeChange: (AppTheme) -> Unit,
-    onReduceMotionChange: (Boolean) -> Unit,
-) {
+internal fun EmitterWorkspace() {
+    val destination = koinInject<AppDestinationContext>()
+    val preferences = checkNotNull(destination.preferences)
+    val config = checkNotNull(preferences.current)
+    val guideViewModel = checkNotNull(destination.guideViewModel)
     val scope = rememberCoroutineScope()
     val imagePicker = koinInject<ImageFilePicker>()
     val projectionController = koinInject<ProjectionController>()
@@ -52,8 +46,8 @@ internal fun EmitterWorkspace(
             EmitterViewModelHost(
                 deviceId = config.deviceId,
                 scope = scope,
-                onExit = onExitRequested,
-                onRoleReset = onRoleReset,
+                onExit = destination.onExitRequested,
+                onRoleReset = destination::resetRole,
             ),
         )
     }
@@ -161,10 +155,6 @@ internal fun EmitterWorkspace(
     PlaylistEditorDialogs(state = playlistEditorState, onAction = playlistViewModel::onAction)
     if (emitterState.isSettingsOpen) {
         SettingsDialog(
-            theme = theme,
-            reduceMotion = reduceMotion,
-            onThemeChange = onThemeChange,
-            onReduceMotionChange = onReduceMotionChange,
             onOpenGuide = {
                 viewModel.onAction(EmitterAction.DismissSettings)
                 guideViewModel.onAction(GuideAction.Start(AppRole.EMITTER))

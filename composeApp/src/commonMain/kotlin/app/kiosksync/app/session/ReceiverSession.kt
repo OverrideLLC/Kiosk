@@ -8,8 +8,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import app.kiosksync.app.di.rememberInjected
-import app.kiosksync.app.shell.Screen
+import app.kiosksync.app.navigation.AppRoute
 import app.kiosksync.core.common.app.AppRole
+import app.kiosksync.feature.role.domain.AppConfig
 import app.kiosksync.feature.guide.presentation.GuideAction
 import app.kiosksync.feature.guide.presentation.GuideViewModel
 import app.kiosksync.feature.kiosk.presentation.KioskAction
@@ -46,7 +47,7 @@ internal class ReceiverDialogs {
 @Composable
 internal fun rememberReceiverPlayback(
     scope: CoroutineScope,
-    screen: Screen,
+    route: AppRoute,
 ): PlaybackStateHolder {
     val holder = rememberInjected<PlaybackStateHolder> {
         parametersOf(PlaybackHost(scope, trackStatus = true, loadFromStorage = true))
@@ -66,16 +67,20 @@ internal fun rememberReceiverPlayback(
             holder.stop()
         }
     }
-    LaunchedEffect(screen) {
-        if (screen is Screen.ReceiverHome) holder.start() else holder.stop()
+    LaunchedEffect(route) {
+        if (route is AppRoute.ReceiverHome) holder.start() else holder.stop()
     }
     return holder
 }
 
 @Composable
-internal fun BindReceiverPairing(pairingViewModel: PairingViewModel, screen: Screen) {
-    DisposableEffect(pairingViewModel, screen) {
-        val receiverConfig = (screen as? Screen.ReceiverHome)?.config
+internal fun BindReceiverPairing(
+    pairingViewModel: PairingViewModel,
+    route: AppRoute,
+    config: AppConfig?,
+) {
+    DisposableEffect(pairingViewModel, route) {
+        val receiverConfig = if (route is AppRoute.ReceiverHome) config else null
         if (receiverConfig != null) {
             pairingViewModel.onAction(PairingAction.StartReceiver(receiverConfig))
         }
@@ -90,13 +95,13 @@ internal fun BindReceiverPairing(pairingViewModel: PairingViewModel, screen: Scr
 @Composable
 internal fun BindReceiverGuide(
     guideViewModel: GuideViewModel,
-    screen: Screen,
+    route: AppRoute,
     pairing: PairingUiState,
     lock: KioskState,
     playback: PlaybackState,
 ) {
-    LaunchedEffect(screen, pairing.pairing.isPaired, lock.hasPassword, playback.hasItems) {
-        if (screen is Screen.ReceiverHome) {
+    LaunchedEffect(route, pairing.pairing.isPaired, lock.hasPassword, playback.hasItems) {
+        if (route is AppRoute.ReceiverHome) {
             guideViewModel.onAction(
                 GuideAction.ReportReceiverProgress(
                     paired = pairing.pairing.isPaired,
@@ -110,7 +115,7 @@ internal fun BindReceiverGuide(
 
 @Composable
 internal fun BindReceiverAdmin(
-    screen: Screen,
+    route: AppRoute,
     pairingViewModel: PairingViewModel,
     pairing: PairingUiState,
     lock: KioskState,
@@ -140,8 +145,8 @@ internal fun BindReceiverAdmin(
         if (lock.isLocked) {
             dialogs.showOptions = false
             dialogs.showUnpairConfirm = false
-            if (screen is Screen.ReceiverHome) guideViewModel.onAction(GuideAction.Stop)
-        } else if (previous && screen is Screen.ReceiverHome) {
+            if (route is AppRoute.ReceiverHome) guideViewModel.onAction(GuideAction.Stop)
+        } else if (previous && route is AppRoute.ReceiverHome) {
             dialogs.showOptions = true
         }
     }
@@ -149,11 +154,11 @@ internal fun BindReceiverAdmin(
         if (updateVisible) {
             dialogs.showOptions = false
             dialogs.showUnpairConfirm = false
-            relockReceiver(screen, pairing, lock, kioskViewModel)
+            relockReceiver(route, pairing, lock, kioskViewModel)
         }
     }
-    LaunchedEffect(screen, pairing.pairing.isPaired) {
-        if (screen is Screen.ReceiverHome) {
+    LaunchedEffect(route, pairing.pairing.isPaired) {
+        if (route is AppRoute.ReceiverHome) {
             registerEscHandler {
                 if (kioskViewModel.state.value.isLocked) return@registerEscHandler
                 dialogs.showOptions = true
@@ -162,8 +167,8 @@ internal fun BindReceiverAdmin(
             registerEscHandler(null)
         }
     }
-    LaunchedEffect(screen, pairing.pairing.isPaired) {
-        if (screen is Screen.ReceiverHome && pairing.pairing.isPaired) {
+    LaunchedEffect(route, pairing.pairing.isPaired) {
+        if (route is AppRoute.ReceiverHome && pairing.pairing.isPaired) {
             registerUnpairHandler { dialogs.showUnpairConfirm = true }
         } else {
             registerUnpairHandler(null)
@@ -173,7 +178,7 @@ internal fun BindReceiverAdmin(
 
 @Composable
 internal fun ReceiverAdminDialogs(
-    screen: Screen,
+    route: AppRoute,
     pairing: PairingUiState,
     lock: KioskState,
     dialogs: ReceiverDialogs,
@@ -187,12 +192,12 @@ internal fun ReceiverAdminDialogs(
 ) {
     fun closeOptions() {
         dialogs.showOptions = false
-        relockReceiver(screen, pairing, lock, kioskViewModel)
+        relockReceiver(route, pairing, lock, kioskViewModel)
     }
 
     if (dialogs.showOptions) {
         ReceiverOptionsDialog(
-            isReceiver = screen is Screen.ReceiverHome,
+            isReceiver = route is AppRoute.ReceiverHome,
             onOpenGuide = {
                 dialogs.showOptions = false
                 guideViewModel.onAction(GuideAction.Start(AppRole.RECEIVER))
@@ -213,7 +218,7 @@ internal fun ReceiverAdminDialogs(
         ReceiverUnpairDialog(
             onDismiss = {
                 dialogs.showUnpairConfirm = false
-                relockReceiver(screen, pairing, lock, kioskViewModel)
+                relockReceiver(route, pairing, lock, kioskViewModel)
             },
             onConfirm = { pairingViewModel.onAction(PairingAction.Unpair) },
         )
@@ -225,7 +230,7 @@ internal fun ReceiverAdminDialogs(
             onDismiss = {
                 if (!roleResetting) {
                     dialogs.showChangeRoleConfirm = false
-                    relockReceiver(screen, pairing, lock, kioskViewModel)
+                    relockReceiver(route, pairing, lock, kioskViewModel)
                 }
             },
             onConfirm = onResetRole,
@@ -234,12 +239,12 @@ internal fun ReceiverAdminDialogs(
 }
 
 internal fun relockReceiver(
-    screen: Screen,
+    route: AppRoute,
     pairing: PairingUiState,
     lock: KioskState,
     kioskViewModel: KioskViewModel,
 ) {
-    if (screen is Screen.ReceiverHome && pairing.pairing.isPaired && lock.hasPassword) {
+    if (route is AppRoute.ReceiverHome && pairing.pairing.isPaired && lock.hasPassword) {
         kioskViewModel.onAction(KioskAction.Lock(force = true))
     }
 }

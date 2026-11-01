@@ -1,5 +1,6 @@
 package app.kiosksync.app.di
 
+import app.kiosksync.app.navigation.appNavigationModule
 import app.kiosksync.feature.emitter.presentation.emitterPresentationModule
 import app.kiosksync.feature.guide.presentation.guidePresentationModule
 import app.kiosksync.feature.kiosk.presentation.kioskPresentationModule
@@ -20,5 +21,6 @@ val presentationModule = module {
         playbackPresentationModule,
         kioskPresentationModule,
         updatePresentationModule,
+        appNavigationModule,
     )
 }

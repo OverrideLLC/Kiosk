@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import app.kiosksync.app.navigation.AppDestinationContext
 import app.kiosksync.core.common.app.AppTheme
 import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppButton
@@ -38,17 +39,16 @@ import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
 import app.kiosksync.feature.emitter.presentation.EmitterAction
 import app.kiosksync.feature.emitter.presentation.EmitterState
+import org.koin.compose.koinInject
 
 @Composable
 internal fun SettingsDialog(
-    theme: AppTheme,
-    reduceMotion: Boolean,
-    onThemeChange: (AppTheme) -> Unit,
-    onReduceMotionChange: (Boolean) -> Unit,
     onOpenGuide: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
+    val preferences = checkNotNull(koinInject<AppDestinationContext>().preferences)
+    val theme = preferences.theme
 
     AppDialog(
         title = Strings.SETTINGS_TITLE,
@@ -65,7 +65,7 @@ internal fun SettingsDialog(
                 options = listOf(Strings.THEME_DARK, Strings.THEME_LIGHT),
                 selectedIndex = if (theme == AppTheme.DARK) 0 else 1,
                 onSelect = { index ->
-                    onThemeChange(if (index == 0) AppTheme.DARK else AppTheme.LIGHT)
+                    preferences.updateTheme(if (index == 0) AppTheme.DARK else AppTheme.LIGHT)
                 },
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -93,8 +93,8 @@ internal fun SettingsDialog(
                 }
                 Spacer(Modifier.width(Space.md))
                 Switch(
-                    checked = reduceMotion,
-                    onCheckedChange = onReduceMotionChange,
+                    checked = preferences.reduceMotion,
+                    onCheckedChange = preferences::updateReduceMotion,
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = colors.onPrimary,
                         checkedTrackColor = colors.primary,

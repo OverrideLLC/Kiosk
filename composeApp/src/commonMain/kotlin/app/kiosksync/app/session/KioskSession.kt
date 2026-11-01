@@ -1,10 +1,10 @@
 package app.kiosksync.app.session
 
 import androidx.compose.runtime.Composable
-import app.kiosksync.app.di.AppSession
-import app.kiosksync.app.shell.Screen
-import app.kiosksync.app.shell.activeRole
 import androidx.compose.runtime.LaunchedEffect
+import app.kiosksync.app.di.AppSession
+import app.kiosksync.app.navigation.AppRoute
+import app.kiosksync.app.navigation.activeRole
 import app.kiosksync.feature.kiosk.presentation.KioskAction
 import app.kiosksync.feature.kiosk.presentation.KioskState
 import app.kiosksync.feature.kiosk.presentation.KioskViewModel
@@ -14,21 +14,21 @@ import org.koin.compose.koinInject
 
 @Composable
 internal fun BindKioskPolicy(
-    screen: Screen,
+    route: AppRoute,
     pairing: PairingUiState,
     lock: KioskState,
     kioskViewModel: KioskViewModel,
 ) {
     val session = koinInject<AppSession>()
     val projectionController = koinInject<ProjectionController>()
-    LaunchedEffect(screen) {
-        session.updateActiveRole(activeRole(screen))
+    LaunchedEffect(route) {
+        session.updateActiveRole(activeRole(route))
     }
     // Only a paired Screen with a blocking password is a kiosk. The pairing
     // screen and the waiting-for-password screen remain usable.
-    LaunchedEffect(screen, pairing.pairing.isPaired, lock.hasPassword) {
-        when (screen) {
-            is Screen.ReceiverHome -> {
+    LaunchedEffect(route, pairing.pairing.isPaired, lock.hasPassword) {
+        when (route) {
+            AppRoute.ReceiverHome -> {
                 if (pairing.pairing.isPaired && lock.hasPassword) {
                     kioskViewModel.onAction(KioskAction.Lock(force = true))
                 } else {
@@ -36,8 +36,8 @@ internal fun BindKioskPolicy(
                 }
             }
 
-            Screen.RoleSelection -> kioskViewModel.onAction(KioskAction.Release)
-            is Screen.EmitterHome -> {
+            AppRoute.RoleSelection -> kioskViewModel.onAction(KioskAction.Release)
+            AppRoute.EmitterHome -> {
                 if (!projectionController.isProjecting) {
                     kioskViewModel.onAction(KioskAction.Release)
                 }

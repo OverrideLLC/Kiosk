@@ -2,7 +2,7 @@ package app.kiosksync.app.session
 
 import androidx.compose.runtime.Composable
 import app.kiosksync.app.di.AppSession
-import app.kiosksync.app.shell.Screen
+import app.kiosksync.app.navigation.AppRoute
 import androidx.compose.runtime.LaunchedEffect
 import app.kiosksync.core.common.app.AppRole
 import app.kiosksync.feature.guide.domain.GuideStep
@@ -21,7 +21,7 @@ import org.koin.compose.koinInject
 internal fun BindGuide(
     guideViewModel: GuideViewModel,
     roleViewModel: RoleViewModel,
-    screen: () -> Screen,
+    route: () -> AppRoute,
     pairing: () -> PairingUiState,
     lock: () -> KioskState,
     kioskViewModel: KioskViewModel,
@@ -37,7 +37,7 @@ internal fun BindGuide(
             roleViewModel.onAction(RoleAction.SelectRole(role))
             roleViewModel.onAction(RoleAction.ConfirmRole)
         },
-        onStopped = { relockReceiver(screen(), pairing(), lock(), kioskViewModel) },
+        onStopped = { relockReceiver(route(), pairing(), lock(), kioskViewModel) },
     )
 }
 
@@ -45,20 +45,20 @@ internal fun BindGuide(
 internal fun AppGuideOverlay(
     guideViewModel: GuideViewModel,
     guideState: GuideState,
-    screen: Screen,
+    route: AppRoute,
     locked: Boolean,
     updateVisible: Boolean,
 ) {
-    if (guideState.isActive && !locked && !updateVisible && guideState.matches(screen)) {
+    if (guideState.isActive && !locked && !updateVisible && guideState.matches(route)) {
         GuideRoot(viewModel = guideViewModel)
     }
 }
 
-private fun GuideState.matches(screen: Screen): Boolean = when (step) {
-    GuideStep.ROLE -> screen is Screen.RoleSelection
+private fun GuideState.matches(route: AppRoute): Boolean = when (step) {
+    GuideStep.ROLE -> route is AppRoute.RoleSelection
     else -> when (role) {
-        AppRole.EMITTER -> screen is Screen.EmitterHome
-        AppRole.RECEIVER -> screen is Screen.ReceiverHome
+        AppRole.EMITTER -> route is AppRoute.EmitterHome
+        AppRole.RECEIVER -> route is AppRoute.ReceiverHome
         null -> false
     }
 }
