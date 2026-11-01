@@ -5,13 +5,13 @@ import app.kiosksync.feature.emitter.presentation.EmitterState
 import app.kiosksync.feature.emitter.domain.models.KioskPasswordDialogUi
 import app.kiosksync.feature.emitter.domain.models.SecurityDialogUi
 
-import app.kiosksync.core.AppLogger
-import app.kiosksync.core.DEFAULT_UNLOCK_SEQUENCE
-import app.kiosksync.core.KioskLockConfig
-import app.kiosksync.core.Strings
-import app.kiosksync.core.isValidKioskPassword
-import app.kiosksync.core.isValidRecoveryPhrase
-import app.kiosksync.core.isValidUnlockSequence
+import app.kiosksync.core.common.app.AppLogger
+import app.kiosksync.core.common.kiosk.DEFAULT_UNLOCK_SEQUENCE
+import app.kiosksync.core.common.kiosk.KioskLockConfig
+import app.kiosksync.core.ui.Strings
+import app.kiosksync.core.common.kiosk.isValidKioskPassword
+import app.kiosksync.core.common.kiosk.isValidRecoveryPhrase
+import app.kiosksync.core.common.kiosk.isValidUnlockSequence
 import app.kiosksync.feature.kiosk.domain.KioskLockConfigurationUseCases
 import app.kiosksync.feature.playlist.domain.Playlist
 import kotlinx.coroutines.CancellationException

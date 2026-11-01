@@ -1,16 +1,16 @@
 package app.kiosksync.feature.update.data
 
-import app.kiosksync.core.APP_EXECUTABLE_NAME
-import app.kiosksync.core.APP_PAYLOAD_DIR_NAME
-import app.kiosksync.core.APP_VERSION
-import app.kiosksync.core.AppLogger
-import app.kiosksync.core.AppVersionPolicy
-import app.kiosksync.core.MAX_UPDATE_EXTRACTED_BYTES
-import app.kiosksync.core.Strings
-import app.kiosksync.core.UPDATE_PACKAGE_FORMAT
-import app.kiosksync.core.UpdatePackageManifest
-import app.kiosksync.core.UpdateUrgency
-import app.kiosksync.core.isValidAppVersion
+import app.kiosksync.core.common.app.APP_EXECUTABLE_NAME
+import app.kiosksync.core.common.app.APP_PAYLOAD_DIR_NAME
+import app.kiosksync.core.common.app.APP_VERSION
+import app.kiosksync.core.common.app.AppLogger
+import app.kiosksync.core.common.update.AppVersionPolicy
+import app.kiosksync.core.common.update.MAX_UPDATE_EXTRACTED_BYTES
+import app.kiosksync.core.ui.Strings
+import app.kiosksync.core.common.update.UPDATE_PACKAGE_FORMAT
+import app.kiosksync.core.common.update.UpdatePackageManifest
+import app.kiosksync.core.common.update.UpdateUrgency
+import app.kiosksync.core.common.update.isValidAppVersion
 import app.kiosksync.core.security.Sha256
 import app.kiosksync.feature.update.domain.ReceiverUpdateManager
 import app.kiosksync.feature.update.domain.ReceiverUpdateError

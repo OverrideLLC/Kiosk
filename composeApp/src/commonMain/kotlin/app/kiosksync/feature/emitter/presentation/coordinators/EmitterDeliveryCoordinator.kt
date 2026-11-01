@@ -1,7 +1,7 @@
 package app.kiosksync.feature.emitter.presentation.coordinators
 
-import app.kiosksync.core.KioskLockConfig
-import app.kiosksync.core.Strings
+import app.kiosksync.core.common.kiosk.KioskLockConfig
+import app.kiosksync.core.ui.Strings
 import app.kiosksync.feature.emitter.domain.EmitterDeliveryResult
 import app.kiosksync.feature.emitter.domain.EmitterLocalMediaMissingException
 import app.kiosksync.feature.emitter.domain.EmitterService

@@ -1,8 +1,8 @@
 package app.kiosksync.feature.media.data
 
-import app.kiosksync.core.AppLogger
-import app.kiosksync.core.ImageFormat
-import app.kiosksync.core.MAX_IMAGE_SIZE_BYTES
+import app.kiosksync.core.common.app.AppLogger
+import app.kiosksync.core.common.media.ImageFormat
+import app.kiosksync.core.common.media.MAX_IMAGE_SIZE_BYTES
 import app.kiosksync.feature.media.domain.MediaImportError
 import app.kiosksync.feature.media.domain.MediaImportResult
 import app.kiosksync.feature.media.domain.MediaRepository

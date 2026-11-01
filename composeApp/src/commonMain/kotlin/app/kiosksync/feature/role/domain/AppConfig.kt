@@ -1,8 +1,8 @@
 package app.kiosksync.feature.role.domain
 
-import app.kiosksync.core.AppRole
-import app.kiosksync.core.AppTheme
-import app.kiosksync.core.DEFAULT_PORT
+import app.kiosksync.core.common.app.AppRole
+import app.kiosksync.core.common.app.AppTheme
+import app.kiosksync.core.common.discovery.DEFAULT_PORT
 import kotlinx.serialization.Serializable
 
 @Serializable

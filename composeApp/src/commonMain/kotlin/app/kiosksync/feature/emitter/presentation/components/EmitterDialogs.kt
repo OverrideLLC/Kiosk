@@ -24,8 +24,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import app.kiosksync.core.AppTheme
-import app.kiosksync.core.Strings
+import app.kiosksync.core.common.app.AppTheme
+import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppButtonGroup
 import app.kiosksync.core.ui.components.AppButtonSize

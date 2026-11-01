@@ -1,11 +1,10 @@
 package app.kiosksync.feature.kiosk.domain
 
-import app.kiosksync.core.DEFAULT_UNLOCK_SEQUENCE
-import app.kiosksync.core.KioskLockConfig
-import app.kiosksync.core.isValidKioskPassword
-import app.kiosksync.core.isValidRecoveryPhrase
-import app.kiosksync.core.isValidUnlockSequence
-
+import app.kiosksync.core.common.kiosk.DEFAULT_UNLOCK_SEQUENCE
+import app.kiosksync.core.common.kiosk.KioskLockConfig
+import app.kiosksync.core.common.kiosk.isValidKioskPassword
+import app.kiosksync.core.common.kiosk.isValidRecoveryPhrase
+import app.kiosksync.core.common.kiosk.isValidUnlockSequence
 /** Business operations for saving the Controller's kiosk lock configuration. */
 class KioskLockConfigurationUseCases(
     private val repository: KioskLockRepository,

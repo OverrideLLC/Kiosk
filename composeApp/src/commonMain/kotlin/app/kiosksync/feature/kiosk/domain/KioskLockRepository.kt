@@ -1,6 +1,6 @@
 package app.kiosksync.feature.kiosk.domain
 
-import app.kiosksync.core.KioskLockConfig
+import app.kiosksync.core.common.kiosk.KioskLockConfig
 import kotlinx.coroutines.flow.Flow
 
 /** Persistence contract for the locally configured kiosk lock. */

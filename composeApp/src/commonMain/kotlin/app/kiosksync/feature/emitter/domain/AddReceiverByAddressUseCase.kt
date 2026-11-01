@@ -1,6 +1,6 @@
 package app.kiosksync.feature.emitter.domain
 
-import app.kiosksync.core.DiscoveredDevice
+import app.kiosksync.core.common.pairing.DiscoveredDevice
 import kotlinx.coroutines.CancellationException
 
 data class ReceiverAddressDetails(

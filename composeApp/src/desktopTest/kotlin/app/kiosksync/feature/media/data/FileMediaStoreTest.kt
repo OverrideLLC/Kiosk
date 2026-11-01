@@ -1,7 +1,7 @@
 package app.kiosksync.feature.media.data
 
 import app.kiosksync.NoOpLogger
-import app.kiosksync.core.ImageFormat
+import app.kiosksync.core.common.media.ImageFormat
 import java.io.File
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest

@@ -7,8 +7,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Density
-import app.kiosksync.core.AppRole
-import app.kiosksync.core.AppTheme
+import app.kiosksync.core.common.app.AppRole
+import app.kiosksync.core.common.app.AppTheme
 import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.feature.guide.domain.GuideStep
 import java.io.File

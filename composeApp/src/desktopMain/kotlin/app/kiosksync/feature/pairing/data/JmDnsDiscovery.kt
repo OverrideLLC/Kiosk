@@ -1,9 +1,9 @@
 package app.kiosksync.feature.pairing.data
 
-import app.kiosksync.core.APP_VERSION
-import app.kiosksync.core.AppLogger
-import app.kiosksync.core.DiscoveredDevice
-import app.kiosksync.core.MDNS_SERVICE_TYPE
+import app.kiosksync.core.common.app.APP_VERSION
+import app.kiosksync.core.common.app.AppLogger
+import app.kiosksync.core.common.pairing.DiscoveredDevice
+import app.kiosksync.core.common.discovery.MDNS_SERVICE_TYPE
 import app.kiosksync.feature.pairing.domain.DeviceDiscovery
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

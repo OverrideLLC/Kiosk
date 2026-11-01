@@ -1,13 +1,13 @@
 package app.kiosksync.feature.receiver.data.server
 
-import app.kiosksync.core.ErrorResponse
-import app.kiosksync.core.HEADER_CONTENT_SHA256
-import app.kiosksync.core.HEADER_AUTH_TOKEN
-import app.kiosksync.core.HEADER_EMITTER_ID
-import app.kiosksync.core.KioskLockConfig
-import app.kiosksync.core.MAX_UPDATE_PACKAGE_BYTES
-import app.kiosksync.core.UpdateUploadResponse
-import app.kiosksync.core.isValidAppVersion
+import app.kiosksync.core.common.http.ErrorResponse
+import app.kiosksync.core.common.http.HEADER_CONTENT_SHA256
+import app.kiosksync.core.common.http.HEADER_AUTH_TOKEN
+import app.kiosksync.core.common.http.HEADER_EMITTER_ID
+import app.kiosksync.core.common.kiosk.KioskLockConfig
+import app.kiosksync.core.common.update.MAX_UPDATE_PACKAGE_BYTES
+import app.kiosksync.core.common.update.UpdateUploadResponse
+import app.kiosksync.core.common.update.isValidAppVersion
 import app.kiosksync.feature.receiver.data.server.isValidForReceiver
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode

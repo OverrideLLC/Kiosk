@@ -1,7 +1,7 @@
 package app.kiosksync.feature.guide.presentation.components
 
-import app.kiosksync.core.AppRole
-import app.kiosksync.core.Strings
+import app.kiosksync.core.common.app.AppRole
+import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppIcon
 import app.kiosksync.feature.guide.presentation.GuideState
 import app.kiosksync.feature.guide.domain.GuideStep

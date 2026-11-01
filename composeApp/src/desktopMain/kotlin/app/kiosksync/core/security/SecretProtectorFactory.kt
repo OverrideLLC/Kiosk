@@ -1,6 +1,6 @@
 package app.kiosksync.core.security
 
-import app.kiosksync.core.AppLogger
+import app.kiosksync.core.common.app.AppLogger
 
 object SecretProtectorFactory {
     fun create(logger: AppLogger, osName: String = System.getProperty("os.name").orEmpty()): SecretProtector =

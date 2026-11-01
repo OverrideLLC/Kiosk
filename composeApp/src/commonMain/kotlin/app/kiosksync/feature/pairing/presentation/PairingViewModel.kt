@@ -1,7 +1,7 @@
 package app.kiosksync.feature.pairing.presentation
 
-import app.kiosksync.core.AppLogger
-import app.kiosksync.core.Strings
+import app.kiosksync.core.common.app.AppLogger
+import app.kiosksync.core.ui.Strings
 import app.kiosksync.feature.pairing.domain.DeviceDiscovery
 import app.kiosksync.feature.pairing.domain.PairingManager
 import app.kiosksync.feature.receiver.domain.ReceiverServer

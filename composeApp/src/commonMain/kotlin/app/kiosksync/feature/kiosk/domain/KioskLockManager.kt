@@ -1,9 +1,9 @@
 package app.kiosksync.feature.kiosk.domain
 
-import app.kiosksync.core.AppLogger
-import app.kiosksync.core.KioskLockConfig
-import app.kiosksync.core.MAX_UNLOCK_ATTEMPTS
-import app.kiosksync.core.UNLOCK_LOCKOUT_SECONDS
+import app.kiosksync.core.common.app.AppLogger
+import app.kiosksync.core.common.kiosk.KioskLockConfig
+import app.kiosksync.core.common.kiosk.MAX_UNLOCK_ATTEMPTS
+import app.kiosksync.core.common.kiosk.UNLOCK_LOCKOUT_SECONDS
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

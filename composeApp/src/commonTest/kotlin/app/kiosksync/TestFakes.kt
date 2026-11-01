@@ -1,11 +1,11 @@
 package app.kiosksync
 
 import androidx.compose.ui.graphics.ImageBitmap
-import app.kiosksync.core.AppLogger
-import app.kiosksync.core.EmitterPairedDevice
-import app.kiosksync.core.ImageFormat
-import app.kiosksync.core.KioskLockConfig
-import app.kiosksync.core.ReceiverPairedInfo
+import app.kiosksync.core.common.app.AppLogger
+import app.kiosksync.core.common.pairing.EmitterPairedDevice
+import app.kiosksync.core.common.media.ImageFormat
+import app.kiosksync.core.common.kiosk.KioskLockConfig
+import app.kiosksync.core.common.pairing.ReceiverPairedInfo
 import app.kiosksync.feature.emitter.domain.EmitterScreensRepository
 import app.kiosksync.feature.kiosk.domain.KioskLockRepository
 import app.kiosksync.feature.pairing.domain.PairingRepository

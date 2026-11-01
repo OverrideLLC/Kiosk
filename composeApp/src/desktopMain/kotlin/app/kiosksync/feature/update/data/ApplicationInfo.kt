@@ -1,6 +1,6 @@
 package app.kiosksync.feature.update.data
 
-import app.kiosksync.core.APP_PAYLOAD_DIR_NAME
+import app.kiosksync.core.common.app.APP_PAYLOAD_DIR_NAME
 import java.io.File
 
 /**

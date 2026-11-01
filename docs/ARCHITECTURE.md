@@ -50,8 +50,8 @@ Hay **un único módulo Gradle** (`composeApp`) con dos source sets:
 ```
 composeApp/src/
 ├── commonMain/kotlin/app/kiosksync/
-│   ├── core/            # APP_NAME, constantes, Strings.kt, modelos, DTOs
-│   ├── core/ui/         # tema M3, tipografía, iconos y componentes compartidos
+│   ├── core/common/     # app, discovery, http, kiosk, media, pairing, playback, playlist, status, sync, update
+│   ├── core/ui/         # Strings.kt, tema M3, iconos y componentes compartidos
 │   ├── feature/
 │   │   ├── role/{domain,data,presentation}/
 │   │   ├── pairing/{domain,data,presentation}/
@@ -59,37 +59,35 @@ composeApp/src/
 │   │   ├── media/{domain,data}/
 │   │   ├── playlist/{domain,data,presentation}/
 │   │   ├── sync/domain/
-│   │   ├── playback/{domain,presentation}/
+│   │   ├── playback/{domain,presentation,di}/
 │   │   ├── kiosk/{domain,data,presentation}/
-│   │   ├── receiver/{domain,data}/
-│   │   ├── projection/domain/
+│   │   ├── receiver/{domain,data,presentation}/
+│   │   ├── projection/{domain,presentation,di}/
 │   │   ├── guide/{domain,presentation/{components}}/
-│   │   └── update/{domain,presentation}/
-│   ├── local/           # KioskDatabase: une los DAO de cada feature
-│   ├── migration/       # importación transaccional de JSON heredado
-│   ├── ui/              # App.kt, navegación y pantallas por rol
-│   └── AppContainer.kt  # inyección manual
+│   │   ├── update/{domain,presentation}/
+│   │   └── persistence/data/ # base Room, repositorios y migración JSON
+│   └── app/             # arranque de la aplicación, separado por función
+│       ├── App.kt
+│       ├── shell/       # pantalla activa, arranque y preferencias
+│       ├── session/     # rol, Controlador, Pantalla, kiosco y guía
+│       ├── di/          # AppSession, apagado y agregador de presentación
 └── desktopMain/kotlin/app/kiosksync/
+    ├── app/Main.kt      # argumentos, logger y punto de entrada
+    ├── app/di/          # plataforma, raíz Koin y arranque
+    ├── app/host/        # ventana y catálogo
+    ├── feature/*/di/    # módulo Koin de la feature, sin includes cruzados
     ├── feature/*/data/  # Room, DataStore, red y adaptadores propios de cada feature
-    ├── local/           # builder SQLite y composición de repositorios
-    ├── migration/       # importación de JSON heredado a Room
     ├── core/security/   # hash y protección compartida de secretos
-    ├── platform/        # logger y servicios compartidos del host
-    ├── Desktop*.kt      # fábrica del contenedor y ciclo de ventanas
-    └── Main.kt          # argumentos, logger y punto de entrada
+    └── platform/        # logger y servicios compartidos del host
 ```
 
 Las dependencias apuntan hacia contratos y modelos del dominio por feature. Las
 implementaciones de repositorio, Room, DataStore, red y operaciones de datos viven
 en `data` junto a la feature que las posee. Cada feature declara sus entidades y
-su DAO. `app.kiosksync.local.KioskDatabase` solo los reúne en una base; el
-builder y `RoomRepositories` viven en el mismo paquete, en `desktopMain`. La
-importación del JSON heredado vive en `app.kiosksync.migration` porque escribe
-varias features en una transacción. Hash y protección de secretos viven en
-`app.kiosksync.core.security`. Los DAOs y las entidades son detalles de
-persistencia:
-presentación y dominio no los consumen. La app mantiene un módulo Gradle, un
-`AppContainer` manual y la navegación existente.
+su DAO. `feature/persistence/data` reúne esa base en `KioskDatabase`,
+compone los repositorios y escribe la migración JSON en una transacción. Hash y
+protección de secretos viven en `app.kiosksync.core.security`. Los DAOs y las
+entidades son detalles de persistencia: presentación y dominio no los consumen. La app mantiene un módulo Gradle, Koin para la inyección de dependencias y la navegación existente.
 
 ## Dependencias principales
 
@@ -109,15 +107,26 @@ presentación y dominio no los consumen. La app mantiene un módulo Gradle, un
 
 ## Composición de la aplicación
 
-`DesktopContainerFactory` inicializa de forma asíncrona una sola instancia de
+`startDesktopKoin` inicializa de forma asíncrona una sola instancia de
 DataStore Preferences y Room para el `dataDir` efectivo del proceso, migra los JSON
-heredados antes de abrir la UI y entrega contratos pequeños a `AppContainer`.
-`AppContainer.shutdown()` cierra ambos recursos. La composición crea una sola vez:
+heredados antes de abrir la UI y abre el grafo con `desktopAppModule`. Ese raíz solo
+incluye módulos y registra `AppShutdown`. Las features no se incluyen entre sí; se
+ven por los contratos ya registrados.
+
+- `platformModule`: argumentos, directorio de datos, logger, `AppSession`, dispatchers, scopes, protector de secretos y selector de imágenes.
+- `persistenceModule`: un DataStore, una base Room y los contratos de repositorio. `FileMediaStore` se crea dentro de `RoomRepositories`.
+- `playbackModule` y `projectionModule`: `ReceiverStatusTracker`, los bridges de reproducción y `ProjectionController` (también expuesto como `ProjectionService`).
+- `pairingModule`, `kioskModule`, `receiverModule` y `emitterModule`: `PairingManager`, `JmDnsDiscovery`, el bloqueo de kiosco, `KtorReceiverServer`, `KtorEmitterClient`, la sincronización y las actualizaciones. Cliente y servidor conviven en el mismo proceso porque el rol puede cambiar sin reiniciar Koin.
+- `presentationModule`: agrega las factories de cada feature. El scope de Compose y los callbacks entran como parámetros del `Host`, no como singletons.
+
+`AppShutdown.shutdown()` cierra red, DataStore y Room en el apagado normal.
+`BootstrapCloseables` solo cierra esos recursos si el arranque falla antes de que
+`AppShutdown` exista. Koin crea una sola vez:
 
 - repositorios de preferencias, playlists, medios y credenciales; `FileMediaStore`,
   protector de secretos y `FileAppLogger`.
 - `JmDnsDiscovery`.
-- `KtorEmitterClient` (Controlador) o `KtorReceiverServer` (Pantalla).
+- `KtorEmitterClient` y `KtorReceiverServer`.
 - `PairingManager`, `KioskLockManager`, `ReceiverStatusTracker`,
   `ReceiverPlaylistBridge`, `ReceiverPlaybackSyncBridge`, `ProjectionController`
   (estado compartido de proyección en `feature/projection/domain`).
@@ -285,8 +294,8 @@ cuando afectan a una acción del usuario.
   porque coordinan temporizadores, recursos o eventos externos.
 - `feature/emitter/presentation` contiene en el paquete raíz `EmitterUiState`,
   `EmitterAction`, `EmitterViewModel` y `EmitterScreen`. El ViewModel aplica las
-  transiciones locales y delega efectos en coordinadores. `App.kt` crea el
-  ViewModel desde `AppContainer`, gestiona `start/stop` con el ciclo de vida del
+  transiciones locales y delega efectos en coordinadores. Koin crea el
+  ViewModel; `EmitterWorkspace` gestiona `start/stop` con el ciclo de vida del
   workspace y conecta directamente el Screen; un `EmitterRoute` duplicaría esa
   composición sin aportar lógica. `coordinators` agrupa los flujos que adaptan
   operaciones y resultados al estado de UI; `components` agrupa los composables
@@ -309,7 +318,7 @@ cuando afectan a una acción del usuario.
   [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md).
 - Los componentes compartidos se promueven a `core.ui` cuando tienen consumidores
   reales en varias features; componentes específicos permanecen junto a su feature.
-- Todos los textos visibles están en `core/Strings.kt`.
+- Todos los textos visibles están en `core/ui/Strings.kt`.
 - La guía interactiva vive en `feature/guide/presentation`: `GuideViewModel`
   mantiene la máquina de estados y emite efectos tipados; `GuideStep`, el modelo
   del flujo, vive en `feature/guide/domain`. `GuideScreen` es la entrada de

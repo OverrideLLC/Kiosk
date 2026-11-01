@@ -27,6 +27,10 @@ kotlin {
 
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
+
+            implementation(project.dependencies.platform(libs.koin.bom))
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
         }
 
         val desktopMain by getting {
@@ -77,7 +81,7 @@ compose.resources {
 
 compose.desktop {
     application {
-        mainClass = "app.kiosksync.MainKt"
+        mainClass = "app.kiosksync.app.MainKt"
 
         // Windows 10/11 may use a legacy ANSI code page for the JVM. The app
         // writes Spanish text and JSON, so force UTF-8 in the packaged runtime.

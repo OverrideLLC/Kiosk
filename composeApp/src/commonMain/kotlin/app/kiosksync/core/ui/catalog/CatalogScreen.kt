@@ -43,8 +43,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import app.kiosksync.core.AppTheme
-import app.kiosksync.core.Strings
+import app.kiosksync.core.common.app.AppTheme
+import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppCircularProgress
 import app.kiosksync.core.ui.components.AppButtonGroup

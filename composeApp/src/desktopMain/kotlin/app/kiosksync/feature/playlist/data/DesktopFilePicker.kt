@@ -1,7 +1,7 @@
 package app.kiosksync.feature.playlist.data
 
-import app.kiosksync.core.AppLogger
-import app.kiosksync.core.Strings
+import app.kiosksync.core.common.app.AppLogger
+import app.kiosksync.core.ui.Strings
 import java.awt.FileDialog
 import java.awt.Frame
 import javax.swing.SwingUtilities

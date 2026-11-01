@@ -1,6 +1,6 @@
 package app.kiosksync.feature.kiosk.data
 
-import app.kiosksync.core.KioskLockConfig
+import app.kiosksync.core.common.kiosk.KioskLockConfig
 import app.kiosksync.feature.kiosk.domain.KioskLockRepository
 import app.kiosksync.core.security.SecretProtector
 import kotlinx.coroutines.Dispatchers

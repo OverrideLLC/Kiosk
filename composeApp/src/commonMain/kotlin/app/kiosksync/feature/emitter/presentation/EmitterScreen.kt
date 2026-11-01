@@ -17,7 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import app.kiosksync.core.Strings
+import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.feature.emitter.domain.models.EmitterPanel
 import org.jetbrains.compose.ui.tooling.preview.Preview

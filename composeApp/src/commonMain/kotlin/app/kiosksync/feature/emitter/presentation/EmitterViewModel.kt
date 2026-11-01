@@ -1,8 +1,8 @@
 package app.kiosksync.feature.emitter.presentation
 
-import app.kiosksync.core.AppLogger
-import app.kiosksync.core.KioskLockConfig
-import app.kiosksync.core.Strings
+import app.kiosksync.core.common.app.AppLogger
+import app.kiosksync.core.common.kiosk.KioskLockConfig
+import app.kiosksync.core.ui.Strings
 import app.kiosksync.feature.emitter.domain.EmitterService
 import app.kiosksync.feature.emitter.domain.EmitterServiceDevice
 import app.kiosksync.feature.emitter.domain.EmitterServiceState
@@ -14,9 +14,9 @@ import app.kiosksync.feature.emitter.presentation.coordinators.EmitterDeliveryCo
 import app.kiosksync.feature.emitter.presentation.coordinators.EmitterManualIpCoordinator
 import app.kiosksync.feature.emitter.presentation.coordinators.EmitterPairingCoordinator
 import app.kiosksync.feature.emitter.presentation.coordinators.EmitterSecurityCoordinator
-import app.kiosksync.core.DEFAULT_UNLOCK_SEQUENCE
-import app.kiosksync.core.MAX_RECOVERY_PHRASE_LENGTH
-import app.kiosksync.core.MAX_UNLOCK_SEQUENCE_LENGTH
+import app.kiosksync.core.common.kiosk.DEFAULT_UNLOCK_SEQUENCE
+import app.kiosksync.core.common.kiosk.MAX_RECOVERY_PHRASE_LENGTH
+import app.kiosksync.core.common.kiosk.MAX_UNLOCK_SEQUENCE_LENGTH
 import app.kiosksync.feature.kiosk.domain.KioskLockConfigurationUseCases
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.playlist.domain.Playlist

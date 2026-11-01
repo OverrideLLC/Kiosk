@@ -1,8 +1,8 @@
 package app.kiosksync.feature.playlist.domain
 
-import app.kiosksync.core.DEFAULT_DURATION_SEC
-import app.kiosksync.core.MAX_DURATION_SEC
-import app.kiosksync.core.MIN_DURATION_SEC
+import app.kiosksync.core.common.playlist.DEFAULT_DURATION_SEC
+import app.kiosksync.core.common.playlist.MAX_DURATION_SEC
+import app.kiosksync.core.common.playlist.MIN_DURATION_SEC
 import kotlinx.serialization.Serializable
 
 @Serializable

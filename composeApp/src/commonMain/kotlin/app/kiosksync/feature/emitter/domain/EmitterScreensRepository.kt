@@ -1,7 +1,6 @@
 package app.kiosksync.feature.emitter.domain
 
-import app.kiosksync.core.EmitterPairedDevice
-
+import app.kiosksync.core.common.pairing.EmitterPairedDevice
 /** Local credentials and addresses for Screens paired by this Emitter. */
 interface EmitterScreensRepository {
     suspend fun loadPairedScreens(): List<EmitterPairedDevice>

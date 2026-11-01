@@ -1,6 +1,6 @@
 package app.kiosksync.feature.receiver.data
 
-import app.kiosksync.core.AppLogger
+import app.kiosksync.core.common.app.AppLogger
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.kiosk.domain.KioskLockRepository
 import app.kiosksync.feature.pairing.domain.PairingManager
@@ -30,7 +30,7 @@ class KtorReceiverServer(
     private val playlistBridge: ReceiverPlaylistBridge,
     private val playbackSyncBridge: ReceiverPlaybackSyncBridge,
     private val kioskLockManager: KioskLockManager,
-    private val statusProvider: () -> app.kiosksync.core.ReceiverStatusResponse,
+    private val statusProvider: () -> app.kiosksync.core.common.status.ReceiverStatusResponse,
     private val updateManager: ReceiverUpdateManager,
 ) : ReceiverServer {
     private val json = Json {

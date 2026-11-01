@@ -1,12 +1,12 @@
 package app.kiosksync.feature.receiver.data
 
 import app.kiosksync.NoOpLogger
-import app.kiosksync.core.KioskLockConfig
-import app.kiosksync.core.ReceiverPairedInfo
+import app.kiosksync.core.common.kiosk.KioskLockConfig
+import app.kiosksync.core.common.pairing.ReceiverPairedInfo
 import app.kiosksync.core.security.DevelopmentSecretProtector
 import app.kiosksync.feature.playlist.domain.Playlist
-import app.kiosksync.local.RoomRepositories
-import app.kiosksync.local.buildKioskDatabase
+import app.kiosksync.feature.persistence.data.RoomRepositories
+import app.kiosksync.feature.persistence.data.buildKioskDatabase
 import java.io.File
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest

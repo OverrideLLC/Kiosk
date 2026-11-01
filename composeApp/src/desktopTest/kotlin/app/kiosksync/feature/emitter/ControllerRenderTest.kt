@@ -11,10 +11,10 @@ import app.kiosksync.feature.emitter.presentation.EmitterAction
 import app.kiosksync.feature.emitter.presentation.EmitterScreen
 import app.kiosksync.feature.emitter.presentation.EmitterViewModel
 import app.kiosksync.feature.emitter.data.EmitterServiceImpl
-import app.kiosksync.core.AppTheme
-import app.kiosksync.core.DiscoveredDevice
-import app.kiosksync.core.EmitterPairedDevice
-import app.kiosksync.core.KioskLockConfig
+import app.kiosksync.core.common.app.AppTheme
+import app.kiosksync.core.common.pairing.DiscoveredDevice
+import app.kiosksync.core.common.pairing.EmitterPairedDevice
+import app.kiosksync.core.common.kiosk.KioskLockConfig
 import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.feature.kiosk.domain.KioskLockConfigurationUseCases
 import app.kiosksync.feature.kiosk.domain.KioskLockManager

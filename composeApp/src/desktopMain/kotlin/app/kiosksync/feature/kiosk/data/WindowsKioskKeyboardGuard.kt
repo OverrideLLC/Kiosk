@@ -1,6 +1,6 @@
 package app.kiosksync.feature.kiosk.data
 
-import app.kiosksync.core.AppLogger
+import app.kiosksync.core.common.app.AppLogger
 import app.kiosksync.feature.kiosk.domain.KioskKeyEvent
 import app.kiosksync.feature.kiosk.domain.KioskKeyKind
 import app.kiosksync.feature.kiosk.domain.KioskKeyboardGuard

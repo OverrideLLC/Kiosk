@@ -1,14 +1,14 @@
 package app.kiosksync.feature.emitter.data
 
-import app.kiosksync.core.APP_VERSION
-import app.kiosksync.core.AppLogger
-import app.kiosksync.core.DEFAULT_PORT
-import app.kiosksync.core.DiscoveredDevice
-import app.kiosksync.core.EmitterPairedDevice
-import app.kiosksync.core.KioskLockConfig
-import app.kiosksync.core.PLAYBACK_SYNC_DELAY_MS
-import app.kiosksync.core.STATUS_FAILURE_THRESHOLD
-import app.kiosksync.core.STATUS_POLL_INTERVAL_MS
+import app.kiosksync.core.common.app.APP_VERSION
+import app.kiosksync.core.common.app.AppLogger
+import app.kiosksync.core.common.discovery.DEFAULT_PORT
+import app.kiosksync.core.common.pairing.DiscoveredDevice
+import app.kiosksync.core.common.pairing.EmitterPairedDevice
+import app.kiosksync.core.common.kiosk.KioskLockConfig
+import app.kiosksync.core.common.playback.PLAYBACK_SYNC_DELAY_MS
+import app.kiosksync.core.common.http.STATUS_FAILURE_THRESHOLD
+import app.kiosksync.core.common.http.STATUS_POLL_INTERVAL_MS
 import app.kiosksync.feature.emitter.domain.AddReceiverByAddressUseCase
 import app.kiosksync.feature.emitter.domain.EmitterClient
 import app.kiosksync.feature.emitter.domain.EmitterDeliveryResult

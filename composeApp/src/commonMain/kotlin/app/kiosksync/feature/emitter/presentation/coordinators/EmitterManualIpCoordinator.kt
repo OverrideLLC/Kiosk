@@ -1,6 +1,6 @@
 package app.kiosksync.feature.emitter.presentation.coordinators
 
-import app.kiosksync.core.Strings
+import app.kiosksync.core.ui.Strings
 import app.kiosksync.feature.emitter.domain.ReceiverAddressException
 import app.kiosksync.feature.emitter.domain.ReceiverAddressFailure
 import app.kiosksync.feature.emitter.domain.EmitterService

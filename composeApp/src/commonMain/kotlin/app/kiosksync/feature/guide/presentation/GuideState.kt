@@ -1,6 +1,6 @@
 package app.kiosksync.feature.guide.presentation
 
-import app.kiosksync.core.AppRole
+import app.kiosksync.core.common.app.AppRole
 import app.kiosksync.feature.guide.domain.GuideStep
 
 data class GuideState(

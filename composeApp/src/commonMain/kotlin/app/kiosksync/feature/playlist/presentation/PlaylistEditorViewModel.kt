@@ -1,10 +1,10 @@
 package app.kiosksync.feature.playlist.presentation
 
-import app.kiosksync.core.AppLogger
-import app.kiosksync.core.DEFAULT_DURATION_SEC
-import app.kiosksync.core.MAX_DURATION_SEC
-import app.kiosksync.core.MIN_DURATION_SEC
-import app.kiosksync.core.Strings
+import app.kiosksync.core.common.app.AppLogger
+import app.kiosksync.core.common.playlist.DEFAULT_DURATION_SEC
+import app.kiosksync.core.common.playlist.MAX_DURATION_SEC
+import app.kiosksync.core.common.playlist.MIN_DURATION_SEC
+import app.kiosksync.core.ui.Strings
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.domain.PlaylistItem
 import app.kiosksync.feature.playlist.domain.models.PlaylistNameDialogMode

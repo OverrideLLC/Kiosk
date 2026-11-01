@@ -9,8 +9,8 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.unit.Density
 import app.kiosksync.FakeRepositories
 import app.kiosksync.NoOpLogger
-import app.kiosksync.core.AppRole
-import app.kiosksync.core.AppTheme
+import app.kiosksync.core.common.app.AppRole
+import app.kiosksync.core.common.app.AppTheme
 import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.feature.playback.presentation.CarouselScreen
 import app.kiosksync.feature.playback.presentation.PlaybackStateHolder

@@ -1,7 +1,7 @@
 package app.kiosksync.feature.receiver.data.server
 
-import app.kiosksync.core.AppLogger
-import app.kiosksync.core.KioskLockConfig
+import app.kiosksync.core.common.app.AppLogger
+import app.kiosksync.core.common.kiosk.KioskLockConfig
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.kiosk.domain.KioskLockRepository
 import app.kiosksync.feature.pairing.domain.PairingManager
@@ -11,8 +11,7 @@ import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.domain.PlaylistRepository
 import app.kiosksync.feature.media.domain.MediaRepository
 import app.kiosksync.feature.update.domain.ReceiverUpdateManager
-import app.kiosksync.core.ReceiverStatusResponse
-
+import app.kiosksync.core.common.status.ReceiverStatusResponse
 internal data class ReceiverRouteContext(
     val pairingManager: PairingManager,
     val logger: AppLogger,
@@ -31,7 +30,7 @@ internal data class ReceiverRouteContext(
 internal val MEDIA_ID_REGEX = Regex("^[A-Za-z0-9_-]{1,100}$")
 
 internal fun Playlist.isValidForReceiver(): Boolean {
-    if (version < 1 || defaultDurationSec !in app.kiosksync.core.MIN_DURATION_SEC..app.kiosksync.core.MAX_DURATION_SEC) {
+    if (version < 1 || defaultDurationSec !in app.kiosksync.core.common.playlist.MIN_DURATION_SEC..app.kiosksync.core.common.playlist.MAX_DURATION_SEC) {
         return false
     }
     if (items.map { it.mediaId }.distinct().size != items.size) return false
@@ -43,12 +42,12 @@ internal fun Playlist.isValidForReceiver(): Boolean {
             item.fileName.none { it in "/\\:*?\"<>|" || it.code < 32 } &&
             item.sha256.length == 64 &&
             (item.durationSec == null ||
-                item.durationSec in app.kiosksync.core.MIN_DURATION_SEC..app.kiosksync.core.MAX_DURATION_SEC)
+                item.durationSec in app.kiosksync.core.common.playlist.MIN_DURATION_SEC..app.kiosksync.core.common.playlist.MAX_DURATION_SEC)
     }
 }
 
 internal fun KioskLockConfig.isValidForReceiver(): Boolean {
-    if (!enabled || !app.kiosksync.core.isValidUnlockSequence(unlockSequence)) return false
+    if (!enabled || !app.kiosksync.core.common.kiosk.isValidUnlockSequence(unlockSequence)) return false
     if (passwordHash != null) {
         if (passwordLength !in 4..64 || !passwordHash.isSha256Hex()) return false
     } else if (passwordLength != 0) {
@@ -56,7 +55,7 @@ internal fun KioskLockConfig.isValidForReceiver(): Boolean {
     }
     if (recoveryHash != null) {
         if (recoveryLength !in
-            app.kiosksync.core.MIN_RECOVERY_PHRASE_LENGTH..app.kiosksync.core.MAX_RECOVERY_PHRASE_LENGTH ||
+            app.kiosksync.core.common.kiosk.MIN_RECOVERY_PHRASE_LENGTH..app.kiosksync.core.common.kiosk.MAX_RECOVERY_PHRASE_LENGTH ||
             !recoveryHash.isSha256Hex()
         ) return false
     } else if (recoveryLength != 0) {

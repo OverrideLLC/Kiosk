@@ -1,10 +1,10 @@
 package app.kiosksync.feature.receiver.data.server
 
-import app.kiosksync.core.ErrorResponse
-import app.kiosksync.core.PlaybackSyncRequest
-import app.kiosksync.core.PlaybackSyncResponse
-import app.kiosksync.core.ReceiverStatusResponse
-import app.kiosksync.core.APP_VERSION
+import app.kiosksync.core.common.http.ErrorResponse
+import app.kiosksync.core.common.playback.PlaybackSyncRequest
+import app.kiosksync.core.common.playback.PlaybackSyncResponse
+import app.kiosksync.core.common.status.ReceiverStatusResponse
+import app.kiosksync.core.common.app.APP_VERSION
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route

@@ -1,8 +1,8 @@
 package app.kiosksync.feature.receiver.data.server
 
-import app.kiosksync.core.ErrorResponse
-import app.kiosksync.core.HEADER_AUTH_TOKEN
-import app.kiosksync.core.HEADER_EMITTER_ID
+import app.kiosksync.core.common.http.ErrorResponse
+import app.kiosksync.core.common.http.HEADER_AUTH_TOKEN
+import app.kiosksync.core.common.http.HEADER_EMITTER_ID
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall

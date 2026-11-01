@@ -1,6 +1,6 @@
 package app.kiosksync.feature.pairing.domain
 
-import app.kiosksync.core.DiscoveredDevice
+import app.kiosksync.core.common.pairing.DiscoveredDevice
 import kotlinx.coroutines.flow.StateFlow
 
 interface DeviceDiscovery {

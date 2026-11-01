@@ -1,6 +1,6 @@
 package app.kiosksync.feature.emitter.domain
 
-import app.kiosksync.core.EmitterPairedDevice
+import app.kiosksync.core.common.pairing.EmitterPairedDevice
 import kotlinx.coroutines.CancellationException
 
 data class PairReceiverRequest(

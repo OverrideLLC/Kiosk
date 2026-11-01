@@ -169,7 +169,7 @@ class FileReceiverUpdateManagerTest {
         val root = createTempDirectory("override-update-test").toFile()
         try {
             val installDir = File(root, "install/app").apply { mkdirs() }
-            File(installDir, "OverrideKiosk.cfg").writeText("mainClass=app.kiosksync.MainKt")
+            File(installDir, "OverrideKiosk.cfg").writeText("mainClass=app.kiosksync.app.MainKt")
             File(installDir, "app.jar").writeText("old payload")
             val dataDir = File(root, "data").apply { mkdirs() }
             block(installDir, dataDir)
@@ -192,7 +192,7 @@ class FileReceiverUpdateManagerTest {
             }
             zip.putNextEntry(ZipEntry("app/"))
             zip.closeEntry()
-            writeEntry(zip, "app/OverrideKiosk.cfg", "mainClass=app.kiosksync.MainKt")
+            writeEntry(zip, "app/OverrideKiosk.cfg", "mainClass=app.kiosksync.app.MainKt")
             writeEntry(zip, "app/app.jar", "new payload $version")
             extraEntries.forEach { (name, content) -> writeEntry(zip, name, content) }
         }

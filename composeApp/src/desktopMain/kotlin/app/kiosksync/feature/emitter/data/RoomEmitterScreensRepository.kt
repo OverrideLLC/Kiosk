@@ -1,6 +1,6 @@
 package app.kiosksync.feature.emitter.data
 
-import app.kiosksync.core.EmitterPairedDevice
+import app.kiosksync.core.common.pairing.EmitterPairedDevice
 import app.kiosksync.feature.emitter.domain.EmitterScreensRepository
 import app.kiosksync.core.security.SecretProtector
 import app.kiosksync.feature.pairing.data.PairedDeviceDao

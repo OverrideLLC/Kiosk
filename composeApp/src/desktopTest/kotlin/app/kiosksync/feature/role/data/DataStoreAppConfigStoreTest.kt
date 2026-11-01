@@ -1,8 +1,8 @@
 package app.kiosksync.feature.role.data
 
 import app.kiosksync.NoOpLogger
-import app.kiosksync.core.AppRole
-import app.kiosksync.core.AppTheme
+import app.kiosksync.core.common.app.AppRole
+import app.kiosksync.core.common.app.AppTheme
 import app.kiosksync.feature.role.domain.AppConfig
 import app.kiosksync.feature.role.data.DataStoreAppConfigStore
 import java.io.File

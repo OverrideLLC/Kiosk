@@ -1,7 +1,7 @@
 package app.kiosksync.feature.kiosk
 
 import app.kiosksync.NoOpLogger
-import app.kiosksync.core.KioskLockConfig
+import app.kiosksync.core.common.kiosk.KioskLockConfig
 import app.kiosksync.feature.kiosk.domain.KioskKeyEvent
 import app.kiosksync.feature.kiosk.domain.KioskKeyKind
 import app.kiosksync.feature.kiosk.domain.KioskLockFeedback

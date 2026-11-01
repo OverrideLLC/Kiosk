@@ -1,6 +1,6 @@
 package app.kiosksync.feature.pairing.data
 
-import app.kiosksync.core.ReceiverPairedInfo
+import app.kiosksync.core.common.pairing.ReceiverPairedInfo
 import app.kiosksync.feature.pairing.domain.PairingRepository
 import app.kiosksync.core.security.SecretProtector
 import kotlinx.coroutines.Dispatchers

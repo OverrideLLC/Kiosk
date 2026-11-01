@@ -67,7 +67,7 @@ Todo lo demás está fuera del MVP (sección 13).
 - **100 % offline.** Prohibido cualquier llamada a internet, telemetría o analítica.
 - **Solo LAN.** El Receptor escucha en la red local; el Emisor solo hace conexiones salientes.
 - Persistencia local separada por tipo: DataStore Preferences para configuración pequeña, Room 3 para datos estructurados y archivos para imágenes, logs y paquetes. Los JSON existentes se migran de forma segura y se conservan como respaldo.
-- **Sin frameworks de DI, sin librerías de navegación.** DI manual con un `AppContainer`; navegación con una `sealed interface Screen` y un `when`.
+- **Sin librerías de navegación.** La navegación usa una `sealed interface Screen` y un `when`. Toda la inyección de dependencias pasa por Koin.
 - Una sola dependencia de red en el Receptor (Ktor Server) y una en el Emisor (Ktor Client). Evita agregar librerías que no estén listadas en la sección 5 sin preguntar.
 - La app **nunca debe cerrarse sola** por una excepción: captura errores en los límites (rutas del servidor, tareas en segundo plano) y regístralos en un archivo de log.
 - Todos los textos de UI en **español**, centralizados en un único archivo (`Strings.kt`) para facilitar traducirlos después.
@@ -90,6 +90,7 @@ Todo lo demás está fuera del MVP (sección 13).
 | Red, Emisor | Ktor Client (motor CIO) |
 | Serialización | kotlinx.serialization (JSON) |
 | Asincronía | Kotlin Coroutines + `StateFlow` |
+| Inyección de dependencias | Koin 4 (`koin-core` y `koin-compose`), módulos por feature y arranque en `desktopMain` |
 | Descubrimiento | JmDNS (mDNS/Zeroconf), solo en `desktopMain`, más campo manual de IP como plan B |
 | Imágenes | Decodificación con Skia (`org.jetbrains.skia.Image`) → `ImageBitmap`, sin librerías extra |
 | Selector de archivos | `java.awt.FileDialog` (sin dependencias extra) |
@@ -125,8 +126,8 @@ Reglas:
 ```
 composeApp/src/
 ├── commonMain/kotlin/app/kiosksync/
-│   ├── core/            # APP_NAME, constantes, Strings.kt, modelos compartidos, DTOs del protocolo
-│   ├── core/ui/         # tema, tokens y componentes realmente compartidos
+│   ├── core/common/     # app, discovery, http, kiosk, media, pairing, playback, playlist, status, sync, update
+│   ├── core/ui/         # Strings.kt, tema, tokens y componentes compartidos
 │   ├── feature/
 │   │   ├── role/{domain,data,presentation}/
 │   │   ├── pairing/{domain,data,presentation}/
@@ -136,25 +137,26 @@ composeApp/src/
 │   │   ├── sync/domain/
 │   │   ├── playback/{domain,presentation}/
 │   │   ├── kiosk/{domain,data,presentation}/
-│   │   ├── receiver/{domain,data}/
-│   │   ├── projection/domain/
+│   │   ├── receiver/{domain,data,presentation}/
+│   │   ├── projection/{domain,presentation}/
 │   │   ├── guide/{domain,presentation/{components}}/
-│   │   └── update/{domain,presentation}/
-│   ├── local/           # KioskDatabase: une los DAO de cada feature
-│   ├── migration/       # importación transaccional de JSON heredado
-│   ├── ui/              # App.kt, navegación y pantallas por rol
-│   └── AppContainer.kt  # DI manual
+│   │   ├── update/{domain,presentation}/
+│   │   └── persistence/data/ # base Room, repositorios y migración JSON
+│   └── app/             # arranque de la aplicación, separado por función
+│       ├── App.kt
+│       ├── shell/       # pantalla activa, arranque y preferencias
+│       ├── session/     # rol, Controlador, Pantalla, kiosco y guía
+│       ├── di/          # AppSession, apagado y módulos de presentación
 └── desktopMain/kotlin/app/kiosksync/
+    ├── app/Main.kt      # argumentos, logger y punto de entrada
+    ├── app/di/          # módulo Koin de plataforma y arranque
+    ├── app/host/        # ventana y catálogo
     ├── feature/*/data/  # Room, DataStore, red y adaptadores propios de cada feature
-    ├── local/           # builder SQLite y composición de repositorios
-    ├── migration/       # importación de JSON heredado a Room
     ├── core/security/   # hash y protección compartida de secretos
-    ├── platform/        # logger y servicios compartidos del host
-    ├── Desktop*.kt      # fábrica del contenedor y ciclo de ventanas
-    └── Main.kt          # argumentos de línea de comandos y punto de entrada
+    └── platform/        # logger y servicios compartidos del host
 ```
 
-Dentro de cada `feature/<nombre>/` crea capas solo cuando contengan responsabilidades reales. En `feature/emitter/presentation`, `EmitterAction`, `EmitterUiState`, `EmitterViewModel` y `EmitterScreen` viven directamente en el paquete raíz; el ViewModel aplica las transiciones de estado y coordina los efectos. No añadas un reducer mecánico ni un Route wrapper si `App.kt` ya compone el ViewModel, gestiona su ciclo de vida y conecta el Screen. Los coordinadores que adapten operaciones a estado de UI viven en `presentation/coordinators`; los componentes exclusivos viven en `presentation/components`. Los servicios operativos y adaptadores concretos viven en `data`. La pantalla recibe estado y emite acciones; el ViewModel consume contratos y casos de uso del dominio, nunca DAOs ni implementaciones. Los contratos y modelos pertenecen al `domain`; Room, DataStore, red, operaciones de datos y repositorios concretos pertenecen a `data`, junto a la feature que los usa. `KioskDatabase` y `RoomRepositories` viven en `app.kiosksync.local` y solo componen los DAO de cada feature. La importación del JSON heredado vive en `app.kiosksync.migration`. Hash y protección de secretos viven en `app.kiosksync.core.security`. Las entidades Room nunca son modelos de protocolo. Comparte un componente `core.ui` cuando tenga consumidores reales en más de una feature; los componentes exclusivos permanecen en su feature. Mantén un solo módulo Gradle y el `AppContainer` manual. DataStore Preferences almacena preferencias pequeñas; Room 3 datos estructurados; archivos, imágenes, logs y paquetes.
+Dentro de cada `feature/<nombre>/` crea capas solo cuando contengan responsabilidades reales. En `feature/emitter/presentation`, `EmitterAction`, `EmitterUiState`, `EmitterViewModel` y `EmitterScreen` viven directamente en el paquete raíz; el ViewModel aplica las transiciones de estado y coordina los efectos. No añadas un reducer mecánico ni un Route wrapper si `App.kt` ya compone el ViewModel, gestiona su ciclo de vida y conecta el Screen. Los coordinadores que adapten operaciones a estado de UI viven en `presentation/coordinators`; los componentes exclusivos viven en `presentation/components`. Los servicios operativos y adaptadores concretos viven en `data`. La pantalla recibe estado y emite acciones; el ViewModel consume contratos y casos de uso del dominio, nunca DAOs ni implementaciones. Los contratos y modelos pertenecen al `domain`; Room, DataStore, red, operaciones de datos y repositorios concretos pertenecen a `data`, junto a la feature que los usa. `KioskDatabase`, `RoomRepositories` y la importación del JSON heredado viven en `feature/persistence/data` y solo componen los DAO de cada feature. Hash y protección de secretos viven en `app.kiosksync.core.security`. Las entidades Room nunca son modelos de protocolo. Comparte un componente `core.ui` cuando tenga consumidores reales en más de una feature; los componentes exclusivos permanecen en su feature. Mantén un solo módulo Gradle. Toda la inyección de dependencias pasa por Koin. DataStore Preferences almacena preferencias pequeñas; Room 3 datos estructurados; archivos, imágenes, logs y paquetes.
 
 ---
 
@@ -313,7 +315,7 @@ Cada fase tiene: **objetivo**, **entregable**, **criterios de aceptación** y **
 
 ### Fase 0: Entorno y esqueleto
 - **Objetivo:** proyecto compilando y mostrando una ventana.
-- **Entregable:** estructura de carpetas de la sección 6, `libs.versions.toml`, `Main.kt` con argumentos, `AppContainer`, `Strings.kt`, logger a archivo.
+- **Entregable:** estructura de carpetas de la sección 6, `libs.versions.toml`, `Main.kt` con argumentos, módulos Koin, `Strings.kt`, logger a archivo.
 - **Manual (persona):** instalar JDK 17+, generar el proyecto con el asistente de KMP (solo Desktop) y ponerlo en la raíz del repo. Además: instalar Git, crear el repositorio vacío en GitHub, hacer `git init`, `git remote add origin <url>` y dejar las credenciales de GitHub configuradas (por ejemplo con Git Credential Manager o `gh auth login`) para que `git push` funcione sin pedir datos. El agente debe pedir confirmación con `git remote -v` antes de seguir.
 - **Entregable adicional:** `.gitignore` según la sección 1.1 y primer commit con push.
 - **Aceptación:** `.\gradlew.bat run` abre una ventana vacía; los argumentos de la sección 10 se leen sin errores.
@@ -357,7 +359,7 @@ Cada fase tiene: **objetivo**, **entregable**, **criterios de aceptación** y **
 La persona autorizó ejecutar las fases de arquitectura consecutivamente. Las fases 7–17 están completadas; se conservaron los commits por fase en `codex/architecture-improvements`. El plan unificado define los detalles de las fases 13–18. En la fase 18, Linux y el runner hospedado de Windows (`windows-2025-vs2026`) pasaron build, tests y smoke checks; sigue pendiente la validación manual en Windows 11 real, incluida la experiencia de escritorio. No declares completa la validación de Windows hasta ejecutar `.\gradlew.bat build` y los recorridos manuales en Windows 11.
 
 - **Fases 7–12, completadas:** arquitectura por capas ligeras, DataStore + Room 3 + archivos, `core.ui`/Material Kolor, MVI selectivo, migración y adaptación Desktop.
-- **Fases 13–14, completadas:** arranque según rol y esquema Room. Las entidades y los DAO viven en la feature dueña; `KioskDatabase` los reúne en `app.kiosksync.local`.
+- **Fases 13–14, completadas:** arranque según rol y esquema Room. Las entidades y los DAO viven en la feature dueña; `KioskDatabase` los reúne en `feature/persistence/data`.
 - **Fase 15, completada:** paquetes feature-first y adaptadores de persistencia junto a sus features.
 - **Fase 16, completada:** tokens UI verificados y render test de ambos temas con contraste 4.5:1.
 - **Fase 17, completada:** `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/DESIGN_SYSTEM.md`, `docs/KNOWN_LIMITATIONS.md` y ADR-004 coinciden con los paquetes y la persistencia vigentes.

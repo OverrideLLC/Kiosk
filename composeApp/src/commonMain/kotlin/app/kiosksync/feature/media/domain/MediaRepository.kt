@@ -1,8 +1,7 @@
 package app.kiosksync.feature.media.domain
 
 import androidx.compose.ui.graphics.ImageBitmap
-import app.kiosksync.core.ImageFormat
-
+import app.kiosksync.core.common.media.ImageFormat
 data class StoredMedia(
     val mediaId: String,
     val fileName: String,

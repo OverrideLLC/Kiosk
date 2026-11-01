@@ -4,11 +4,11 @@ import app.kiosksync.feature.emitter.domain.models.EmitterDeviceUi
 import app.kiosksync.feature.emitter.domain.models.EmitterPendingAction
 import app.kiosksync.feature.emitter.presentation.EmitterState
 
-import app.kiosksync.core.AppLogger
-import app.kiosksync.core.KioskLockConfig
+import app.kiosksync.core.common.app.AppLogger
+import app.kiosksync.core.common.kiosk.KioskLockConfig
 import app.kiosksync.feature.emitter.domain.PairError
 import app.kiosksync.feature.emitter.domain.PairRejectedException
-import app.kiosksync.core.Strings
+import app.kiosksync.core.ui.Strings
 import app.kiosksync.feature.emitter.domain.PairReceiverPersistenceException
 import app.kiosksync.feature.emitter.domain.EmitterService
 import kotlinx.coroutines.CancellationException

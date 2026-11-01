@@ -1,7 +1,7 @@
 package app.kiosksync.feature.playlist.presentation
 
 import androidx.compose.ui.graphics.ImageBitmap
-import app.kiosksync.core.DEFAULT_DURATION_SEC
+import app.kiosksync.core.common.playlist.DEFAULT_DURATION_SEC
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.domain.models.PlaylistNameDialogMode
 

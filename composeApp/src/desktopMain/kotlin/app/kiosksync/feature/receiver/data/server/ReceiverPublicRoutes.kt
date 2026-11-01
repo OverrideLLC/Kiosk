@@ -1,7 +1,7 @@
 package app.kiosksync.feature.receiver.data.server
 
-import app.kiosksync.core.APP_VERSION
-import app.kiosksync.core.DeviceInfo
+import app.kiosksync.core.common.app.APP_VERSION
+import app.kiosksync.core.common.pairing.DeviceInfo
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get

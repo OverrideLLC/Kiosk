@@ -1,7 +1,7 @@
 package app.kiosksync.feature.sync.domain
 
-import app.kiosksync.core.EmitterPairedDevice
-import app.kiosksync.core.KioskLockConfig
+import app.kiosksync.core.common.pairing.EmitterPairedDevice
+import app.kiosksync.core.common.kiosk.KioskLockConfig
 import app.kiosksync.feature.playlist.domain.Playlist
 
 data class SyncProgress(

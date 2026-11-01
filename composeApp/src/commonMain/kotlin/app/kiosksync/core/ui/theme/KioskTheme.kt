@@ -6,7 +6,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import com.materialkolor.dynamiccolor.ColorSpec
 import com.materialkolor.material3.rememberDynamicColorScheme
-import app.kiosksync.core.AppTheme
+import app.kiosksync.core.common.app.AppTheme
 
 /**
  * Root theme. It only provides tokens; screens must not define colours,

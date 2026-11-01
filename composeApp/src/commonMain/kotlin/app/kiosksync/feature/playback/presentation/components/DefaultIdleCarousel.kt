@@ -15,7 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import app.kiosksync.core.APP_NAME
+import app.kiosksync.core.common.app.APP_NAME
 import app.kiosksync.core.ui.theme.KioskDisplayType
 import app.kiosksync.core.ui.theme.KioskScreenColors
 import app.kiosksync.core.ui.components.OverrideLogo

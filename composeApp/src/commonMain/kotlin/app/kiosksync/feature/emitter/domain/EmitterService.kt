@@ -1,6 +1,6 @@
 package app.kiosksync.feature.emitter.domain
 
-import app.kiosksync.core.KioskLockConfig
+import app.kiosksync.core.common.kiosk.KioskLockConfig
 import app.kiosksync.feature.playlist.domain.Playlist
 import kotlinx.coroutines.flow.StateFlow
 

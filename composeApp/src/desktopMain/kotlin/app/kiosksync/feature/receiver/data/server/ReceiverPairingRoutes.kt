@@ -1,8 +1,8 @@
 package app.kiosksync.feature.receiver.data.server
 
-import app.kiosksync.core.ErrorResponse
-import app.kiosksync.core.PairRequest
-import app.kiosksync.core.PairResponse
+import app.kiosksync.core.common.http.ErrorResponse
+import app.kiosksync.core.common.pairing.PairRequest
+import app.kiosksync.core.common.pairing.PairResponse
 import app.kiosksync.feature.pairing.domain.PairResult
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.response.respond

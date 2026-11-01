@@ -4,8 +4,8 @@ import app.kiosksync.FakeRepositories
 import app.kiosksync.FakeReceiverUpdateManager
 import app.kiosksync.NoOpLogger
 import app.kiosksync.core.security.Sha256
-import app.kiosksync.core.APP_VERSION
-import app.kiosksync.core.ReceiverStatusResponse
+import app.kiosksync.core.common.app.APP_VERSION
+import app.kiosksync.core.common.status.ReceiverStatusResponse
 import app.kiosksync.feature.emitter.domain.PlaylistRejectedException
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
 import app.kiosksync.feature.pairing.domain.PairingManager

@@ -2,7 +2,7 @@ package app.kiosksync.feature.guide.presentation
 
 import app.kiosksync.feature.guide.domain.GuideStep
 import app.kiosksync.NoOpLogger
-import app.kiosksync.core.AppRole
+import app.kiosksync.core.common.app.AppRole
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

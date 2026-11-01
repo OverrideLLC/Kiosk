@@ -25,7 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
-import app.kiosksync.core.Strings
+import app.kiosksync.core.ui.Strings
 import app.kiosksync.feature.kiosk.domain.KioskLockFeedback
 import app.kiosksync.core.ui.components.AppIcon
 import app.kiosksync.core.ui.theme.KioskDisplayType

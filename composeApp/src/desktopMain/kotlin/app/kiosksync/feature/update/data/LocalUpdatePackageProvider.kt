@@ -1,11 +1,11 @@
 package app.kiosksync.feature.update.data
 
-import app.kiosksync.core.APP_NAME
-import app.kiosksync.core.APP_PAYLOAD_DIR_NAME
-import app.kiosksync.core.APP_VERSION
-import app.kiosksync.core.AppLogger
-import app.kiosksync.core.UPDATE_PACKAGE_FORMAT
-import app.kiosksync.core.UpdatePackageManifest
+import app.kiosksync.core.common.app.APP_NAME
+import app.kiosksync.core.common.app.APP_PAYLOAD_DIR_NAME
+import app.kiosksync.core.common.app.APP_VERSION
+import app.kiosksync.core.common.app.AppLogger
+import app.kiosksync.core.common.update.UPDATE_PACKAGE_FORMAT
+import app.kiosksync.core.common.update.UpdatePackageManifest
 import app.kiosksync.core.security.Sha256
 import app.kiosksync.feature.update.domain.UpdatePackage
 import app.kiosksync.feature.update.domain.UpdatePackageProvider

@@ -1,10 +1,10 @@
 package app.kiosksync.feature.emitter.data
 
-import app.kiosksync.core.APP_VERSION
-import app.kiosksync.core.AppLogger
-import app.kiosksync.core.AppVersionPolicy
-import app.kiosksync.core.EmitterPairedDevice
-import app.kiosksync.core.UpdateUrgency
+import app.kiosksync.core.common.app.APP_VERSION
+import app.kiosksync.core.common.app.AppLogger
+import app.kiosksync.core.common.update.AppVersionPolicy
+import app.kiosksync.core.common.pairing.EmitterPairedDevice
+import app.kiosksync.core.common.update.UpdateUrgency
 import app.kiosksync.feature.emitter.domain.EmitterClient
 import app.kiosksync.feature.emitter.domain.EmitterServiceDevice
 import app.kiosksync.feature.emitter.domain.EmitterUpdateState

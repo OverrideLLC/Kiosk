@@ -1,7 +1,6 @@
 package app.kiosksync.feature.guide.presentation
 
-import app.kiosksync.core.AppRole
-
+import app.kiosksync.core.common.app.AppRole
 sealed interface GuideAction {
     data class Start(val role: AppRole? = null) : GuideAction
     data object Stop : GuideAction

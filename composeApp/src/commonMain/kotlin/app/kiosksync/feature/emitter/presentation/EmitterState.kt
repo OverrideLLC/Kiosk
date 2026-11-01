@@ -1,6 +1,6 @@
 package app.kiosksync.feature.emitter.presentation
 
-import app.kiosksync.core.Strings
+import app.kiosksync.core.ui.Strings
 import app.kiosksync.feature.emitter.domain.EmitterUpdateState
 import app.kiosksync.feature.emitter.domain.models.DeviceSyncUi
 import app.kiosksync.feature.emitter.domain.models.EmitterDeviceUi

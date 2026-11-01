@@ -4,10 +4,10 @@ import app.kiosksync.FakeRepositories
 import app.kiosksync.FakeUpdatePackageProvider
 import app.kiosksync.NoOpLogger
 import app.kiosksync.feature.emitter.presentation.EmitterViewModel
-import app.kiosksync.core.APP_VERSION
-import app.kiosksync.core.DiscoveredDevice
-import app.kiosksync.core.EmitterPairedDevice
-import app.kiosksync.core.KioskLockConfig
+import app.kiosksync.core.common.app.APP_VERSION
+import app.kiosksync.core.common.pairing.DiscoveredDevice
+import app.kiosksync.core.common.pairing.EmitterPairedDevice
+import app.kiosksync.core.common.kiosk.KioskLockConfig
 import app.kiosksync.feature.emitter.data.EmitterServiceImpl
 import app.kiosksync.feature.emitter.domain.EmitterClient
 import app.kiosksync.feature.emitter.domain.EmitterUpdateStatus

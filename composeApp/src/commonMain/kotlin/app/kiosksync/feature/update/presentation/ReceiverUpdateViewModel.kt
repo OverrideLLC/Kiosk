@@ -1,6 +1,6 @@
 package app.kiosksync.feature.update.presentation
 
-import app.kiosksync.core.Strings
+import app.kiosksync.core.ui.Strings
 import app.kiosksync.feature.update.domain.ReceiverUpdateError
 import app.kiosksync.feature.update.domain.ReceiverUpdateManager
 import app.kiosksync.feature.update.domain.ReceiverUpdateState as DomainUpdateState

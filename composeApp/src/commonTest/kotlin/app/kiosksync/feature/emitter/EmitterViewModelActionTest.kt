@@ -1,6 +1,6 @@
 package app.kiosksync.feature.emitter
 
-import app.kiosksync.core.MAX_RECOVERY_PHRASE_LENGTH
+import app.kiosksync.core.common.kiosk.MAX_RECOVERY_PHRASE_LENGTH
 import app.kiosksync.feature.emitter.presentation.EmitterAction
 import app.kiosksync.feature.emitter.domain.models.EmitterDeviceUi
 import app.kiosksync.feature.emitter.domain.models.SecurityDialogUi

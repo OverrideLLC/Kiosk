@@ -26,8 +26,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import app.kiosksync.core.Strings
-
+import app.kiosksync.core.ui.Strings
 /**
  * Numeric field with a stepper. Used for the default and per-image duration.
  * Arrow buttons clamp automatically; text input is validated by the caller so

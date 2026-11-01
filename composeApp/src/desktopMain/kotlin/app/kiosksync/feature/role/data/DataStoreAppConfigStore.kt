@@ -7,9 +7,9 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import app.kiosksync.core.AppLogger
-import app.kiosksync.core.AppRole
-import app.kiosksync.core.AppTheme
+import app.kiosksync.core.common.app.AppLogger
+import app.kiosksync.core.common.app.AppRole
+import app.kiosksync.core.common.app.AppTheme
 import app.kiosksync.feature.role.domain.AppConfig
 import app.kiosksync.feature.role.domain.AppConfigStore
 import java.io.File
@@ -115,7 +115,7 @@ class DataStoreAppConfigStore(
             role = role,
             deviceId = deviceId,
             deviceName = deviceName,
-            port = preferences[PORT] ?: app.kiosksync.core.DEFAULT_PORT,
+            port = preferences[PORT] ?: app.kiosksync.core.common.discovery.DEFAULT_PORT,
             theme = theme,
             reduceMotion = preferences[REDUCE_MOTION] ?: false
         )

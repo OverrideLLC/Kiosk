@@ -1,6 +1,6 @@
 package app.kiosksync.feature.update.domain
 
-import app.kiosksync.core.APP_VERSION
+import app.kiosksync.core.common.app.APP_VERSION
 import kotlinx.coroutines.flow.StateFlow
 
 enum class ReceiverUpdateError {

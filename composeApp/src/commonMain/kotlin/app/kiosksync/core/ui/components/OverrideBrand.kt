@@ -23,8 +23,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
-import app.kiosksync.core.OVERRIDE_WEBSITE
-import app.kiosksync.core.Strings
+import app.kiosksync.core.common.app.OVERRIDE_WEBSITE
+import app.kiosksync.core.ui.Strings
 import app.kiosksync.resources.Res
 import app.kiosksync.resources.override_logo
 import org.jetbrains.compose.resources.painterResource

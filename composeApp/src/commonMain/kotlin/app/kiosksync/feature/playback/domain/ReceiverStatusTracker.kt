@@ -1,6 +1,6 @@
 package app.kiosksync.feature.playback.domain
 
-import app.kiosksync.core.ReceiverStatusResponse
+import app.kiosksync.core.common.status.ReceiverStatusResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

@@ -142,7 +142,7 @@ de cambiar el nombre del paquete.
 
 La versión se declara en dos lugares y **debe coincidir**:
 
-- `composeApp/src/commonMain/kotlin/app/kiosksync/core/Constants.kt`
+- `composeApp/src/commonMain/kotlin/app/kiosksync/core/common/app/AppIdentity.kt`
   (`APP_VERSION`), que usa la app y la política de actualizaciones.
 - `composeApp/build.gradle.kts` (`packageVersion`), que usa `jpackage` para el
   nombre de los artefactos.

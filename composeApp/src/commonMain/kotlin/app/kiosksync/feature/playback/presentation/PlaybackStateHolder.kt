@@ -1,7 +1,7 @@
 package app.kiosksync.feature.playback.presentation
 
 import androidx.compose.ui.graphics.ImageBitmap
-import app.kiosksync.core.AppLogger
+import app.kiosksync.core.common.app.AppLogger
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.domain.PlaylistItem
 import app.kiosksync.feature.playlist.domain.PlaylistRepository
