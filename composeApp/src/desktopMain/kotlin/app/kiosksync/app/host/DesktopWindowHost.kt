@@ -229,7 +229,6 @@ private fun DesktopWindow(
                 Cursor.getDefaultCursor()
             }
             App(
-                kioskViewModel = kioskViewModel,
                 receiverUpdateViewModel = receiverUpdateViewModel,
                 onExitRequested = {
                     shutdown.shutdown()

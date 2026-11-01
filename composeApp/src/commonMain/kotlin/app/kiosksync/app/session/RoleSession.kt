@@ -101,8 +101,6 @@ internal class RoleSession(
 @Composable
 internal fun rememberRoleSession(
     scope: CoroutineScope,
-    guideViewModel: GuideViewModel,
-    kioskViewModel: KioskViewModel,
     preferences: AppPreferences,
     dialogs: ReceiverDialogs,
     deviceId: String,
@@ -111,6 +109,8 @@ internal fun rememberRoleSession(
 ): RoleSession {
     val session = koinInject<AppSession>()
     val viewModel = sessionViewModel<RoleViewModel>()
+    val guideViewModel = sessionViewModel<GuideViewModel>()
+    val kioskViewModel = sessionViewModel<KioskViewModel>()
     val serviceDispatcher = koinInject<CoroutineDispatcher>(AppQualifiers.serviceDispatcher)
     val discovery = koinInject<DeviceDiscovery>()
     val receiverServer = koinInject<ReceiverServer>()

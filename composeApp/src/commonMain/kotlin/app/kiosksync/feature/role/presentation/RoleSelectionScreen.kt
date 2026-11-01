@@ -29,6 +29,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import app.kiosksync.app.navigation.session.sessionViewModel
 import app.kiosksync.core.common.app.AppRole
 import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppButton
@@ -49,7 +50,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
  * primary action. Every colour, size and shape comes from the design system.
  */
 @Composable
-fun RoleRoot(viewModel: RoleViewModel) {
+fun RoleRoot(viewModel: RoleViewModel = sessionViewModel()) {
     val state by viewModel.state.collectAsState()
     RoleSelectionScreen(
         state = state,

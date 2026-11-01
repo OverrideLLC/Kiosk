@@ -5,15 +5,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import app.kiosksync.app.di.AppSession
+import androidx.compose.runtime.staticCompositionLocalOf
 import app.kiosksync.core.common.app.AppLogger
+import app.kiosksync.core.common.app.AppRole
 import app.kiosksync.core.common.app.AppTheme
 import app.kiosksync.feature.role.domain.AppConfig
 import app.kiosksync.feature.role.domain.AppConfigStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import org.koin.compose.koinInject
 
 internal class AppPreferences(
     initial: AppConfig?,
@@ -61,26 +61,15 @@ internal class AppPreferences(
 }
 
 /** Preferences created with the window and read by destinations. */
-internal class AppPreferencesRef {
-    var value: AppPreferences? = null
+internal val LocalAppPreferences = staticCompositionLocalOf<AppPreferences> {
+    error("AppPreferences is not available")
 }
 
 @Composable
-internal fun PersistForcedRole(config: AppConfig?) {
-    val session = koinInject<AppSession>()
-    val configStore = koinInject<AppConfigStore>()
-    val logger = koinInject<AppLogger>()
-    LaunchedEffect(session.args.role) {
-        if (session.args.role != null) {
-            config?.let { current ->
-                try {
-                    configStore.save(current)
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (error: Exception) {
-                    logger.error("Could not persist the role forced by command line", error)
-                }
-            }
+internal fun PersistForcedRole(preferences: AppPreferences, forcedRole: AppRole?) {
+    LaunchedEffect(forcedRole) {
+        if (forcedRole != null) {
+            preferences.current?.let(preferences::persist)
         }
     }
 }

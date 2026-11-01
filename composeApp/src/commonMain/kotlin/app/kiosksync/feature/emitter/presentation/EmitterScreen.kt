@@ -33,11 +33,12 @@ import app.kiosksync.feature.playlist.presentation.PlaylistEditorAction
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorState
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorViewModel
 import app.kiosksync.feature.playlist.presentation.components.PlaylistPanel
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun EmitterRoot(
-    viewModel: EmitterViewModel,
-    playlistViewModel: PlaylistEditorViewModel,
+    viewModel: EmitterViewModel = koinViewModel(),
+    playlistViewModel: PlaylistEditorViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsState()
     val playlistState by playlistViewModel.state.collectAsState()

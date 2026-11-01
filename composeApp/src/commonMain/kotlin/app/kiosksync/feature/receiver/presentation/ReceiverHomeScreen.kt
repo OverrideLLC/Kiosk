@@ -8,17 +8,14 @@ import app.kiosksync.feature.kiosk.presentation.KioskViewModel
 import app.kiosksync.feature.pairing.presentation.PairingRoot
 import app.kiosksync.feature.pairing.presentation.PairingViewModel
 import app.kiosksync.feature.playback.presentation.CarouselRoot
-import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
 
 @Composable
 fun ReceiverHomeScreen() {
-    val pairingViewModel = sessionViewModel<PairingViewModel>()
-    val playback = sessionViewModel<PlaybackStateHolder>()
+    val pairing by sessionViewModel<PairingViewModel>().state.collectAsState()
     val lock by sessionViewModel<KioskViewModel>().state.collectAsState()
-    val pairingState by pairingViewModel.state.collectAsState()
     when {
-        !pairingState.pairing.isPaired -> PairingRoot(viewModel = pairingViewModel)
+        !pairing.pairing.isPaired -> PairingRoot()
         !lock.hasPassword -> WaitingForPasswordScreen()
-        else -> CarouselRoot(holder = playback)
+        else -> CarouselRoot()
     }
 }

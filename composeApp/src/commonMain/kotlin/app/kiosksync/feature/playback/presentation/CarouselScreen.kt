@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import app.kiosksync.app.navigation.session.sessionViewModel
 import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.theme.KioskDisplayType
 import app.kiosksync.core.ui.theme.KioskScreenColors
@@ -37,7 +38,7 @@ private const val CROSSFADE_DURATION_MS = 500
  * a discreet caption explains that content is pending.
  */
 @Composable
-fun CarouselRoot(holder: PlaybackStateHolder) {
+fun CarouselRoot(holder: PlaybackStateHolder = sessionViewModel()) {
     val state by holder.state.collectAsState()
     CarouselScreen(state = state)
 }

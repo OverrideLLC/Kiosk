@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import app.kiosksync.app.navigation.session.sessionViewModel
 import app.kiosksync.core.ui.Strings
 import app.kiosksync.feature.kiosk.domain.KioskLockFeedback
 import app.kiosksync.core.ui.components.AppIcon
@@ -46,7 +47,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
  * the project manual and shown in the controller's "Seguridad" dialog.
  */
 @Composable
-fun KioskRoot(viewModel: KioskViewModel) {
+fun KioskRoot(viewModel: KioskViewModel = sessionViewModel()) {
     val state by viewModel.state.collectAsState()
     KioskScreen(state = state)
 }

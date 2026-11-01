@@ -3,6 +3,7 @@ package app.kiosksync.app.session
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,7 +28,58 @@ import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
 import app.kiosksync.feature.receiver.presentation.ReceiverOptionsDialog
 import app.kiosksync.feature.receiver.presentation.ReceiverUnpairDialog
 import app.kiosksync.feature.role.presentation.ChangeRoleDialog
+import app.kiosksync.feature.update.presentation.ReceiverUpdateViewModel
 import org.koin.compose.koinInject
+
+@Composable
+internal fun ReceiverHost(
+    route: AppRoute,
+    config: AppConfig?,
+    dialogs: ReceiverDialogs,
+    roleResetting: Boolean,
+    roleResetFailed: Boolean,
+    updateViewModel: ReceiverUpdateViewModel,
+    registerEscHandler: ((() -> Unit)?) -> Unit,
+    registerUnpairHandler: ((() -> Unit)?) -> Unit,
+    onExitRequested: () -> Unit,
+    onResetRole: () -> Unit,
+) {
+    val pairingViewModel = sessionViewModel<PairingViewModel>()
+    val guideViewModel = sessionViewModel<GuideViewModel>()
+    val kioskViewModel = sessionViewModel<KioskViewModel>()
+    val playback = rememberReceiverPlayback(route)
+    val pairingState by pairingViewModel.state.collectAsState()
+    val lockState by kioskViewModel.state.collectAsState()
+    val playbackState by playback.state.collectAsState()
+    val updateState by updateViewModel.state.collectAsState()
+    BindReceiverPairing(pairingViewModel, route, config)
+    BindReceiverGuide(guideViewModel, route, pairingState, lockState, playbackState)
+    BindReceiverAdmin(
+        route = route,
+        pairingViewModel = pairingViewModel,
+        pairing = pairingState,
+        lock = lockState,
+        updateVisible = updateState.isVisible,
+        dialogs = dialogs,
+        kioskViewModel = kioskViewModel,
+        guideViewModel = guideViewModel,
+        registerEscHandler = registerEscHandler,
+        registerUnpairHandler = registerUnpairHandler,
+    )
+    ReceiverAdminDialogs(
+        route = route,
+        pairing = pairingState,
+        lock = lockState,
+        dialogs = dialogs,
+        roleResetting = roleResetting,
+        roleResetFailed = roleResetFailed,
+        pairingViewModel = pairingViewModel,
+        kioskViewModel = kioskViewModel,
+        guideViewModel = guideViewModel,
+        onExitRequested = onExitRequested,
+        onResetRole = onResetRole,
+    )
+}
 
 internal class ReceiverDialogs {
     var showOptions by mutableStateOf(false)

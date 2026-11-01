@@ -3,7 +3,6 @@ package app.kiosksync.feature.role.presentation
 import app.kiosksync.app.di.AppSession
 import app.kiosksync.app.navigation.routes.AppRoute
 import app.kiosksync.app.navigation.session.AppCommands
-import app.kiosksync.app.navigation.session.sessionViewModel
 import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -22,6 +21,6 @@ internal val rolePresentationModule = module {
         )
     }
     navigation<AppRoute.RoleSelection> {
-        RoleRoot(viewModel = sessionViewModel())
+        RoleRoot()
     }
 }

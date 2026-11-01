@@ -2,25 +2,25 @@ package app.kiosksync.app.session
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import app.kiosksync.app.di.AppSession
 import app.kiosksync.app.navigation.routes.AppRoute
 import app.kiosksync.app.navigation.routes.activeRole
+import app.kiosksync.app.navigation.session.sessionViewModel
 import app.kiosksync.feature.kiosk.presentation.KioskAction
-import app.kiosksync.feature.kiosk.presentation.KioskState
 import app.kiosksync.feature.kiosk.presentation.KioskViewModel
-import app.kiosksync.feature.pairing.presentation.PairingUiState
+import app.kiosksync.feature.pairing.presentation.PairingViewModel
 import app.kiosksync.feature.projection.domain.ProjectionController
 import org.koin.compose.koinInject
 
 @Composable
-internal fun BindKioskPolicy(
-    route: AppRoute,
-    pairing: PairingUiState,
-    lock: KioskState,
-    kioskViewModel: KioskViewModel,
-) {
+internal fun BindKioskPolicy(route: AppRoute) {
     val session = koinInject<AppSession>()
     val projectionController = koinInject<ProjectionController>()
+    val kioskViewModel = sessionViewModel<KioskViewModel>()
+    val pairing by sessionViewModel<PairingViewModel>().state.collectAsState()
+    val lock by kioskViewModel.state.collectAsState()
     LaunchedEffect(route) {
         session.updateActiveRole(activeRole(route))
     }

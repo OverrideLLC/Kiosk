@@ -24,7 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import app.kiosksync.app.shell.AppPreferencesRef
+import app.kiosksync.app.shell.LocalAppPreferences
 import app.kiosksync.core.common.app.AppTheme
 import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppButton
@@ -39,7 +39,6 @@ import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
 import app.kiosksync.feature.emitter.presentation.EmitterAction
 import app.kiosksync.feature.emitter.presentation.EmitterState
-import org.koin.compose.koinInject
 
 @Composable
 internal fun SettingsDialog(
@@ -47,7 +46,7 @@ internal fun SettingsDialog(
     onDismiss: () -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
-    val preferences = checkNotNull(koinInject<AppPreferencesRef>().value)
+    val preferences = LocalAppPreferences.current
     val theme = preferences.theme
 
     AppDialog(

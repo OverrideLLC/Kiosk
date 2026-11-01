@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import app.kiosksync.app.navigation.session.sessionViewModel
 import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppButtonSize
@@ -46,7 +47,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
  * message. Pure black background regardless of the selected theme.
  */
 @Composable
-fun PairingRoot(viewModel: PairingViewModel) {
+fun PairingRoot(viewModel: PairingViewModel = sessionViewModel()) {
     val state by viewModel.state.collectAsState()
     PairingCodeScreen(
         state = state,

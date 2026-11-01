@@ -1,9 +1,6 @@
 package app.kiosksync.app.navigation
 
 import androidx.navigation3.runtime.NavKey
-import app.kiosksync.app.navigation.emitter.EmitterHomeNavigator
-import app.kiosksync.app.navigation.receiver.ReceiverHomeNavigator
-import app.kiosksync.app.navigation.role.RoleNavigator
 import app.kiosksync.app.navigation.routes.AppRoute
 import app.kiosksync.app.navigation.routes.activeRole
 import app.kiosksync.app.navigation.session.SessionNavigator
@@ -15,34 +12,34 @@ class AppNavigatorTest {
 
     @Test
     fun startupRouteFollowsTheSavedOrForcedRole() {
-        val role = navigators().role
-        assertEquals(AppRoute.RoleSelection, role.start(null))
-        assertEquals(AppRoute.EmitterHome, role.start(AppRole.EMITTER))
-        assertEquals(AppRoute.ReceiverHome, role.start(AppRole.RECEIVER))
+        val navigator = navigator()
+        assertEquals(AppRoute.RoleSelection, navigator.start(null))
+        assertEquals(AppRoute.EmitterHome, navigator.start(AppRole.EMITTER))
+        assertEquals(AppRoute.ReceiverHome, navigator.start(AppRole.RECEIVER))
     }
 
     @Test
     fun confirmingARoleReplacesTheRoot() {
         val stack = mutableListOf<NavKey>(AppRoute.RoleSelection)
-        val graphs = navigators(stack)
+        val navigator = navigator(stack)
 
-        graphs.role.confirm(AppRole.EMITTER)
+        navigator.confirm(AppRole.EMITTER)
 
         assertEquals(1, stack.size)
-        assertEquals(AppRoute.EmitterHome, graphs.session.current)
-        assertEquals(AppRole.EMITTER, activeRole(graphs.session.current))
+        assertEquals(AppRoute.EmitterHome, navigator.current)
+        assertEquals(AppRole.EMITTER, activeRole(navigator.current))
     }
 
     @Test
     fun resettingTheRoleReplacesTheRootWithSelection() {
         val stack = mutableListOf<NavKey>(AppRoute.ReceiverHome)
-        val graphs = navigators(stack)
+        val navigator = navigator(stack)
 
-        graphs.role.show()
+        navigator.showRoleSelection()
 
         assertEquals(1, stack.size)
-        assertEquals(AppRoute.RoleSelection, graphs.session.current)
-        assertEquals(null, activeRole(graphs.session.current))
+        assertEquals(AppRoute.RoleSelection, navigator.current)
+        assertEquals(null, activeRole(navigator.current))
     }
 
     @Test
@@ -50,43 +47,38 @@ class AppNavigatorTest {
         val stack = object : MutableList<NavKey> by mutableListOf<NavKey>(AppRoute.EmitterHome) {
             override fun clear() = error("replaced")
         }
-        val graphs = navigators(stack)
+        val navigator = navigator(stack)
 
-        graphs.emitter.show()
+        navigator.showEmitter()
 
         assertEquals(1, stack.size)
-        assertEquals(AppRoute.EmitterHome, graphs.session.current)
+        assertEquals(AppRoute.EmitterHome, navigator.current)
     }
 
     @Test
     fun backKeepsTheOnlyRoot() {
         val stack = mutableListOf<NavKey>(AppRoute.ReceiverHome)
-        val graphs = navigators(stack)
+        val navigator = navigator(stack)
 
-        graphs.session.back()
+        navigator.back()
 
         assertEquals(1, stack.size)
-        assertEquals(AppRoute.ReceiverHome, graphs.session.current)
+        assertEquals(AppRoute.ReceiverHome, navigator.current)
     }
 
     @Test
     fun backDropsEntriesAboveTheRoot() {
         val stack = mutableListOf<NavKey>(AppRoute.RoleSelection, AppRoute.EmitterHome)
-        val graphs = navigators(stack)
+        val navigator = navigator(stack)
 
-        graphs.session.back()
-        graphs.session.back()
+        navigator.back()
+        navigator.back()
 
         assertEquals(1, stack.size)
-        assertEquals(AppRoute.RoleSelection, graphs.session.current)
+        assertEquals(AppRoute.RoleSelection, navigator.current)
     }
 
-    private fun navigators(stack: MutableList<NavKey> = mutableListOf()) = Navigators(stack)
-
-    private class Navigators(stack: MutableList<NavKey>) {
-        val session = SessionNavigator(stack)
-        val emitter = EmitterHomeNavigator(session)
-        val receiver = ReceiverHomeNavigator(session)
-        val role = RoleNavigator(session, emitter, receiver)
+    private fun navigator(stack: MutableList<NavKey> = mutableListOf()): AppNavigator {
+        return AppNavigator(SessionNavigator(stack))
     }
 }
