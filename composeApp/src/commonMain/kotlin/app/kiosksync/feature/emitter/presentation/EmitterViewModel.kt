@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.kiosksync.core.common.app.AppLogger
 import app.kiosksync.core.common.kiosk.KioskLockConfig
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.feature.emitter.domain.EmitterService
 import app.kiosksync.feature.emitter.domain.EmitterServiceDevice
 import app.kiosksync.feature.emitter.domain.EmitterServiceState
@@ -34,6 +33,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.project_no_playlist
+import app.kiosksync.resources.security_storage_error
+import app.kiosksync.resources.send_empty_playlist
+import app.kiosksync.resources.send_no_screens
+import app.kiosksync.core.ui.UiText
 
 /** Holds Controller presentation state and delegates operational work to the Emitter service. */
 class EmitterViewModel(
@@ -249,11 +254,11 @@ class EmitterViewModel(
         val state = _state.value
         if (state.isSending || state.isSyncing) return
         if (playlist.items.isEmpty()) {
-            showStatus(Strings.SEND_EMPTY_PLAYLIST)
+            showStatus(UiText(Res.string.send_empty_playlist))
             return
         }
         if (state.devices.none { it.isSelected && it.isPairedToThisEmitter }) {
-            showStatus(Strings.SEND_NO_SCREENS)
+            showStatus(UiText(Res.string.send_no_screens))
             return
         }
 
@@ -265,7 +270,7 @@ class EmitterViewModel(
     private fun requestProjection(playlist: Playlist) {
         if (_state.value.isSending || _state.value.isSyncing || projectionController.isProjecting) return
         if (playlist.items.isEmpty()) {
-            showStatus(Strings.PROJECT_NO_PLAYLIST)
+            showStatus(UiText(Res.string.project_no_playlist))
             return
         }
 
@@ -290,7 +295,7 @@ class EmitterViewModel(
     private suspend fun loadLock(onSuccess: (KioskLockConfig?) -> Unit) {
         service.loadKioskLock().fold(
             onSuccess = onSuccess,
-            onFailure = { showStatus(Strings.SECURITY_STORAGE_ERROR) },
+            onFailure = { showStatus(UiText(Res.string.security_storage_error)) },
         )
     }
 
@@ -324,7 +329,7 @@ class EmitterViewModel(
         }
     }
 
-    private fun showStatus(message: String) {
+    private fun showStatus(message: UiText) {
         _state.update { it.copy(statusMessage = message, statusIsError = true) }
     }
 

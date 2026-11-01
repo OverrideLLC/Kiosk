@@ -23,7 +23,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppButtonGroup
 import app.kiosksync.core.ui.components.AppButtonSize
@@ -34,39 +33,56 @@ import app.kiosksync.core.ui.components.AppIconButtonSize
 import app.kiosksync.core.ui.components.AppIconButtonVariant
 import app.kiosksync.core.ui.theme.KioskColors
 import app.kiosksync.core.ui.theme.Space
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.design_add_ip
+import app.kiosksync.resources.design_cancel
+import app.kiosksync.resources.design_disabled_button
+import app.kiosksync.resources.design_disabled_reason
+import app.kiosksync.resources.design_group_all
+import app.kiosksync.resources.design_group_offline
+import app.kiosksync.resources.design_group_online
+import app.kiosksync.resources.design_icon_button
+import app.kiosksync.resources.design_project
+import app.kiosksync.resources.design_section_buttons
+import app.kiosksync.resources.design_section_buttons_desc
+import app.kiosksync.resources.design_section_group
+import app.kiosksync.resources.design_section_icons
+import app.kiosksync.resources.design_section_icons_desc
+import app.kiosksync.resources.design_send
+import org.jetbrains.compose.resources.stringResource
 
 
 
 @Composable
 internal fun ButtonSection() {
-    CatalogSection(Strings.DESIGN_SECTION_BUTTONS, Strings.DESIGN_SECTION_BUTTONS_DESC) {
+    CatalogSection(stringResource(Res.string.design_section_buttons), stringResource(Res.string.design_section_buttons_desc)) {
         Column(verticalArrangement = Arrangement.spacedBy(Space.md)) {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(Space.sm),
                 verticalArrangement = Arrangement.spacedBy(Space.sm),
             ) {
                 AppButton(
-                    text = Strings.DESIGN_SEND,
+                    text = stringResource(Res.string.design_send),
                     onClick = {},
                     variant = AppButtonVariant.FILLED,
                     size = AppButtonSize.LARGE,
                     icon = AppIcon.SEND,
                 )
                 AppButton(
-                    text = Strings.DESIGN_PROJECT,
+                    text = stringResource(Res.string.design_project),
                     onClick = {},
                     variant = AppButtonVariant.TONAL,
                     size = AppButtonSize.LARGE,
                     icon = AppIcon.PRESENT_TO_ALL,
                 )
                 AppButton(
-                    text = Strings.DESIGN_ADD_IP,
+                    text = stringResource(Res.string.design_add_ip),
                     onClick = {},
                     variant = AppButtonVariant.OUTLINED,
                     icon = AppIcon.ADD_LINK,
                 )
                 AppButton(
-                    text = Strings.DESIGN_CANCEL,
+                    text = stringResource(Res.string.design_cancel),
                     onClick = {},
                     variant = AppButtonVariant.TEXT,
                 )
@@ -75,47 +91,47 @@ internal fun ButtonSection() {
                 horizontalArrangement = Arrangement.spacedBy(Space.sm),
                 verticalArrangement = Arrangement.spacedBy(Space.sm),
             ) {
-                AppButton(Strings.DESIGN_SEND, {}, size = AppButtonSize.LARGE, icon = AppIcon.SEND)
-                AppButton(Strings.DESIGN_SEND, {}, size = AppButtonSize.MEDIUM, icon = AppIcon.SEND)
-                AppButton(Strings.DESIGN_SEND, {}, size = AppButtonSize.SMALL, icon = AppIcon.SEND)
+                AppButton(stringResource(Res.string.design_send), {}, size = AppButtonSize.LARGE, icon = AppIcon.SEND)
+                AppButton(stringResource(Res.string.design_send), {}, size = AppButtonSize.MEDIUM, icon = AppIcon.SEND)
+                AppButton(stringResource(Res.string.design_send), {}, size = AppButtonSize.SMALL, icon = AppIcon.SEND)
             }
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(Space.sm),
                 verticalArrangement = Arrangement.spacedBy(Space.sm),
             ) {
                 AppButton(
-                    text = Strings.DESIGN_DISABLED_BUTTON,
+                    text = stringResource(Res.string.design_disabled_button),
                     onClick = {},
                     enabled = false,
-                    disabledReason = Strings.DESIGN_DISABLED_REASON,
+                    disabledReason = stringResource(Res.string.design_disabled_reason),
                     icon = AppIcon.SEND,
                 )
                 AppButton(
-                    text = Strings.DESIGN_SEND,
+                    text = stringResource(Res.string.design_send),
                     onClick = {},
                     loading = true,
                 )
                 AppIconButton(
                     icon = AppIcon.REFRESH,
-                    contentDescription = Strings.DESIGN_ICON_BUTTON,
+                    contentDescription = stringResource(Res.string.design_icon_button),
                     onClick = {},
                     variant = AppIconButtonVariant.STANDARD,
                 )
                 AppIconButton(
                     icon = AppIcon.REFRESH,
-                    contentDescription = Strings.DESIGN_ICON_BUTTON,
+                    contentDescription = stringResource(Res.string.design_icon_button),
                     onClick = {},
                     variant = AppIconButtonVariant.TONAL,
                 )
                 AppIconButton(
                     icon = AppIcon.REFRESH,
-                    contentDescription = Strings.DESIGN_ICON_BUTTON,
+                    contentDescription = stringResource(Res.string.design_icon_button),
                     onClick = {},
                     variant = AppIconButtonVariant.FILLED,
                 )
                 AppIconButton(
                     icon = AppIcon.SETTINGS,
-                    contentDescription = Strings.DESIGN_ICON_BUTTON,
+                    contentDescription = stringResource(Res.string.design_icon_button),
                     onClick = {},
                     size = AppIconButtonSize.SMALL,
                 )
@@ -128,12 +144,12 @@ internal fun ButtonSection() {
 internal fun ButtonGroupSection() {
     var selected by remember { mutableIntStateOf(0) }
 
-    CatalogSection(Strings.DESIGN_SECTION_GROUP) {
+    CatalogSection(stringResource(Res.string.design_section_group)) {
         AppButtonGroup(
             options = listOf(
-                Strings.DESIGN_GROUP_ALL,
-                Strings.DESIGN_GROUP_ONLINE,
-                Strings.DESIGN_GROUP_OFFLINE,
+                stringResource(Res.string.design_group_all),
+                stringResource(Res.string.design_group_online),
+                stringResource(Res.string.design_group_offline),
             ),
             selectedIndex = selected,
             onSelect = { selected = it },
@@ -146,7 +162,7 @@ internal fun ButtonGroupSection() {
 internal fun IconSection() {
     val colors = KioskColors.scheme
 
-    CatalogSection(Strings.DESIGN_SECTION_ICONS, Strings.DESIGN_SECTION_ICONS_DESC) {
+    CatalogSection(stringResource(Res.string.design_section_icons), stringResource(Res.string.design_section_icons_desc)) {
         FlowRow(
             maxItemsInEachRow = 8,
             horizontalArrangement = Arrangement.spacedBy(Space.sm),

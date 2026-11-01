@@ -14,7 +14,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppLoadingIndicator
 import app.kiosksync.core.ui.theme.KioskDisplayType
 import app.kiosksync.core.ui.theme.KioskScreenColors
@@ -22,6 +21,10 @@ import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.receiver_waiting_password_message
+import app.kiosksync.resources.receiver_waiting_password_title
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Shown after pairing while the screen still has no blocking password. The
@@ -49,14 +52,14 @@ fun WaitingForPasswordScreen() {
             )
             Spacer(Modifier.height(Space.xl))
             Text(
-                text = Strings.RECEIVER_WAITING_PASSWORD_TITLE,
+                text = stringResource(Res.string.receiver_waiting_password_title),
                 style = KioskDisplayType.screenTitle(),
                 color = KioskScreenColors.content,
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(Space.md))
             Text(
-                text = Strings.RECEIVER_WAITING_PASSWORD_MESSAGE,
+                text = stringResource(Res.string.receiver_waiting_password_message),
                 style = KioskDisplayType.screenCaption(),
                 color = KioskScreenColors.muted,
                 textAlign = TextAlign.Center,

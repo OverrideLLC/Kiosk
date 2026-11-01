@@ -19,6 +19,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.playlist_delete_last_error
+import app.kiosksync.core.ui.UiText
 
 class PlaylistEditorViewModelTest {
     @Test
@@ -89,7 +92,7 @@ class PlaylistEditorViewModelTest {
 
             viewModel.onAction(PlaylistEditorAction.RequestDeletePlaylist)
 
-            assertEquals("Debe quedar al menos una playlist.", viewModel.state.value.message)
+            assertEquals(UiText(Res.string.playlist_delete_last_error), viewModel.state.value.message)
             assertFalse(viewModel.state.value.showDeleteDialog)
         } finally {
             scope.cancel()

@@ -1,6 +1,5 @@
 package app.kiosksync.feature.emitter.presentation.coordinators
 
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.feature.emitter.domain.ReceiverAddressException
 import app.kiosksync.feature.emitter.domain.ReceiverAddressFailure
 import app.kiosksync.feature.emitter.domain.EmitterService
@@ -10,6 +9,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.manual_ip_invalid
+import app.kiosksync.resources.manual_ip_not_receiver
+import app.kiosksync.resources.manual_ip_unreachable
+import app.kiosksync.core.ui.UiText
 
 /** Adapts the manual-address use case result to the MVI state. */
 internal class EmitterManualIpCoordinator(
@@ -38,9 +42,9 @@ internal class EmitterManualIpCoordinator(
             } catch (error: Exception) {
                 val reason = (error as? ReceiverAddressException)?.reason
                 val message = when (reason) {
-                    ReceiverAddressFailure.INVALID_ADDRESS -> Strings.MANUAL_IP_INVALID
-                    ReceiverAddressFailure.NOT_A_RECEIVER -> Strings.MANUAL_IP_NOT_RECEIVER
-                    ReceiverAddressFailure.UNREACHABLE, null -> Strings.MANUAL_IP_UNREACHABLE
+                    ReceiverAddressFailure.INVALID_ADDRESS -> UiText(Res.string.manual_ip_invalid)
+                    ReceiverAddressFailure.NOT_A_RECEIVER -> UiText(Res.string.manual_ip_not_receiver)
+                    ReceiverAddressFailure.UNREACHABLE, null -> UiText(Res.string.manual_ip_unreachable)
                 }
                 uiState.update {
                     it.copy(isManualIpLoading = false, manualIpError = message)

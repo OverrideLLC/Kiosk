@@ -7,6 +7,9 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import com.materialkolor.PaletteStyle
+import com.materialkolor.dynamiccolor.ColorSpec
+import com.materialkolor.material3.dynamicColorScheme
 
 /** Extra semantic roles that Material 3 does not define. */
 @Immutable
@@ -25,52 +28,38 @@ data class KioskExtraColors(
     val disabledContent: Color,
 )
 
-internal fun kioskExtraColors(isDark: Boolean, scheme: ColorScheme) =
-    if (isDark) {
-        KioskExtraColors(
-            success = Color(0xFF7DDBA0),
-            onSuccess = Color(0xFF00391D),
-            successContainer = Color(0xFF00522C),
-            onSuccessContainer = Color(0xFF9AF8BC),
-            warning = Color(0xFFF5C048),
-            onWarning = Color(0xFF3F2E00),
-            warningContainer = Color(0xFF5A4300),
-            onWarningContainer = Color(0xFFFFDF9A),
-            infoContainer = scheme.primaryContainer,
-            onInfoContainer = scheme.onPrimaryContainer,
-            disabledContainer = scheme.surfaceContainerHighest,
-            disabledContent = scheme.onSurfaceVariant,
-        )
-    } else {
-        KioskExtraColors(
-            success = Color(0xFF006D3C),
-            onSuccess = Color(0xFFFFFFFF),
-            successContainer = Color(0xFF9AF8BC),
-            onSuccessContainer = Color(0xFF00210F),
-            warning = Color(0xFF7A5900),
-            onWarning = Color(0xFFFFFFFF),
-            warningContainer = Color(0xFFFFDF9A),
-            onWarningContainer = Color(0xFF261A00),
-            infoContainer = scheme.primaryContainer,
-            onInfoContainer = scheme.onPrimaryContainer,
-            disabledContainer = scheme.surfaceContainerHighest,
-            disabledContent = scheme.onSurfaceVariant,
-        )
-    }
+private val SuccessSeed = Color(0xFF1B8A4A)
+private val WarningSeed = Color(0xFFF5A524)
 
-private val FallbackExtraColors = KioskExtraColors(
-    success = Color(0xFF006D3C),
-    onSuccess = Color(0xFFFFFFFF),
-    successContainer = Color(0xFF9AF8BC),
-    onSuccessContainer = Color(0xFF00210F),
-    warning = Color(0xFF7A5900),
-    onWarning = Color(0xFFFFFFFF),
-    warningContainer = Color(0xFFFFDF9A),
-    onWarningContainer = Color(0xFF261A00),
-    infoContainer = Color(0xFFDEE0FF),
-    onInfoContainer = Color(0xFF001A43),
-    disabledContainer = Color(0xFFE2E2E7),
-    disabledContent = Color(0xFF444655),
+internal fun kioskExtraColors(isDark: Boolean, scheme: ColorScheme): KioskExtraColors {
+    val success = semanticScheme(SuccessSeed, isDark)
+    val warning = semanticScheme(WarningSeed, isDark)
+    return KioskExtraColors(
+        success = success.primary,
+        onSuccess = success.onPrimary,
+        successContainer = success.primaryContainer,
+        onSuccessContainer = success.onPrimaryContainer,
+        warning = warning.primary,
+        onWarning = warning.onPrimary,
+        warningContainer = warning.primaryContainer,
+        onWarningContainer = warning.onPrimaryContainer,
+        infoContainer = scheme.primaryContainer,
+        onInfoContainer = scheme.onPrimaryContainer,
+        disabledContainer = scheme.surfaceContainerHighest,
+        disabledContent = scheme.onSurfaceVariant,
+    )
+}
+
+private fun semanticScheme(seedColor: Color, isDark: Boolean): ColorScheme = dynamicColorScheme(
+    seedColor = seedColor,
+    isDark = isDark,
+    style = PaletteStyle.TonalSpot,
+    specVersion = ColorSpec.SpecVersion.SPEC_2025,
+)
+
+private val FallbackExtraColors = kioskExtraColors(
+    isDark = false,
+    scheme = semanticScheme(KioskSeedColor, isDark = false),
 )
 
 val LocalKioskExtraColors = staticCompositionLocalOf { FallbackExtraColors }

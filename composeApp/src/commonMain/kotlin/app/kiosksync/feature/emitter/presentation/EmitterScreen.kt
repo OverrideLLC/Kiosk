@@ -17,7 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.feature.emitter.domain.models.EmitterPanel
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -34,6 +33,11 @@ import app.kiosksync.feature.playlist.presentation.PlaylistEditorState
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorViewModel
 import app.kiosksync.feature.playlist.presentation.components.PlaylistPanel
 import org.koin.compose.viewmodel.koinViewModel
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.emitter_screens_title
+import app.kiosksync.resources.playlist_title
+import org.jetbrains.compose.resources.stringResource
+import app.kiosksync.core.ui.resolve
 
 @Composable
 fun EmitterRoot(
@@ -82,7 +86,7 @@ fun EmitterScreen(
             state.statusMessage?.let { message ->
                 Spacer(Modifier.height(Space.sm))
                 StatusBanner(
-                    message = message,
+                    message = message.resolve(),
                     isError = state.statusIsError,
                     onDismiss = { onAction(EmitterAction.DismissStatusMessage) },
                 )
@@ -116,8 +120,8 @@ fun EmitterScreen(
                 ) {
                     AppButtonGroup(
                         options = listOf(
-                            Strings.EMITTER_SCREENS_TITLE,
-                            Strings.PLAYLIST_TITLE,
+                            stringResource(Res.string.emitter_screens_title),
+                            stringResource(Res.string.playlist_title),
                         ),
                         selectedIndex = if (state.selectedPanel == EmitterPanel.SCREENS) 0 else 1,
                         onSelect = {

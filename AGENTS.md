@@ -70,7 +70,7 @@ Todo lo demás está fuera del MVP (sección 13).
 - **Navegación con una sola pila.** Navigation 3 (`navigation3-ui`) vive en `app/navigation`. Cada área tiene su ruta, su navegador y el registro de su clave. `NavDisplay` resuelve los destinos con `koinEntryProvider`. La raíz se reemplaza al confirmar o cambiar el rol. Atrás no vacía la pila. Paneles del Controlador, diálogos, guía y bloqueo no son rutas. Los ViewModel de una entrada se piden con `koinViewModel`; los compartidos por la ventana, con `sessionViewModel`.
 - Una sola dependencia de red en el Receptor (Ktor Server) y una en el Emisor (Ktor Client). Evita agregar librerías que no estén listadas en la sección 5 sin preguntar.
 - La app **nunca debe cerrarse sola** por una excepción: captura errores en los límites (rutas del servidor, tareas en segundo plano) y regístralos en un archivo de log.
-- Todos los textos de UI en **español**, centralizados en un único archivo (`Strings.kt`) para facilitar traducirlos después.
+- Todos los textos de UI van en Compose Resources: español por defecto en `composeApp/src/commonMain/composeResources/values/strings.xml` e inglés en `values-en/strings.xml`. El idioma sigue el del sistema.
 - Formatos de imagen soportados: **JPG, PNG, WEBP**. Tamaño máximo por imagen: **25 MB**. Rechaza con mensaje claro lo demás.
 - Código bajo licencia permisiva (propón MIT o Apache-2.0 en la fase final; no la elijas sin aprobación).
 
@@ -128,7 +128,7 @@ Reglas:
 composeApp/src/
 ├── commonMain/kotlin/app/kiosksync/
 │   ├── core/common/     # app, discovery, http, kiosk, media, pairing, playback, playlist, status, sync, update
-│   ├── core/ui/         # Strings.kt, tema, tokens y componentes compartidos
+│   ├── core/ui/         # tema, tokens y componentes compartidos
 │   ├── feature/
 │   │   ├── role/{domain,data,presentation}/
 │   │   ├── pairing/{domain,data,presentation}/

@@ -31,7 +31,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
-import app.kiosksync.core.ui.Strings
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.close_button
+import org.jetbrains.compose.resources.stringResource
 /**
  * Consistent dialog: icon + title + close, content and a right-aligned action
  * row. Wrap the dangerous action in [AppButton] with the error container only
@@ -102,7 +104,7 @@ fun AppDialog(
                     if (dismissible) {
                         AppIconButton(
                             icon = AppIcon.CLOSE,
-                            contentDescription = Strings.CLOSE_BUTTON,
+                            contentDescription = stringResource(Res.string.close_button),
                             onClick = onDismissRequest,
                             variant = AppIconButtonVariant.STANDARD,
                             size = AppIconButtonSize.SMALL,

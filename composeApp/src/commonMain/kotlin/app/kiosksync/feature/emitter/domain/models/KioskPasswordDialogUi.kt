@@ -1,6 +1,7 @@
 package app.kiosksync.feature.emitter.domain.models
 
 import app.kiosksync.feature.playlist.domain.Playlist
+import app.kiosksync.core.ui.UiText
 
 data class KioskPasswordDialogUi(
     val action: EmitterPendingAction,
@@ -8,5 +9,5 @@ data class KioskPasswordDialogUi(
     val deviceId: String? = null,
     val draft: String = "",
     val confirmDraft: String = "",
-    val error: String? = null
+    val error: UiText? = null
 )

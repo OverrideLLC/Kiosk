@@ -10,13 +10,21 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import app.kiosksync.core.common.app.AppRole
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppButtonSize
 import app.kiosksync.core.ui.components.AppButtonVariant
 import app.kiosksync.core.ui.components.AppDialog
 import app.kiosksync.core.ui.components.AppIcon
 import app.kiosksync.core.ui.theme.Space
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.guide_role_body
+import app.kiosksync.resources.guide_role_hint
+import app.kiosksync.resources.guide_role_title
+import app.kiosksync.resources.guide_skip
+import app.kiosksync.resources.guide_title
+import app.kiosksync.resources.role_emitter_title
+import app.kiosksync.resources.role_receiver_title
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun GuideRoleDialog(
@@ -26,18 +34,18 @@ internal fun GuideRoleDialog(
     val colors = MaterialTheme.colorScheme
 
     AppDialog(
-        title = Strings.GUIDE_TITLE,
+        title = stringResource(Res.string.guide_title),
         icon = AppIcon.HELP,
         onDismissRequest = onSkip,
         content = {
             Text(
-                text = Strings.GUIDE_ROLE_TITLE,
+                text = stringResource(Res.string.guide_role_title),
                 style = MaterialTheme.typography.titleLarge,
                 color = colors.onSurface,
             )
             Spacer(Modifier.height(Space.xs))
             Text(
-                text = Strings.GUIDE_ROLE_BODY,
+                text = stringResource(Res.string.guide_role_body),
                 style = MaterialTheme.typography.bodyLarge,
                 color = colors.onSurfaceVariant,
             )
@@ -47,14 +55,14 @@ internal fun GuideRoleDialog(
                 horizontalArrangement = Arrangement.spacedBy(Space.sm),
             ) {
                 AppButton(
-                    text = Strings.ROLE_EMITTER_TITLE,
+                    text = stringResource(Res.string.role_emitter_title),
                     onClick = { onChooseRole(AppRole.EMITTER) },
                     icon = AppIcon.CAST,
                     size = AppButtonSize.MEDIUM,
                     modifier = Modifier.weight(1f),
                 )
                 AppButton(
-                    text = Strings.ROLE_RECEIVER_TITLE,
+                    text = stringResource(Res.string.role_receiver_title),
                     onClick = { onChooseRole(AppRole.RECEIVER) },
                     icon = AppIcon.TV,
                     variant = AppButtonVariant.TONAL,
@@ -64,14 +72,14 @@ internal fun GuideRoleDialog(
             }
             Spacer(Modifier.height(Space.sm))
             Text(
-                text = Strings.GUIDE_ROLE_HINT,
+                text = stringResource(Res.string.guide_role_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.onSurfaceVariant,
             )
         },
         actions = {
             AppButton(
-                text = Strings.GUIDE_SKIP,
+                text = stringResource(Res.string.guide_skip),
                 onClick = onSkip,
                 variant = AppButtonVariant.TEXT,
                 size = AppButtonSize.SMALL,

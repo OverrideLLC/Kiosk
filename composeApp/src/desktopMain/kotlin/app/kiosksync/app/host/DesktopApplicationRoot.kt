@@ -25,12 +25,16 @@ import app.kiosksync.app.di.startDesktopKoin
 import app.kiosksync.core.common.app.APP_NAME
 import app.kiosksync.core.common.app.AppArgs
 import app.kiosksync.core.common.app.AppLogger
-import app.kiosksync.core.ui.Strings
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.koin.core.context.stopKoin
 import java.io.File
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.startup_error
+import app.kiosksync.resources.startup_loading
+import app.kiosksync.resources.startup_retry
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun DesktopApplicationRoot(
@@ -80,17 +84,17 @@ internal fun DesktopApplicationRoot(
                     verticalArrangement = Arrangement.Center,
                 ) {
                     if (failed) {
-                        Text(Strings.STARTUP_ERROR, style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(Res.string.startup_error), style = MaterialTheme.typography.bodyLarge)
                         Button(
                             onClick = { retryNonce++ },
                             modifier = Modifier.padding(top = 20.dp),
                         ) {
-                            Text(Strings.STARTUP_RETRY)
+                            Text(stringResource(Res.string.startup_retry))
                         }
                     } else {
                         CircularProgressIndicator()
                         Text(
-                            text = Strings.STARTUP_LOADING,
+                            text = stringResource(Res.string.startup_loading),
                             modifier = Modifier.padding(top = 20.dp),
                             style = MaterialTheme.typography.bodyLarge,
                         )

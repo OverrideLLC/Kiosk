@@ -51,7 +51,7 @@ Hay **un único módulo Gradle** (`composeApp`) con dos source sets:
 composeApp/src/
 ├── commonMain/kotlin/app/kiosksync/
 │   ├── core/common/     # app, discovery, http, kiosk, media, pairing, playback, playlist, status, sync, update
-│   ├── core/ui/         # Strings.kt, tema M3, iconos y componentes compartidos
+│   ├── core/ui/         # tema M3, iconos y componentes compartidos
 │   ├── feature/
 │   │   ├── role/{domain,data,presentation}/
 │   │   ├── pairing/{domain,data,presentation}/
@@ -321,7 +321,7 @@ cuando afectan a una acción del usuario.
   [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md).
 - Los componentes compartidos se promueven a `core.ui` cuando tienen consumidores
   reales en varias features; componentes específicos permanecen junto a su feature.
-- Todos los textos visibles están en `core/ui/Strings.kt`.
+- Todos los textos visibles están en Compose Resources (`composeResources/values/strings.xml`, español por defecto, e inglés en `values-en`).
 - La guía interactiva vive en `feature/guide/presentation`: `GuideViewModel`
   mantiene la máquina de estados y emite efectos tipados; `GuideStep`, el modelo
   del flujo, vive en `feature/guide/domain`. `GuideScreen` es la entrada de

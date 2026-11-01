@@ -124,10 +124,10 @@ prometer funciones o de instalar la app en un comercio real.
   una pantalla de producto.
 - La navegación por teclado cubre Tab/Enter/Esc y flechas en las tarjetas de rol,
   pero no se probó con todos los lectores de pantalla de Windows.
-- La guía interactiva está en español y no reemplaza la configuración de red ni
-  el aviso del Firewall de Windows; solo recorre las pantallas reales.
-- No hay internacionalización completa: los textos están en español y
-  centralizados en `Strings.kt` para traducirlos más adelante.
+- La guía interactiva no reemplaza la configuración de red ni el aviso del
+  Firewall de Windows; solo recorre las pantallas reales.
+- Los textos de la interfaz están en español (predeterminado) e inglés. El idioma
+  sigue el del sistema. No hay un selector de idioma dentro de la app.
 - No hay temas visuales personalizados ni perfiles de usuario.
 
 ## Datos y operación

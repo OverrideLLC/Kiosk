@@ -1,75 +1,96 @@
 package app.kiosksync.feature.guide.presentation.components
 
 import app.kiosksync.core.common.app.AppRole
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppIcon
 import app.kiosksync.feature.guide.presentation.GuideState
 import app.kiosksync.feature.guide.domain.GuideStep
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.guide_emitter_done_body
+import app.kiosksync.resources.guide_emitter_done_title
+import app.kiosksync.resources.guide_emitter_password_body
+import app.kiosksync.resources.guide_emitter_password_title
+import app.kiosksync.resources.guide_emitter_playlist_body
+import app.kiosksync.resources.guide_emitter_playlist_title
+import app.kiosksync.resources.guide_emitter_screens_body
+import app.kiosksync.resources.guide_emitter_screens_title
+import app.kiosksync.resources.guide_emitter_send_body
+import app.kiosksync.resources.guide_emitter_send_title
+import app.kiosksync.resources.guide_receiver_code_body
+import app.kiosksync.resources.guide_receiver_code_title
+import app.kiosksync.resources.guide_receiver_content_body
+import app.kiosksync.resources.guide_receiver_content_title
+import app.kiosksync.resources.guide_receiver_done_body
+import app.kiosksync.resources.guide_receiver_done_title
+import app.kiosksync.resources.guide_receiver_password_body
+import app.kiosksync.resources.guide_receiver_password_title
+import app.kiosksync.resources.guide_role_body
+import app.kiosksync.resources.guide_role_title
+import org.jetbrains.compose.resources.StringResource
 
 internal data class GuideStepContent(
-    val title: String,
-    val body: String,
+    val title: StringResource,
+    val body: StringResource,
     val icon: AppIcon,
 )
 
 internal fun guideContent(state: GuideState): GuideStepContent = when (state.step) {
     GuideStep.EMITTER_PLAYLIST -> GuideStepContent(
-        title = Strings.GUIDE_EMITTER_PLAYLIST_TITLE,
-        body = Strings.GUIDE_EMITTER_PLAYLIST_BODY,
+        title = Res.string.guide_emitter_playlist_title,
+        body = Res.string.guide_emitter_playlist_body,
         icon = AppIcon.ADD_PHOTO_ALTERNATE,
     )
 
     GuideStep.EMITTER_SCREENS -> GuideStepContent(
-        title = Strings.GUIDE_EMITTER_SCREENS_TITLE,
-        body = Strings.GUIDE_EMITTER_SCREENS_BODY,
+        title = Res.string.guide_emitter_screens_title,
+        body = Res.string.guide_emitter_screens_body,
         icon = AppIcon.CAST,
     )
 
     GuideStep.EMITTER_PASSWORD -> GuideStepContent(
-        title = Strings.GUIDE_EMITTER_PASSWORD_TITLE,
-        body = Strings.GUIDE_EMITTER_PASSWORD_BODY,
+        title = Res.string.guide_emitter_password_title,
+        body = Res.string.guide_emitter_password_body,
         icon = AppIcon.LOCK,
     )
 
     GuideStep.EMITTER_SEND -> GuideStepContent(
-        title = Strings.GUIDE_EMITTER_SEND_TITLE,
-        body = Strings.GUIDE_EMITTER_SEND_BODY,
+        title = Res.string.guide_emitter_send_title,
+        body = Res.string.guide_emitter_send_body,
         icon = AppIcon.SEND,
     )
 
     GuideStep.EMITTER_DONE -> GuideStepContent(
-        title = Strings.GUIDE_EMITTER_DONE_TITLE,
-        body = Strings.GUIDE_EMITTER_DONE_BODY,
+        title = Res.string.guide_emitter_done_title,
+        body = Res.string.guide_emitter_done_body,
         icon = AppIcon.CHECK_CIRCLE,
     )
 
     GuideStep.RECEIVER_CODE -> GuideStepContent(
-        title = Strings.GUIDE_RECEIVER_CODE_TITLE,
-        body = Strings.GUIDE_RECEIVER_CODE_BODY,
+        title = Res.string.guide_receiver_code_title,
+        body = Res.string.guide_receiver_code_body,
         icon = AppIcon.TV,
     )
 
     GuideStep.RECEIVER_PASSWORD -> GuideStepContent(
-        title = Strings.GUIDE_RECEIVER_PASSWORD_TITLE,
-        body = Strings.GUIDE_RECEIVER_PASSWORD_BODY,
+        title = Res.string.guide_receiver_password_title,
+        body = Res.string.guide_receiver_password_body,
         icon = AppIcon.LOCK,
     )
 
     GuideStep.RECEIVER_CONTENT -> GuideStepContent(
-        title = Strings.GUIDE_RECEIVER_CONTENT_TITLE,
-        body = Strings.GUIDE_RECEIVER_CONTENT_BODY,
+        title = Res.string.guide_receiver_content_title,
+        body = Res.string.guide_receiver_content_body,
         icon = AppIcon.PLAYLIST_PLAY,
     )
 
     GuideStep.RECEIVER_DONE -> GuideStepContent(
-        title = Strings.GUIDE_RECEIVER_DONE_TITLE,
-        body = Strings.GUIDE_RECEIVER_DONE_BODY,
+        title = Res.string.guide_receiver_done_title,
+        body = Res.string.guide_receiver_done_body,
         icon = AppIcon.CHECK_CIRCLE,
     )
 
     GuideStep.ROLE -> GuideStepContent(
-        title = Strings.GUIDE_ROLE_TITLE,
-        body = Strings.GUIDE_ROLE_BODY,
+        title = Res.string.guide_role_title,
+        body = Res.string.guide_role_body,
         icon = AppIcon.HELP,
     )
 }

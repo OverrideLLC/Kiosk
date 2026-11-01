@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppIcon
 import app.kiosksync.core.ui.components.AppIconButton
 import app.kiosksync.core.ui.components.AppIconButtonSize
@@ -35,24 +34,45 @@ import app.kiosksync.core.ui.theme.KioskColors
 import app.kiosksync.core.ui.theme.KioskShape
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.design_card_controller_desc
+import app.kiosksync.resources.design_card_screen_desc
+import app.kiosksync.resources.design_chip_duration
+import app.kiosksync.resources.design_chip_error
+import app.kiosksync.resources.design_chip_linked
+import app.kiosksync.resources.design_chip_neutral
+import app.kiosksync.resources.design_chip_offline
+import app.kiosksync.resources.design_chip_online
+import app.kiosksync.resources.design_chip_projecting
+import app.kiosksync.resources.design_chip_success
+import app.kiosksync.resources.design_chip_warning
+import app.kiosksync.resources.design_delete
+import app.kiosksync.resources.design_playlist_row
+import app.kiosksync.resources.design_playlist_row_sub
+import app.kiosksync.resources.design_section_cards
+import app.kiosksync.resources.design_section_chips
+import app.kiosksync.resources.design_section_list
+import app.kiosksync.resources.role_emitter_title
+import app.kiosksync.resources.role_receiver_title
+import org.jetbrains.compose.resources.stringResource
 
 
 
 @Composable
 internal fun ChipSection() {
-    CatalogSection(Strings.DESIGN_SECTION_CHIPS) {
+    CatalogSection(stringResource(Res.string.design_section_chips)) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(Space.sm),
             verticalArrangement = Arrangement.spacedBy(Space.sm),
         ) {
-            AppStatusChip(Strings.DESIGN_CHIP_NEUTRAL, AppStatusTone.NEUTRAL, icon = AppIcon.TV)
-            AppStatusChip(Strings.DESIGN_CHIP_LINKED, AppStatusTone.PRIMARY, icon = AppIcon.LINK)
-            AppStatusChip(Strings.DESIGN_CHIP_ONLINE, AppStatusTone.SUCCESS, icon = AppIcon.WIFI)
-            AppStatusChip(Strings.DESIGN_CHIP_PROJECTING, AppStatusTone.PRIMARY, icon = AppIcon.PLAY_ARROW)
-            AppStatusChip(Strings.DESIGN_CHIP_SUCCESS, AppStatusTone.SUCCESS, icon = AppIcon.CHECK_CIRCLE)
-            AppStatusChip(Strings.DESIGN_CHIP_WARNING, AppStatusTone.WARNING, icon = AppIcon.WARNING)
-            AppStatusChip(Strings.DESIGN_CHIP_ERROR, AppStatusTone.ERROR, icon = AppIcon.ERROR)
-            AppStatusChip(Strings.DESIGN_CHIP_OFFLINE, AppStatusTone.ERROR, icon = AppIcon.WIFI_OFF)
+            AppStatusChip(stringResource(Res.string.design_chip_neutral), AppStatusTone.NEUTRAL, icon = AppIcon.TV)
+            AppStatusChip(stringResource(Res.string.design_chip_linked), AppStatusTone.PRIMARY, icon = AppIcon.LINK)
+            AppStatusChip(stringResource(Res.string.design_chip_online), AppStatusTone.SUCCESS, icon = AppIcon.WIFI)
+            AppStatusChip(stringResource(Res.string.design_chip_projecting), AppStatusTone.PRIMARY, icon = AppIcon.PLAY_ARROW)
+            AppStatusChip(stringResource(Res.string.design_chip_success), AppStatusTone.SUCCESS, icon = AppIcon.CHECK_CIRCLE)
+            AppStatusChip(stringResource(Res.string.design_chip_warning), AppStatusTone.WARNING, icon = AppIcon.WARNING)
+            AppStatusChip(stringResource(Res.string.design_chip_error), AppStatusTone.ERROR, icon = AppIcon.ERROR)
+            AppStatusChip(stringResource(Res.string.design_chip_offline), AppStatusTone.ERROR, icon = AppIcon.WIFI_OFF)
         }
     }
 }
@@ -62,14 +82,14 @@ internal fun CardSection() {
     var roleSelected by remember { mutableIntStateOf(0) }
     var screenChecked by remember { mutableStateOf(true) }
 
-    CatalogSection(Strings.DESIGN_SECTION_CARDS) {
+    CatalogSection(stringResource(Res.string.design_section_cards)) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(Space.md),
             verticalArrangement = Arrangement.spacedBy(Space.md),
         ) {
             AppSelectableCard(
-                title = Strings.ROLE_EMITTER_TITLE,
-                description = Strings.DESIGN_CARD_CONTROLLER_DESC,
+                title = stringResource(Res.string.role_emitter_title),
+                description = stringResource(Res.string.design_card_controller_desc),
                 icon = AppIcon.CAST,
                 selected = roleSelected == 0,
                 onClick = { roleSelected = 0 },
@@ -77,8 +97,8 @@ internal fun CardSection() {
                 modifier = Modifier.width(380.dp),
             )
             AppSelectableCard(
-                title = Strings.ROLE_RECEIVER_TITLE,
-                description = Strings.DESIGN_CARD_SCREEN_DESC,
+                title = stringResource(Res.string.role_receiver_title),
+                description = stringResource(Res.string.design_card_screen_desc),
                 icon = AppIcon.TV,
                 selected = roleSelected == 1,
                 onClick = { roleSelected = 1 },
@@ -86,15 +106,15 @@ internal fun CardSection() {
                 modifier = Modifier.width(380.dp),
             )
             AppSelectableCard(
-                title = Strings.DESIGN_CHIP_ONLINE,
-                description = Strings.DESIGN_PLAYLIST_ROW_SUB,
+                title = stringResource(Res.string.design_chip_online),
+                description = stringResource(Res.string.design_playlist_row_sub),
                 icon = AppIcon.TV,
                 selected = screenChecked,
                 onClick = { screenChecked = !screenChecked },
                 role = Role.Checkbox,
                 modifier = Modifier.width(380.dp),
                 trailing = {
-                    AppStatusChip(Strings.DESIGN_CHIP_LINKED, AppStatusTone.PRIMARY)
+                    AppStatusChip(stringResource(Res.string.design_chip_linked), AppStatusTone.PRIMARY)
                 },
             )
         }
@@ -105,27 +125,27 @@ internal fun CardSection() {
 internal fun ListSection() {
     val colors = KioskColors.scheme
 
-    CatalogSection(Strings.DESIGN_SECTION_LIST) {
+    CatalogSection(stringResource(Res.string.design_section_list)) {
         Surface(
             shape = KioskShape.card,
             color = colors.surfaceContainerLow,
         ) {
             Column(modifier = Modifier.padding(Space.xs)) {
                 AppListItem(
-                    title = Strings.DESIGN_PLAYLIST_ROW,
-                    subtitle = Strings.DESIGN_PLAYLIST_ROW_SUB,
+                    title = stringResource(Res.string.design_playlist_row),
+                    subtitle = stringResource(Res.string.design_playlist_row_sub),
                     leading = { ThumbnailPlaceholder() },
                     trailing = {
-                        AppStatusChip(Strings.DESIGN_CHIP_DURATION, AppStatusTone.NEUTRAL)
+                        AppStatusChip(stringResource(Res.string.design_chip_duration), AppStatusTone.NEUTRAL)
                         AppIconButton(
                             icon = AppIcon.DRAG_INDICATOR,
-                            contentDescription = Strings.DESIGN_SECTION_LIST,
+                            contentDescription = stringResource(Res.string.design_section_list),
                             onClick = {},
                             size = AppIconButtonSize.SMALL,
                         )
                         AppIconButton(
                             icon = AppIcon.DELETE,
-                            contentDescription = Strings.DESIGN_DELETE,
+                            contentDescription = stringResource(Res.string.design_delete),
                             onClick = {},
                             size = AppIconButtonSize.SMALL,
                         )
@@ -136,15 +156,15 @@ internal fun ListSection() {
                     color = colors.outlineVariant,
                 )
                 AppListItem(
-                    title = Strings.DESIGN_PLAYLIST_ROW,
-                    subtitle = Strings.DESIGN_PLAYLIST_ROW_SUB,
+                    title = stringResource(Res.string.design_playlist_row),
+                    subtitle = stringResource(Res.string.design_playlist_row_sub),
                     leading = { ThumbnailPlaceholder() },
                     selected = true,
                     trailing = {
-                        AppStatusChip(Strings.DESIGN_CHIP_DURATION, AppStatusTone.PRIMARY)
+                        AppStatusChip(stringResource(Res.string.design_chip_duration), AppStatusTone.PRIMARY)
                         AppIconButton(
                             icon = AppIcon.DRAG_INDICATOR,
-                            contentDescription = Strings.DESIGN_SECTION_LIST,
+                            contentDescription = stringResource(Res.string.design_section_list),
                             onClick = {},
                             size = AppIconButtonSize.SMALL,
                         )

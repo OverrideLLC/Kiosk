@@ -37,7 +37,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import app.kiosksync.core.common.app.APP_NAME
 import app.kiosksync.core.common.app.APP_VERSION
 import app.kiosksync.core.common.update.AppVersionPolicy
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.common.update.UpdateUrgency
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppButtonSize
@@ -58,6 +57,15 @@ import app.kiosksync.core.ui.theme.KioskShape
 import app.kiosksync.core.ui.components.OverrideLogo
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.add_by_ip
+import app.kiosksync.resources.discovery_empty
+import app.kiosksync.resources.discovery_refresh
+import app.kiosksync.resources.discovery_refreshing
+import app.kiosksync.resources.discovery_searching
+import app.kiosksync.resources.emitter_screens_subtitle
+import app.kiosksync.resources.emitter_screens_title
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun ScreensPanel(
@@ -67,22 +75,22 @@ internal fun ScreensPanel(
 ) {
     Column(modifier = modifier) {
         AppPanelHeader(
-            title = Strings.EMITTER_SCREENS_TITLE,
-            subtitle = Strings.EMITTER_SCREENS_SUBTITLE,
+            title = stringResource(Res.string.emitter_screens_title),
+            subtitle = stringResource(Res.string.emitter_screens_subtitle),
             actions = {
                 AppIconButton(
                     icon = AppIcon.REFRESH,
-                    contentDescription = Strings.DISCOVERY_REFRESH,
+                    contentDescription = stringResource(Res.string.discovery_refresh),
                     onClick = { onAction(EmitterAction.RefreshDevices) },
                     enabled = !state.isRefreshing,
                     tooltip = if (state.isRefreshing) {
-                        Strings.DISCOVERY_REFRESHING
+                        stringResource(Res.string.discovery_refreshing)
                     } else {
-                        Strings.DISCOVERY_REFRESH
+                        stringResource(Res.string.discovery_refresh)
                     },
                 )
                 AppButton(
-                    text = Strings.ADD_BY_IP,
+                    text = stringResource(Res.string.add_by_ip),
                     onClick = { onAction(EmitterAction.OpenManualIp) },
                     variant = AppButtonVariant.OUTLINED,
                     size = AppButtonSize.SMALL,
@@ -98,7 +106,7 @@ internal fun ScreensPanel(
             Box(modifier = listModifier, contentAlignment = Alignment.Center) {
                 AppEmptyState(
                     icon = AppIcon.TV,
-                    title = if (state.isSearching) Strings.DISCOVERY_SEARCHING else Strings.DISCOVERY_EMPTY,
+                    title = if (state.isSearching) stringResource(Res.string.discovery_searching) else stringResource(Res.string.discovery_empty),
                 )
             }
         } else {

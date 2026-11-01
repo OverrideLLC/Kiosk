@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import app.kiosksync.app.navigation.session.sessionViewModel
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.theme.KioskDisplayType
 import app.kiosksync.core.ui.theme.KioskScreenColors
 import app.kiosksync.core.ui.theme.Motion
@@ -23,6 +22,9 @@ import app.kiosksync.core.ui.theme.Space
 import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.feature.playback.presentation.components.DefaultIdleCarousel
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.waiting_content
+import org.jetbrains.compose.resources.stringResource
 
 private data class DisplayedImage(
     val contentKey: String,
@@ -70,7 +72,7 @@ fun CarouselScreen(state: PlaybackState) {
         } else {
             DefaultIdleCarousel()
             Text(
-                text = Strings.WAITING_CONTENT,
+                text = stringResource(Res.string.waiting_content),
                 style = KioskDisplayType.screenCaption(),
                 color = KioskScreenColors.subtle,
                 modifier = Modifier

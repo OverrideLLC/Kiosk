@@ -34,7 +34,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import app.kiosksync.core.common.playlist.MAX_DURATION_SEC
 import app.kiosksync.core.common.playlist.MIN_DURATION_SEC
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppButtonSize
 import app.kiosksync.core.ui.components.AppButtonVariant
@@ -56,6 +55,19 @@ import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorAction
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorState
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.add_images
+import app.kiosksync.resources.adding_images
+import app.kiosksync.resources.close_button
+import app.kiosksync.resources.default_duration
+import app.kiosksync.resources.duration_hint
+import app.kiosksync.resources.empty_playlist_title
+import app.kiosksync.resources.playlist_empty
+import app.kiosksync.resources.playlist_subtitle
+import app.kiosksync.resources.playlist_title
+import app.kiosksync.resources.seconds_suffix
+import org.jetbrains.compose.resources.stringResource
+import app.kiosksync.core.ui.resolve
 
 @Composable
 fun PlaylistPanel(
@@ -68,11 +80,11 @@ fun PlaylistPanel(
 
     Column(modifier = modifier) {
         AppPanelHeader(
-            title = Strings.PLAYLIST_TITLE,
-            subtitle = Strings.PLAYLIST_SUBTITLE,
+            title = stringResource(Res.string.playlist_title),
+            subtitle = stringResource(Res.string.playlist_subtitle),
             actions = {
                 AppButton(
-                    text = if (state.isImporting) Strings.ADDING_IMAGES else Strings.ADD_IMAGES,
+                    text = if (state.isImporting) stringResource(Res.string.adding_images) else stringResource(Res.string.add_images),
                     onClick = { onAction(PlaylistEditorAction.AddImages) },
                     variant = AppButtonVariant.TONAL,
                     size = AppButtonSize.SMALL,
@@ -95,12 +107,12 @@ fun PlaylistPanel(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = Strings.DEFAULT_DURATION,
+                    text = stringResource(Res.string.default_duration),
                     style = MaterialTheme.typography.labelMedium,
                     color = colors.onSurfaceVariant,
                 )
                 Text(
-                    text = Strings.DURATION_HINT,
+                    text = stringResource(Res.string.duration_hint),
                     style = MaterialTheme.typography.labelSmall,
                     color = colors.onSurfaceVariant,
                 )
@@ -111,7 +123,7 @@ fun PlaylistPanel(
                     ?: state.playlist.defaultDurationSec,
                 onValueChange = { onAction(PlaylistEditorAction.UpdateDefaultDuration(it.toString())) },
                 range = MIN_DURATION_SEC..MAX_DURATION_SEC,
-                unit = Strings.SECONDS_SUFFIX,
+                unit = stringResource(Res.string.seconds_suffix),
                 modifier = Modifier.width(Sizes.stepperWidth),
             )
         }
@@ -147,13 +159,13 @@ fun PlaylistPanel(
                         },
                     )
                     Text(
-                        text = message,
+                        text = message.resolve(),
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.weight(1f),
                     )
                     AppIconButton(
                         icon = AppIcon.CLOSE,
-                        contentDescription = Strings.CLOSE_BUTTON,
+                        contentDescription = stringResource(Res.string.close_button),
                         onClick = { onAction(PlaylistEditorAction.DismissMessage) },
                         size = AppIconButtonSize.SMALL,
                         tint = if (state.messageIsError) {
@@ -175,11 +187,11 @@ fun PlaylistPanel(
             ) {
                 AppEmptyState(
                     icon = AppIcon.PHOTO_LIBRARY,
-                    title = Strings.EMPTY_PLAYLIST_TITLE,
-                    description = Strings.PLAYLIST_EMPTY,
+                    title = stringResource(Res.string.empty_playlist_title),
+                    description = stringResource(Res.string.playlist_empty),
                     action = {
                         AppButton(
-                            text = Strings.ADD_IMAGES,
+                            text = stringResource(Res.string.add_images),
                             onClick = { onAction(PlaylistEditorAction.AddImages) },
                             variant = AppButtonVariant.TONAL,
                             size = AppButtonSize.SMALL,

@@ -41,7 +41,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import app.kiosksync.core.common.app.APP_NAME
 import app.kiosksync.core.common.app.APP_VERSION
 import app.kiosksync.core.common.update.AppVersionPolicy
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.common.update.UpdateUrgency
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppButtonSize
@@ -62,6 +61,34 @@ import app.kiosksync.core.ui.theme.KioskShape
 import app.kiosksync.core.ui.components.OverrideLogo
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.pair_button
+import app.kiosksync.resources.paired_other_controller
+import app.kiosksync.resources.select_screen_named
+import app.kiosksync.resources.send_device_applying
+import app.kiosksync.resources.send_device_failed
+import app.kiosksync.resources.send_device_pending
+import app.kiosksync.resources.send_device_success
+import app.kiosksync.resources.send_device_uploading
+import app.kiosksync.resources.send_result_with_version
+import app.kiosksync.resources.status_offline
+import app.kiosksync.resources.status_online
+import app.kiosksync.resources.status_unpaired
+import app.kiosksync.resources.sync_uploading
+import app.kiosksync.resources.unpair_button
+import app.kiosksync.resources.update_button
+import app.kiosksync.resources.update_send_applying
+import app.kiosksync.resources.update_send_failed
+import app.kiosksync.resources.update_send_preparing
+import app.kiosksync.resources.update_send_unavailable
+import app.kiosksync.resources.update_send_uploading
+import app.kiosksync.resources.update_send_waiting
+import app.kiosksync.resources.update_skipped
+import app.kiosksync.resources.version_tag
+import app.kiosksync.resources.version_tag_text
+import app.kiosksync.resources.version_unknown
+import org.jetbrains.compose.resources.stringResource
+import app.kiosksync.core.ui.resolve
 
 @Composable
 internal fun DeviceCard(
@@ -94,25 +121,25 @@ internal fun DeviceCard(
     val statusIcon: AppIcon
     when {
         device.isPairedToThisEmitter && device.isOnline -> {
-            statusLabel = Strings.STATUS_ONLINE
+            statusLabel = stringResource(Res.string.status_online)
             statusTone = AppStatusTone.SUCCESS
             statusIcon = AppIcon.WIFI
         }
 
         device.isPairedToThisEmitter -> {
-            statusLabel = Strings.STATUS_OFFLINE
+            statusLabel = stringResource(Res.string.status_offline)
             statusTone = AppStatusTone.WARNING
             statusIcon = AppIcon.WIFI_OFF
         }
 
         device.isPairedToAnotherEmitter -> {
-            statusLabel = Strings.PAIRED_OTHER_CONTROLLER
+            statusLabel = stringResource(Res.string.paired_other_controller)
             statusTone = AppStatusTone.WARNING
             statusIcon = AppIcon.LINK
         }
 
         else -> {
-            statusLabel = Strings.STATUS_UNPAIRED
+            statusLabel = stringResource(Res.string.status_unpaired)
             statusTone = AppStatusTone.NEUTRAL
             statusIcon = AppIcon.LINK
         }
@@ -156,17 +183,18 @@ internal fun DeviceCard(
                     )
                     Text(
                         text = "${device.host}:${device.port} · " +
-                            Strings.screenVersion(device.appVersion),
+                            (device.appVersion?.let { stringResource(Res.string.version_tag_text, it) } ?: stringResource(Res.string.version_unknown)),
                         style = MaterialTheme.typography.bodySmall,
                         color = if (selected) colors.onPrimaryContainer else colors.onSurfaceVariant,
                     )
                 }
                 if (device.isPairedToThisEmitter) {
+                    val selectDescription = stringResource(Res.string.select_screen_named, device.deviceName)
                     Checkbox(
                         checked = device.isSelected,
                         onCheckedChange = { onToggleSelection() },
                         modifier = Modifier.semantics {
-                            contentDescription = Strings.selectScreen(device.deviceName)
+                            contentDescription = selectDescription
                         },
                         colors = CheckboxDefaults.colors(
                             checkedColor = colors.primary,
@@ -194,7 +222,7 @@ internal fun DeviceCard(
                         ) {
                             if (canRequestUpdate) {
                                 AppButton(
-                                    text = Strings.UPDATE_BUTTON,
+                                    text = stringResource(Res.string.update_button),
                                     onClick = onUpdate,
                                     variant = AppButtonVariant.TONAL,
                                     size = AppButtonSize.SMALL,
@@ -202,7 +230,7 @@ internal fun DeviceCard(
                                 )
                             }
                             AppButton(
-                                text = Strings.UNPAIR_BUTTON,
+                                text = stringResource(Res.string.unpair_button),
                                 onClick = onUnpair,
                                 variant = AppButtonVariant.TEXT,
                                 size = AppButtonSize.SMALL,
@@ -213,7 +241,7 @@ internal fun DeviceCard(
 
                     !device.isPairedToAnotherEmitter -> {
                         AppButton(
-                            text = Strings.PAIR_BUTTON,
+                            text = stringResource(Res.string.pair_button),
                             onClick = onPair,
                             variant = AppButtonVariant.TONAL,
                             size = AppButtonSize.SMALL,
@@ -254,9 +282,9 @@ internal fun UpdateStatusRow(update: EmitterUpdateState, deviceVersion: String?)
             )
             Text(
                 text = when (update.status) {
-                    EmitterUpdateStatus.PREPARING -> Strings.UPDATE_SEND_PREPARING
-                    EmitterUpdateStatus.UPLOADING -> Strings.UPDATE_SEND_UPLOADING
-                    else -> Strings.UPDATE_SEND_APPLYING
+                    EmitterUpdateStatus.PREPARING -> stringResource(Res.string.update_send_preparing)
+                    EmitterUpdateStatus.UPLOADING -> stringResource(Res.string.update_send_uploading)
+                    else -> stringResource(Res.string.update_send_applying)
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.onSurfaceVariant,
@@ -274,14 +302,14 @@ internal fun UpdateStatusRow(update: EmitterUpdateState, deviceVersion: String?)
                 tint = colors.primary,
             )
             Text(
-                text = Strings.UPDATE_SEND_WAITING,
+                text = stringResource(Res.string.update_send_waiting),
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.onSurfaceVariant,
             )
         }
 
         EmitterUpdateStatus.SKIPPED -> Text(
-            text = deviceVersion?.let(Strings::updateSkipped) ?: Strings.updateSkipped(update.version),
+            text = stringResource(Res.string.update_skipped, deviceVersion ?: update.version),
             style = MaterialTheme.typography.bodySmall,
             color = colors.onSurfaceVariant,
         )
@@ -297,7 +325,7 @@ internal fun UpdateStatusRow(update: EmitterUpdateState, deviceVersion: String?)
                 tint = colors.error,
             )
             Text(
-                text = Strings.UPDATE_SEND_FAILED,
+                text = stringResource(Res.string.update_send_failed),
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.error,
             )
@@ -314,7 +342,7 @@ internal fun UpdateStatusRow(update: EmitterUpdateState, deviceVersion: String?)
                 tint = extra.warning,
             )
             Text(
-                text = Strings.UPDATE_SEND_UNAVAILABLE,
+                text = stringResource(Res.string.update_send_unavailable),
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.onSurfaceVariant,
             )
@@ -329,7 +357,7 @@ internal fun SyncStatusRow(sync: DeviceSyncUi) {
 
     when (sync.status) {
         SyncUiStatus.PENDING -> Text(
-            text = Strings.SEND_DEVICE_PENDING,
+            text = stringResource(Res.string.send_device_pending),
             style = MaterialTheme.typography.bodySmall,
             color = colors.onSurfaceVariant,
         )
@@ -342,9 +370,9 @@ internal fun SyncStatusRow(sync: DeviceSyncUi) {
                     0f
                 },
                 label = if (sync.total > 0) {
-                    Strings.syncUploading(sync.uploaded, sync.total)
+                    stringResource(Res.string.sync_uploading, sync.uploaded, sync.total)
                 } else {
-                    Strings.SEND_DEVICE_UPLOADING
+                    stringResource(Res.string.send_device_uploading)
                 },
             )
         }
@@ -358,7 +386,7 @@ internal fun SyncStatusRow(sync: DeviceSyncUi) {
                 dotSize = Sizes.loadingDotSmall,
             )
             Text(
-                text = Strings.SEND_DEVICE_APPLYING,
+                text = stringResource(Res.string.send_device_applying),
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.onSurfaceVariant,
             )
@@ -375,7 +403,11 @@ internal fun SyncStatusRow(sync: DeviceSyncUi) {
                 tint = extra.success,
             )
             Text(
-                text = "${sync.message ?: Strings.SEND_DEVICE_SUCCESS} (${Strings.versionTag(sync.version)})",
+                text = stringResource(
+                    Res.string.send_result_with_version,
+                    sync.message?.resolve() ?: stringResource(Res.string.send_device_success),
+                    stringResource(Res.string.version_tag, sync.version),
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = extra.success,
             )
@@ -392,7 +424,7 @@ internal fun SyncStatusRow(sync: DeviceSyncUi) {
                 tint = colors.error,
             )
             Text(
-                text = sync.message ?: Strings.SEND_DEVICE_FAILED,
+                text = sync.message?.resolve() ?: stringResource(Res.string.send_device_failed),
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.error,
             )

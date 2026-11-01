@@ -35,7 +35,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import app.kiosksync.core.common.app.APP_NAME
 import app.kiosksync.core.common.app.APP_VERSION
 import app.kiosksync.core.common.update.AppVersionPolicy
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.common.update.UpdateUrgency
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppButtonSize
@@ -56,6 +55,18 @@ import app.kiosksync.core.ui.theme.KioskShape
 import app.kiosksync.core.ui.components.OverrideLogo
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.app_tagline
+import app.kiosksync.resources.change_role
+import app.kiosksync.resources.close_button
+import app.kiosksync.resources.exit_app
+import app.kiosksync.resources.kiosk_security_button
+import app.kiosksync.resources.more_options
+import app.kiosksync.resources.role_emitter_title
+import app.kiosksync.resources.security_status_none
+import app.kiosksync.resources.security_status_protected
+import app.kiosksync.resources.settings_title
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun ControllerHeader(
@@ -94,13 +105,13 @@ internal fun ControllerHeader(
                 )
                 Spacer(Modifier.width(Space.xs))
                 AppStatusChip(
-                    label = Strings.ROLE_EMITTER_TITLE,
+                    label = stringResource(Res.string.role_emitter_title),
                     tone = AppStatusTone.PRIMARY,
                     icon = AppIcon.CAST,
                 )
             }
             Text(
-                text = Strings.APP_TAGLINE,
+                text = stringResource(Res.string.app_tagline),
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.onSurfaceVariant,
                 maxLines = 1,
@@ -110,9 +121,9 @@ internal fun ControllerHeader(
 
         AppStatusChip(
             label = if (hasPassword) {
-                Strings.SECURITY_STATUS_PROTECTED
+                stringResource(Res.string.security_status_protected)
             } else {
-                Strings.SECURITY_STATUS_NONE
+                stringResource(Res.string.security_status_none)
             },
             tone = if (hasPassword) AppStatusTone.SUCCESS else AppStatusTone.NEUTRAL,
             icon = if (hasPassword) AppIcon.LOCK else AppIcon.LOCK_OPEN,
@@ -122,31 +133,31 @@ internal fun ControllerHeader(
         Box {
             AppIconButton(
                 icon = AppIcon.MORE_VERT,
-                contentDescription = Strings.MORE_OPTIONS,
+                contentDescription = stringResource(Res.string.more_options),
                 onClick = { menuExpanded = true },
-                tooltip = Strings.MORE_OPTIONS,
+                tooltip = stringResource(Res.string.more_options),
             )
             AppDropdownMenu(
                 expanded = menuExpanded,
                 onDismissRequest = { menuExpanded = false },
                 items = listOf(
                     AppMenuItem(
-                        label = Strings.KIOSK_SECURITY_BUTTON,
+                        label = stringResource(Res.string.kiosk_security_button),
                         icon = AppIcon.LOCK,
                         onClick = onOpenSecurity,
                     ),
                     AppMenuItem(
-                        label = Strings.SETTINGS_TITLE,
+                        label = stringResource(Res.string.settings_title),
                         icon = AppIcon.SETTINGS,
                         onClick = onOpenSettings,
                     ),
                     AppMenuItem(
-                        label = Strings.CHANGE_ROLE,
+                        label = stringResource(Res.string.change_role),
                         icon = AppIcon.SWAP_HORIZ,
                         onClick = onChangeRole,
                     ),
                     AppMenuItem(
-                        label = Strings.EXIT_APP,
+                        label = stringResource(Res.string.exit_app),
                         icon = AppIcon.LOGOUT,
                         onClick = onExit,
                     ),
@@ -192,7 +203,7 @@ internal fun StatusBanner(
             )
             AppIconButton(
                 icon = AppIcon.CLOSE,
-                contentDescription = Strings.CLOSE_BUTTON,
+                contentDescription = stringResource(Res.string.close_button),
                 onClick = onDismiss,
                 size = AppIconButtonSize.SMALL,
                 tint = content,

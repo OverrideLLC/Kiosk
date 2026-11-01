@@ -26,7 +26,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import app.kiosksync.app.navigation.session.sessionViewModel
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.feature.kiosk.domain.KioskLockFeedback
 import app.kiosksync.core.ui.components.AppIcon
 import app.kiosksync.core.ui.theme.KioskDisplayType
@@ -36,6 +35,16 @@ import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.kiosk_attempts_left
+import app.kiosksync.resources.kiosk_locked_out
+import app.kiosksync.resources.kiosk_locked_title
+import app.kiosksync.resources.kiosk_lockout_seconds
+import app.kiosksync.resources.kiosk_recovery_hint
+import app.kiosksync.resources.kiosk_typed_characters
+import app.kiosksync.resources.kiosk_unlock_hint
+import app.kiosksync.resources.kiosk_wrong_password
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Small overlay shown while the keyboard is locked. The carousel keeps playing
@@ -85,7 +94,7 @@ fun KioskScreen(state: KioskState) {
                     tint = colors.primary,
                 )
                 Text(
-                    text = Strings.KIOSK_LOCKED_TITLE,
+                    text = stringResource(Res.string.kiosk_locked_title),
                     style = KioskDisplayType.screenCaption(),
                     color = colors.onSurface,
                 )
@@ -93,7 +102,7 @@ fun KioskScreen(state: KioskState) {
 
             if (state.lockoutRemainingSec > 0) {
                 Text(
-                    text = Strings.kioskLockoutSeconds(state.lockoutRemainingSec),
+                    text = stringResource(Res.string.kiosk_lockout_seconds, state.lockoutRemainingSec),
                     style = KioskDisplayType.screenCaption(),
                     color = colors.error,
                 )
@@ -106,7 +115,7 @@ fun KioskScreen(state: KioskState) {
                     Spacer(Modifier.height(Space.xxs))
                 } else {
                     Text(
-                        text = Strings.KIOSK_UNLOCK_HINT,
+                        text = stringResource(Res.string.kiosk_unlock_hint),
                         style = KioskDisplayType.screenCaption(),
                         color = colors.onSurfaceVariant,
                     )
@@ -121,7 +130,7 @@ fun KioskScreen(state: KioskState) {
                 }
 
                 Text(
-                    text = Strings.KIOSK_RECOVERY_HINT,
+                    text = stringResource(Res.string.kiosk_recovery_hint),
                     style = KioskDisplayType.screenCaption(),
                     color = colors.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -131,18 +140,20 @@ fun KioskScreen(state: KioskState) {
     }
 }
 
+@Composable
 private fun feedbackText(feedback: KioskLockFeedback): String = when (feedback) {
     is KioskLockFeedback.IncorrectPassword ->
-        "${Strings.KIOSK_WRONG_PASSWORD} ${Strings.KIOSK_ATTEMPTS_LEFT} ${feedback.attemptsRemaining}"
+        "${stringResource(Res.string.kiosk_wrong_password)} ${stringResource(Res.string.kiosk_attempts_left)} ${feedback.attemptsRemaining}"
 
-    KioskLockFeedback.LockedOut -> Strings.KIOSK_LOCKED_OUT
+    KioskLockFeedback.LockedOut -> stringResource(Res.string.kiosk_locked_out)
 }
 
 @Composable
 private fun TypedDots(count: Int, color: Color) {
+    val description = stringResource(Res.string.kiosk_typed_characters, count)
     Row(
         modifier = Modifier.semantics {
-            contentDescription = Strings.kioskTypedCharacters(count)
+            contentDescription = description
         },
         horizontalArrangement = Arrangement.spacedBy(Space.xs),
     ) {

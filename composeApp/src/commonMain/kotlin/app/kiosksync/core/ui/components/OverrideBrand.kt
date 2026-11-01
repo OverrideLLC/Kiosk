@@ -24,10 +24,13 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import app.kiosksync.core.common.app.OVERRIDE_WEBSITE
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.resources.Res
 import app.kiosksync.resources.override_logo
 import org.jetbrains.compose.resources.painterResource
+import app.kiosksync.resources.developed_by
+import app.kiosksync.resources.developed_with
+import app.kiosksync.resources.override_name
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * The Override mark. It is decorative by default because the surrounding text
@@ -63,7 +66,7 @@ fun OverrideFooter(modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = Strings.DEVELOPED_WITH,
+            text = stringResource(Res.string.developed_with),
             style = MaterialTheme.typography.labelSmall,
             color = color,
         )
@@ -75,7 +78,7 @@ fun OverrideFooter(modifier: Modifier = Modifier) {
             tint = MaterialTheme.colorScheme.tertiary,
         )
         Text(
-            text = Strings.DEVELOPED_BY,
+            text = stringResource(Res.string.developed_by),
             style = MaterialTheme.typography.labelSmall,
             color = color,
         )
@@ -96,7 +99,7 @@ fun OverrideFooter(modifier: Modifier = Modifier) {
                 tint = linkColor,
             )
             Text(
-                text = Strings.OVERRIDE_NAME,
+                text = stringResource(Res.string.override_name),
                 modifier = Modifier.padding(start = Space.xxs),
                 style = MaterialTheme.typography.labelSmall,
                 color = linkColor,

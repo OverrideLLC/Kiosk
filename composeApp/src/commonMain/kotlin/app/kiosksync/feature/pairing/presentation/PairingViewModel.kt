@@ -3,7 +3,6 @@ package app.kiosksync.feature.pairing.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.kiosksync.core.common.app.AppLogger
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.feature.pairing.domain.DeviceDiscovery
 import app.kiosksync.feature.pairing.domain.PairingManager
 import app.kiosksync.feature.receiver.domain.ReceiverServer
@@ -23,6 +22,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.server_start_error
+import app.kiosksync.core.ui.UiText
 
 /** Coordinates the Receiver pairing lifecycle and exposes a screen-ready MVI state. */
 class PairingViewModel(
@@ -119,7 +121,7 @@ class PairingViewModel(
                 throw cancelled
             } catch (error: Exception) {
                 logger.error("Could not start the receiver server", error)
-                _state.update { it.copy(serviceError = Strings.SERVER_START_ERROR) }
+                _state.update { it.copy(serviceError = UiText(Res.string.server_start_error)) }
             }
         }
     }

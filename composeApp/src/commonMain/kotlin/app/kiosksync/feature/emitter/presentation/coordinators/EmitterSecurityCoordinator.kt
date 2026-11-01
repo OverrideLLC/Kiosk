@@ -8,7 +8,6 @@ import app.kiosksync.feature.emitter.domain.models.SecurityDialogUi
 import app.kiosksync.core.common.app.AppLogger
 import app.kiosksync.core.common.kiosk.DEFAULT_UNLOCK_SEQUENCE
 import app.kiosksync.core.common.kiosk.KioskLockConfig
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.common.kiosk.isValidKioskPassword
 import app.kiosksync.core.common.kiosk.isValidRecoveryPhrase
 import app.kiosksync.core.common.kiosk.isValidUnlockSequence
@@ -22,6 +21,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.kiosk_password_invalid
+import app.kiosksync.resources.kiosk_password_mismatch
+import app.kiosksync.resources.kiosk_password_saved
+import app.kiosksync.resources.security_recovery_invalid
+import app.kiosksync.resources.security_recovery_mismatch
+import app.kiosksync.resources.security_recovery_must_accept
+import app.kiosksync.resources.security_recovery_reset_done
+import app.kiosksync.resources.security_recovery_saved
+import app.kiosksync.resources.security_sequence_invalid
+import app.kiosksync.resources.security_sequence_saved
+import app.kiosksync.resources.security_storage_error
+import app.kiosksync.core.ui.UiText
 
 /** Owns controller-side kiosk password and recovery configuration workflows. */
 internal class EmitterSecurityCoordinator(
@@ -75,7 +87,7 @@ internal class EmitterSecurityCoordinator(
         val dialog = uiState.value.securityDialog ?: return
         if (!isValidUnlockSequence(dialog.sequence)) {
             uiState.update {
-                it.copy(securityDialog = dialog.copy(sequenceError = Strings.SECURITY_SEQUENCE_INVALID))
+                it.copy(securityDialog = dialog.copy(sequenceError = UiText(Res.string.security_sequence_invalid)))
             }
             return
         }
@@ -85,7 +97,7 @@ internal class EmitterSecurityCoordinator(
                 it.copy(
                     hasKioskPassword = config.passwordHash != null,
                     securityDialog = it.securityDialog?.copy(sequenceError = null),
-                    statusMessage = Strings.SECURITY_SEQUENCE_SAVED,
+                    statusMessage = UiText(Res.string.security_sequence_saved),
                     statusIsError = false,
                 )
             }
@@ -97,16 +109,16 @@ internal class EmitterSecurityCoordinator(
     fun saveRecoveryPhrase() {
         val dialog = uiState.value.securityDialog ?: return
         if (!dialog.recoveryAccepted) {
-            updateRecoveryError(dialog, Strings.SECURITY_RECOVERY_MUST_ACCEPT)
+            updateRecoveryError(dialog, UiText(Res.string.security_recovery_must_accept))
             return
         }
         val phrase = dialog.recoveryDraft
         if (!isValidRecoveryPhrase(phrase)) {
-            updateRecoveryError(dialog, Strings.SECURITY_RECOVERY_INVALID)
+            updateRecoveryError(dialog, UiText(Res.string.security_recovery_invalid))
             return
         }
         if (phrase != dialog.recoveryConfirmDraft) {
-            updateRecoveryError(dialog, Strings.SECURITY_RECOVERY_MISMATCH)
+            updateRecoveryError(dialog, UiText(Res.string.security_recovery_mismatch))
             return
         }
         launchStorage {
@@ -122,7 +134,7 @@ internal class EmitterSecurityCoordinator(
                         recoveryConfirmDraft = "",
                         recoveryError = null,
                     ),
-                    statusMessage = Strings.SECURITY_RECOVERY_SAVED,
+                    statusMessage = UiText(Res.string.security_recovery_saved),
                     statusIsError = false,
                 )
             }
@@ -144,7 +156,7 @@ internal class EmitterSecurityCoordinator(
                         recoveryConfirmDraft = "",
                         recoveryError = null,
                     ),
-                    statusMessage = Strings.SECURITY_RECOVERY_RESET_DONE,
+                    statusMessage = UiText(Res.string.security_recovery_reset_done),
                     statusIsError = false,
                 )
             }
@@ -158,13 +170,13 @@ internal class EmitterSecurityCoordinator(
         val password = dialog.draft
         if (!isValidKioskPassword(password)) {
             uiState.update {
-                it.copy(passwordDialog = dialog.copy(error = Strings.KIOSK_PASSWORD_INVALID))
+                it.copy(passwordDialog = dialog.copy(error = UiText(Res.string.kiosk_password_invalid)))
             }
             return
         }
         if (password != dialog.confirmDraft) {
             uiState.update {
-                it.copy(passwordDialog = dialog.copy(error = Strings.KIOSK_PASSWORD_MISMATCH))
+                it.copy(passwordDialog = dialog.copy(error = UiText(Res.string.kiosk_password_mismatch)))
             }
             return
         }
@@ -175,7 +187,7 @@ internal class EmitterSecurityCoordinator(
                     passwordDialog = null,
                     securityDialog = null,
                     hasKioskPassword = true,
-                    statusMessage = Strings.KIOSK_PASSWORD_SAVED,
+                    statusMessage = UiText(Res.string.kiosk_password_saved),
                     statusIsError = false,
                 )
             }
@@ -184,7 +196,7 @@ internal class EmitterSecurityCoordinator(
         }
     }
 
-    private fun updateRecoveryError(dialog: SecurityDialogUi, error: String) {
+    private fun updateRecoveryError(dialog: SecurityDialogUi, error: UiText) {
         uiState.update { it.copy(securityDialog = dialog.copy(recoveryError = error)) }
     }
 
@@ -197,7 +209,7 @@ internal class EmitterSecurityCoordinator(
             } catch (error: Exception) {
                 logger.error("Could not persist kiosk security configuration", error)
                 uiState.update {
-                    it.copy(statusMessage = Strings.SECURITY_STORAGE_ERROR, statusIsError = true)
+                    it.copy(statusMessage = UiText(Res.string.security_storage_error), statusIsError = true)
                 }
             }
         }

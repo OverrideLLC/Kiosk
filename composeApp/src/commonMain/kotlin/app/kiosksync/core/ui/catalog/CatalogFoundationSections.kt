@@ -44,7 +44,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import app.kiosksync.core.common.app.AppTheme
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppCircularProgress
 import app.kiosksync.core.ui.components.AppButtonGroup
@@ -77,6 +76,49 @@ import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
 import kotlinx.coroutines.launch
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.app_title
+import app.kiosksync.resources.design_card_controller_desc
+import app.kiosksync.resources.design_color_error
+import app.kiosksync.resources.design_color_error_container
+import app.kiosksync.resources.design_color_on_primary
+import app.kiosksync.resources.design_color_on_surface_variant
+import app.kiosksync.resources.design_color_outline
+import app.kiosksync.resources.design_color_primary
+import app.kiosksync.resources.design_color_primary_container
+import app.kiosksync.resources.design_color_secondary
+import app.kiosksync.resources.design_color_secondary_container
+import app.kiosksync.resources.design_color_success
+import app.kiosksync.resources.design_color_surface
+import app.kiosksync.resources.design_color_surface_high
+import app.kiosksync.resources.design_color_surface_highest
+import app.kiosksync.resources.design_color_tertiary
+import app.kiosksync.resources.design_color_warning
+import app.kiosksync.resources.design_display_code
+import app.kiosksync.resources.design_section_color
+import app.kiosksync.resources.design_section_color_desc
+import app.kiosksync.resources.design_section_display
+import app.kiosksync.resources.design_section_display_desc
+import app.kiosksync.resources.design_section_shapes
+import app.kiosksync.resources.design_section_typography
+import app.kiosksync.resources.design_section_typography_desc
+import app.kiosksync.resources.design_shape_extra_large
+import app.kiosksync.resources.design_shape_extra_small
+import app.kiosksync.resources.design_shape_large
+import app.kiosksync.resources.design_shape_medium
+import app.kiosksync.resources.design_shape_pill
+import app.kiosksync.resources.design_shape_small
+import app.kiosksync.resources.design_typo_body
+import app.kiosksync.resources.design_typo_display
+import app.kiosksync.resources.design_typo_headline
+import app.kiosksync.resources.design_typo_headline_medium
+import app.kiosksync.resources.design_typo_label
+import app.kiosksync.resources.design_typo_sample_body
+import app.kiosksync.resources.design_typo_sample_label
+import app.kiosksync.resources.design_typo_sample_title
+import app.kiosksync.resources.design_typo_title
+import app.kiosksync.resources.kiosk_locked_title
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun CatalogSection(
@@ -110,26 +152,26 @@ internal fun ColorSection() {
     val colors = KioskColors.scheme
     val extra = KioskColors.extra
 
-    CatalogSection(Strings.DESIGN_SECTION_COLOR, Strings.DESIGN_SECTION_COLOR_DESC) {
+    CatalogSection(stringResource(Res.string.design_section_color), stringResource(Res.string.design_section_color_desc)) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(Space.sm),
             verticalArrangement = Arrangement.spacedBy(Space.md),
         ) {
-            ColorSwatch(Strings.DESIGN_COLOR_PRIMARY, colors.primary)
-            ColorSwatch(Strings.DESIGN_COLOR_ON_PRIMARY, colors.onPrimary)
-            ColorSwatch(Strings.DESIGN_COLOR_PRIMARY_CONTAINER, colors.primaryContainer)
-            ColorSwatch(Strings.DESIGN_COLOR_SECONDARY, colors.secondary)
-            ColorSwatch(Strings.DESIGN_COLOR_SECONDARY_CONTAINER, colors.secondaryContainer)
-            ColorSwatch(Strings.DESIGN_COLOR_TERTIARY, colors.tertiary)
-            ColorSwatch(Strings.DESIGN_COLOR_SURFACE, colors.surface)
-            ColorSwatch(Strings.DESIGN_COLOR_SURFACE_HIGH, colors.surfaceContainerHigh)
-            ColorSwatch(Strings.DESIGN_COLOR_SURFACE_HIGHEST, colors.surfaceContainerHighest)
-            ColorSwatch(Strings.DESIGN_COLOR_ON_SURFACE_VARIANT, colors.onSurfaceVariant)
-            ColorSwatch(Strings.DESIGN_COLOR_OUTLINE, colors.outline)
-            ColorSwatch(Strings.DESIGN_COLOR_ERROR, colors.error)
-            ColorSwatch(Strings.DESIGN_COLOR_ERROR_CONTAINER, colors.errorContainer)
-            ColorSwatch(Strings.DESIGN_COLOR_SUCCESS, extra.success)
-            ColorSwatch(Strings.DESIGN_COLOR_WARNING, extra.warning)
+            ColorSwatch(stringResource(Res.string.design_color_primary), colors.primary)
+            ColorSwatch(stringResource(Res.string.design_color_on_primary), colors.onPrimary)
+            ColorSwatch(stringResource(Res.string.design_color_primary_container), colors.primaryContainer)
+            ColorSwatch(stringResource(Res.string.design_color_secondary), colors.secondary)
+            ColorSwatch(stringResource(Res.string.design_color_secondary_container), colors.secondaryContainer)
+            ColorSwatch(stringResource(Res.string.design_color_tertiary), colors.tertiary)
+            ColorSwatch(stringResource(Res.string.design_color_surface), colors.surface)
+            ColorSwatch(stringResource(Res.string.design_color_surface_high), colors.surfaceContainerHigh)
+            ColorSwatch(stringResource(Res.string.design_color_surface_highest), colors.surfaceContainerHighest)
+            ColorSwatch(stringResource(Res.string.design_color_on_surface_variant), colors.onSurfaceVariant)
+            ColorSwatch(stringResource(Res.string.design_color_outline), colors.outline)
+            ColorSwatch(stringResource(Res.string.design_color_error), colors.error)
+            ColorSwatch(stringResource(Res.string.design_color_error_container), colors.errorContainer)
+            ColorSwatch(stringResource(Res.string.design_color_success), extra.success)
+            ColorSwatch(stringResource(Res.string.design_color_warning), extra.warning)
         }
     }
 }
@@ -162,18 +204,18 @@ internal fun TypographySection() {
     val colors = KioskColors.scheme
     val typography = MaterialTheme.typography
 
-    CatalogSection(Strings.DESIGN_SECTION_TYPOGRAPHY, Strings.DESIGN_SECTION_TYPOGRAPHY_DESC) {
+    CatalogSection(stringResource(Res.string.design_section_typography), stringResource(Res.string.design_section_typography_desc)) {
         Column(verticalArrangement = Arrangement.spacedBy(Space.sm)) {
-            TypographySample(Strings.DESIGN_TYPO_DISPLAY, typography.displaySmall)
-            TypographySample(Strings.DESIGN_TYPO_HEADLINE, typography.headlineLarge)
-            TypographySample(Strings.DESIGN_TYPO_HEADLINE_MEDIUM, typography.headlineMedium)
-            TypographySample(Strings.DESIGN_TYPO_TITLE, typography.titleLarge)
-            TypographySample(Strings.DESIGN_TYPO_BODY, typography.bodyLarge)
-            TypographySample(Strings.DESIGN_TYPO_LABEL, typography.labelLarge)
+            TypographySample(stringResource(Res.string.design_typo_display), typography.displaySmall)
+            TypographySample(stringResource(Res.string.design_typo_headline), typography.headlineLarge)
+            TypographySample(stringResource(Res.string.design_typo_headline_medium), typography.headlineMedium)
+            TypographySample(stringResource(Res.string.design_typo_title), typography.titleLarge)
+            TypographySample(stringResource(Res.string.design_typo_body), typography.bodyLarge)
+            TypographySample(stringResource(Res.string.design_typo_label), typography.labelLarge)
         }
         Spacer(Modifier.height(Space.xs))
         Text(
-            text = Strings.DESIGN_TYPO_SAMPLE_BODY,
+            text = stringResource(Res.string.design_typo_sample_body),
             style = typography.bodyMedium,
             color = colors.onSurfaceVariant,
         )
@@ -197,10 +239,10 @@ internal fun TypographySample(label: String, style: TextStyle) {
         )
         Text(
             text = when (label) {
-                Strings.DESIGN_TYPO_LABEL -> Strings.DESIGN_TYPO_SAMPLE_LABEL
-                Strings.DESIGN_TYPO_BODY -> Strings.DESIGN_TYPO_SAMPLE_BODY
-                Strings.DESIGN_TYPO_TITLE -> Strings.DESIGN_TYPO_SAMPLE_TITLE
-                else -> Strings.APP_TITLE
+                stringResource(Res.string.design_typo_label) -> stringResource(Res.string.design_typo_sample_label)
+                stringResource(Res.string.design_typo_body) -> stringResource(Res.string.design_typo_sample_body)
+                stringResource(Res.string.design_typo_title) -> stringResource(Res.string.design_typo_sample_title)
+                else -> stringResource(Res.string.app_title)
             },
             style = style,
             color = colors.onSurface,
@@ -212,7 +254,7 @@ internal fun TypographySample(label: String, style: TextStyle) {
 internal fun DisplaySection() {
     val colors = KioskColors.scheme
 
-    CatalogSection(Strings.DESIGN_SECTION_DISPLAY, Strings.DESIGN_SECTION_DISPLAY_DESC) {
+    CatalogSection(stringResource(Res.string.design_section_display), stringResource(Res.string.design_section_display_desc)) {
         Surface(
             shape = KioskShape.card,
             color = KioskScreenColors.background,
@@ -226,17 +268,17 @@ internal fun DisplaySection() {
                 verticalArrangement = Arrangement.spacedBy(Space.sm),
             ) {
                 Text(
-                    text = Strings.DESIGN_DISPLAY_CODE,
+                    text = stringResource(Res.string.design_display_code),
                     style = KioskDisplayType.pairingCode(),
                     color = KioskScreenColors.content,
                 )
                 Text(
-                    text = Strings.KIOSK_LOCKED_TITLE,
+                    text = stringResource(Res.string.kiosk_locked_title),
                     style = KioskDisplayType.screenTitle(),
                     color = KioskScreenColors.content,
                 )
                 Text(
-                    text = Strings.DESIGN_CARD_CONTROLLER_DESC,
+                    text = stringResource(Res.string.design_card_controller_desc),
                     style = KioskDisplayType.screenBody(),
                     color = KioskScreenColors.content,
                 )
@@ -249,17 +291,17 @@ internal fun DisplaySection() {
 internal fun ShapeSection() {
     val colors = KioskColors.scheme
 
-    CatalogSection(Strings.DESIGN_SECTION_SHAPES) {
+    CatalogSection(stringResource(Res.string.design_section_shapes)) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(Space.md),
             verticalArrangement = Arrangement.spacedBy(Space.md),
         ) {
-            ShapeTile(Strings.DESIGN_SHAPE_EXTRA_SMALL, KioskShapes.extraSmall)
-            ShapeTile(Strings.DESIGN_SHAPE_SMALL, KioskShapes.small)
-            ShapeTile(Strings.DESIGN_SHAPE_MEDIUM, KioskShapes.medium)
-            ShapeTile(Strings.DESIGN_SHAPE_LARGE, KioskShapes.large)
-            ShapeTile(Strings.DESIGN_SHAPE_EXTRA_LARGE, KioskShapes.extraLarge)
-            ShapeTile(Strings.DESIGN_SHAPE_PILL, KioskShape.chip)
+            ShapeTile(stringResource(Res.string.design_shape_extra_small), KioskShapes.extraSmall)
+            ShapeTile(stringResource(Res.string.design_shape_small), KioskShapes.small)
+            ShapeTile(stringResource(Res.string.design_shape_medium), KioskShapes.medium)
+            ShapeTile(stringResource(Res.string.design_shape_large), KioskShapes.large)
+            ShapeTile(stringResource(Res.string.design_shape_extra_large), KioskShapes.extraLarge)
+            ShapeTile(stringResource(Res.string.design_shape_pill), KioskShape.chip)
         }
     }
 }

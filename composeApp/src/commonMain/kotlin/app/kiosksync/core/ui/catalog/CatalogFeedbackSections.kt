@@ -44,7 +44,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import app.kiosksync.core.common.app.AppTheme
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppCircularProgress
 import app.kiosksync.core.ui.components.AppButtonGroup
@@ -77,6 +76,32 @@ import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
 import kotlinx.coroutines.launch
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.design_add_images
+import app.kiosksync.resources.design_add_ip
+import app.kiosksync.resources.design_cancel
+import app.kiosksync.resources.design_dialog_text
+import app.kiosksync.resources.design_dialog_title
+import app.kiosksync.resources.design_empty_playlist_desc
+import app.kiosksync.resources.design_empty_playlist_title
+import app.kiosksync.resources.design_empty_screens_desc
+import app.kiosksync.resources.design_empty_screens_title
+import app.kiosksync.resources.design_menu_delete
+import app.kiosksync.resources.design_menu_new
+import app.kiosksync.resources.design_menu_rename
+import app.kiosksync.resources.design_name_label
+import app.kiosksync.resources.design_progress_label
+import app.kiosksync.resources.design_save
+import app.kiosksync.resources.design_section_empty
+import app.kiosksync.resources.design_section_feedback
+import app.kiosksync.resources.design_section_loading
+import app.kiosksync.resources.design_show_dialog
+import app.kiosksync.resources.design_show_menu
+import app.kiosksync.resources.design_show_snackbar
+import app.kiosksync.resources.design_tooltip_target
+import app.kiosksync.resources.design_tooltip_text
+import app.kiosksync.resources.waiting_content
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun FeedbackSection(
@@ -86,20 +111,20 @@ internal fun FeedbackSection(
     var showMenu by remember { mutableStateOf(false) }
     var name by remember { mutableStateOf("") }
 
-    CatalogSection(Strings.DESIGN_SECTION_FEEDBACK) {
+    CatalogSection(stringResource(Res.string.design_section_feedback)) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(Space.sm),
             verticalArrangement = Arrangement.spacedBy(Space.sm),
         ) {
             AppButton(
-                text = Strings.DESIGN_SHOW_DIALOG,
+                text = stringResource(Res.string.design_show_dialog),
                 onClick = { showDialog = true },
                 variant = AppButtonVariant.OUTLINED,
                 icon = AppIcon.EDIT,
             )
             Box {
                 AppButton(
-                    text = Strings.DESIGN_SHOW_MENU,
+                    text = stringResource(Res.string.design_show_menu),
                     onClick = { showMenu = true },
                     variant = AppButtonVariant.OUTLINED,
                     icon = AppIcon.MORE_VERT,
@@ -109,17 +134,17 @@ internal fun FeedbackSection(
                     onDismissRequest = { showMenu = false },
                     items = listOf(
                         AppMenuItem(
-                            label = Strings.DESIGN_MENU_NEW,
+                            label = stringResource(Res.string.design_menu_new),
                             onClick = {},
                             icon = AppIcon.PLAYLIST_ADD,
                         ),
                         AppMenuItem(
-                            label = Strings.DESIGN_MENU_RENAME,
+                            label = stringResource(Res.string.design_menu_rename),
                             onClick = {},
                             icon = AppIcon.EDIT,
                         ),
                         AppMenuItem(
-                            label = Strings.DESIGN_MENU_DELETE,
+                            label = stringResource(Res.string.design_menu_delete),
                             onClick = {},
                             icon = AppIcon.DELETE,
                             destructive = true,
@@ -128,14 +153,14 @@ internal fun FeedbackSection(
                 )
             }
             AppButton(
-                text = Strings.DESIGN_SHOW_SNACKBAR,
+                text = stringResource(Res.string.design_show_snackbar),
                 onClick = showSnackbar,
                 variant = AppButtonVariant.TONAL,
                 icon = AppIcon.INFO,
             )
-            AppTooltip(Strings.DESIGN_TOOLTIP_TEXT) {
+            AppTooltip(stringResource(Res.string.design_tooltip_text)) {
                 AppButton(
-                    text = Strings.DESIGN_TOOLTIP_TARGET,
+                    text = stringResource(Res.string.design_tooltip_target),
                     onClick = {},
                     variant = AppButtonVariant.TEXT,
                     icon = AppIcon.HELP,
@@ -146,17 +171,17 @@ internal fun FeedbackSection(
 
     if (showDialog) {
         AppDialog(
-            title = Strings.DESIGN_DIALOG_TITLE,
+            title = stringResource(Res.string.design_dialog_title),
             onDismissRequest = { showDialog = false },
             icon = AppIcon.PLAYLIST_ADD,
             actions = {
                 AppButton(
-                    text = Strings.DESIGN_CANCEL,
+                    text = stringResource(Res.string.design_cancel),
                     onClick = { showDialog = false },
                     variant = AppButtonVariant.TEXT,
                 )
                 AppButton(
-                    text = Strings.DESIGN_SAVE,
+                    text = stringResource(Res.string.design_save),
                     onClick = { showDialog = false },
                     icon = AppIcon.CHECK,
                 )
@@ -165,8 +190,8 @@ internal fun FeedbackSection(
                 AppTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = Strings.DESIGN_NAME_LABEL,
-                    helper = Strings.DESIGN_DIALOG_TEXT,
+                    label = stringResource(Res.string.design_name_label),
+                    helper = stringResource(Res.string.design_dialog_text),
                 )
             },
         )
@@ -177,7 +202,7 @@ internal fun FeedbackSection(
 internal fun LoadingSection() {
     val colors = KioskColors.scheme
 
-    CatalogSection(Strings.DESIGN_SECTION_LOADING) {
+    CatalogSection(stringResource(Res.string.design_section_loading)) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(Space.xl),
             verticalArrangement = Arrangement.spacedBy(Space.md),
@@ -188,7 +213,7 @@ internal fun LoadingSection() {
             ) {
                 AppLoadingIndicator()
                 Text(
-                    text = Strings.WAITING_CONTENT,
+                    text = stringResource(Res.string.waiting_content),
                     style = MaterialTheme.typography.bodyMedium,
                     color = colors.onSurfaceVariant,
                 )
@@ -196,7 +221,7 @@ internal fun LoadingSection() {
             AppCircularProgress()
             AppLinearProgress(
                 progress = 0.42f,
-                label = Strings.DESIGN_PROGRESS_LABEL,
+                label = stringResource(Res.string.design_progress_label),
                 modifier = Modifier.width(360.dp),
             )
         }
@@ -205,7 +230,7 @@ internal fun LoadingSection() {
 
 @Composable
 internal fun EmptySection() {
-    CatalogSection(Strings.DESIGN_SECTION_EMPTY) {
+    CatalogSection(stringResource(Res.string.design_section_empty)) {
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(Space.md),
             verticalArrangement = Arrangement.spacedBy(Space.md),
@@ -217,11 +242,11 @@ internal fun EmptySection() {
             ) {
                 AppEmptyState(
                     icon = AppIcon.TV,
-                    title = Strings.DESIGN_EMPTY_SCREENS_TITLE,
-                    description = Strings.DESIGN_EMPTY_SCREENS_DESC,
+                    title = stringResource(Res.string.design_empty_screens_title),
+                    description = stringResource(Res.string.design_empty_screens_desc),
                     action = {
                         AppButton(
-                            text = Strings.DESIGN_ADD_IP,
+                            text = stringResource(Res.string.design_add_ip),
                             onClick = {},
                             icon = AppIcon.ADD_LINK,
                         )
@@ -235,11 +260,11 @@ internal fun EmptySection() {
             ) {
                 AppEmptyState(
                     icon = AppIcon.PHOTO_LIBRARY,
-                    title = Strings.DESIGN_EMPTY_PLAYLIST_TITLE,
-                    description = Strings.DESIGN_EMPTY_PLAYLIST_DESC,
+                    title = stringResource(Res.string.design_empty_playlist_title),
+                    description = stringResource(Res.string.design_empty_playlist_desc),
                     action = {
                         AppButton(
-                            text = Strings.DESIGN_ADD_IMAGES,
+                            text = stringResource(Res.string.design_add_images),
                             onClick = {},
                             icon = AppIcon.ADD_PHOTO_ALTERNATE,
                         )

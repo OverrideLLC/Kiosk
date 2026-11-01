@@ -6,7 +6,6 @@ import app.kiosksync.app.host.UiCatalogWindow
 import app.kiosksync.core.common.app.APP_NAME
 import app.kiosksync.core.common.app.AppArgs
 import app.kiosksync.core.common.app.DATA_DIR_NAME
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.platform.FileAppLogger
 import java.io.File
 

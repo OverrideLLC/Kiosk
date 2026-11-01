@@ -26,6 +26,8 @@ KioskTheme(theme = AppTheme.DARK, reduceMotion = false) {
 }
 ```
 
+`KioskTheme` delega el tema de Material en `DynamicMaterialTheme` de Material Kolor.
+
 - `AppTheme.DARK` es el valor por defecto (salas con poca luz).
 - `AppTheme.LIGHT` está completo y se puede alternar.
 - La preferencia se guarda en DataStore Preferences junto al rol y sobrevive al
@@ -35,10 +37,10 @@ KioskTheme(theme = AppTheme.DARK, reduceMotion = false) {
 
 ## Color
 
-El tema genera la paleta tonal desde el azul semilla **`#3D7AF5`** con Material
-Kolor Material 3 y `ColorSpec.SpecVersion.SPEC_2025`. La galería de UI muestra los
-roles generados en claro y oscuro; los tokens de éxito, advertencia e información
-siguen definidos por la app.
+El tema genera la paleta tonal desde el azul semilla **`#3D7AF5`** con
+`DynamicMaterialTheme`, estilo `TonalSpot` y `ColorSpec.SpecVersion.SPEC_2025`.
+Éxito y advertencia salen de otras semillas (`#1B8A4A` y `#F5A524`) con la misma
+API. La información y lo deshabilitado reutilizan roles del esquema principal.
 
 ### Roles principales
 

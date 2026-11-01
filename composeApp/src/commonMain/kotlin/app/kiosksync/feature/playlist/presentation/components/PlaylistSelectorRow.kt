@@ -20,7 +20,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppDropdownMenu
 import app.kiosksync.core.ui.components.AppIcon
 import app.kiosksync.core.ui.components.AppIconButton
@@ -31,6 +30,12 @@ import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorAction
 import app.kiosksync.feature.playlist.presentation.PlaylistEditorState
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.playlist_delete
+import app.kiosksync.resources.playlist_new
+import app.kiosksync.resources.playlist_rename
+import app.kiosksync.resources.playlist_selector_label
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun PlaylistSelectorRow(
@@ -46,7 +51,7 @@ internal fun PlaylistSelectorRow(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = Strings.PLAYLIST_SELECTOR_LABEL,
+                text = stringResource(Res.string.playlist_selector_label),
                 style = MaterialTheme.typography.labelMedium,
                 color = colors.onSurfaceVariant,
             )
@@ -107,24 +112,24 @@ internal fun PlaylistSelectorRow(
         Spacer(Modifier.width(Space.xs))
         AppIconButton(
             icon = AppIcon.ADD,
-            contentDescription = Strings.PLAYLIST_NEW,
+            contentDescription = stringResource(Res.string.playlist_new),
             onClick = { onAction(PlaylistEditorAction.OpenCreateDialog) },
             size = AppIconButtonSize.SMALL,
-            tooltip = Strings.PLAYLIST_NEW,
+            tooltip = stringResource(Res.string.playlist_new),
         )
         AppIconButton(
             icon = AppIcon.EDIT,
-            contentDescription = Strings.PLAYLIST_RENAME,
+            contentDescription = stringResource(Res.string.playlist_rename),
             onClick = { onAction(PlaylistEditorAction.OpenRenameDialog) },
             size = AppIconButtonSize.SMALL,
-            tooltip = Strings.PLAYLIST_RENAME,
+            tooltip = stringResource(Res.string.playlist_rename),
         )
         AppIconButton(
             icon = AppIcon.DELETE,
-            contentDescription = Strings.PLAYLIST_DELETE,
+            contentDescription = stringResource(Res.string.playlist_delete),
             onClick = { onAction(PlaylistEditorAction.RequestDeletePlaylist) },
             size = AppIconButtonSize.SMALL,
-            tooltip = Strings.PLAYLIST_DELETE,
+            tooltip = stringResource(Res.string.playlist_delete),
             tint = colors.error,
         )
     }

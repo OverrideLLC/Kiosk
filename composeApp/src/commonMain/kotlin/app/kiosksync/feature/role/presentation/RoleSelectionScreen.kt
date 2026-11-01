@@ -31,7 +31,6 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import app.kiosksync.app.navigation.session.sessionViewModel
 import app.kiosksync.core.common.app.AppRole
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppButtonSize
 import app.kiosksync.core.ui.components.AppButtonVariant
@@ -44,6 +43,21 @@ import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.app_tagline
+import app.kiosksync.resources.app_title
+import app.kiosksync.resources.exit_app
+import app.kiosksync.resources.guide_button
+import app.kiosksync.resources.role_change_hint
+import app.kiosksync.resources.role_confirm_button
+import app.kiosksync.resources.role_emitter_desc
+import app.kiosksync.resources.role_emitter_title
+import app.kiosksync.resources.role_receiver_desc
+import app.kiosksync.resources.role_receiver_title
+import app.kiosksync.resources.role_select_first
+import app.kiosksync.resources.role_selection_subtitle
+import app.kiosksync.resources.role_selection_title
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * First-run role choice. Two large cards, arrow-key navigation and a single
@@ -85,13 +99,13 @@ fun RoleSelectionScreen(
                 Spacer(Modifier.height(Space.huge))
 
                 Text(
-                    text = Strings.ROLE_SELECTION_TITLE,
+                    text = stringResource(Res.string.role_selection_title),
                     style = MaterialTheme.typography.headlineLarge,
                     color = colors.onSurface,
                 )
                 Spacer(Modifier.height(Space.xs))
                 Text(
-                    text = Strings.ROLE_SELECTION_SUBTITLE,
+                    text = stringResource(Res.string.role_selection_subtitle),
                     style = MaterialTheme.typography.bodyLarge,
                     color = colors.onSurfaceVariant,
                 )
@@ -121,16 +135,16 @@ fun RoleSelectionScreen(
                     horizontalArrangement = Arrangement.spacedBy(Space.lg),
                 ) {
                     AppSelectableCard(
-                        title = Strings.ROLE_EMITTER_TITLE,
-                        description = Strings.ROLE_EMITTER_DESC,
+                        title = stringResource(Res.string.role_emitter_title),
+                        description = stringResource(Res.string.role_emitter_desc),
                         icon = AppIcon.CAST,
                         selected = selectedRole == AppRole.EMITTER,
                         onClick = { onAction(RoleAction.SelectRole(AppRole.EMITTER)) },
                         modifier = Modifier.weight(1f).height(Sizes.roleCardHeight),
                     )
                     AppSelectableCard(
-                        title = Strings.ROLE_RECEIVER_TITLE,
-                        description = Strings.ROLE_RECEIVER_DESC,
+                        title = stringResource(Res.string.role_receiver_title),
+                        description = stringResource(Res.string.role_receiver_desc),
                         icon = AppIcon.TV,
                         selected = selectedRole == AppRole.RECEIVER,
                         onClick = { onAction(RoleAction.SelectRole(AppRole.RECEIVER)) },
@@ -141,10 +155,10 @@ fun RoleSelectionScreen(
                 Spacer(Modifier.height(Space.xl))
 
                 AppButton(
-                    text = Strings.ROLE_CONFIRM_BUTTON,
+                    text = stringResource(Res.string.role_confirm_button),
                     onClick = { onAction(RoleAction.ConfirmRole) },
                     enabled = selectedRole != null,
-                    disabledReason = Strings.ROLE_SELECT_FIRST,
+                    disabledReason = stringResource(Res.string.role_select_first),
                     size = AppButtonSize.LARGE,
                     icon = AppIcon.PLAY_ARROW,
                     modifier = Modifier.widthIn(min = Sizes.roleActionMinWidth, max = Sizes.roleActionMaxWidth),
@@ -153,9 +167,9 @@ fun RoleSelectionScreen(
                 Spacer(Modifier.height(Space.xs))
                 Text(
                     text = if (selectedRole == null) {
-                        Strings.ROLE_SELECT_FIRST
+                        stringResource(Res.string.role_select_first)
                     } else {
-                        Strings.ROLE_CHANGE_HINT
+                        stringResource(Res.string.role_change_hint)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = colors.onSurfaceVariant,
@@ -204,25 +218,25 @@ private fun BrandHeader(
         Spacer(Modifier.size(Space.sm))
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = Strings.APP_TITLE,
+                text = stringResource(Res.string.app_title),
                 style = MaterialTheme.typography.titleLarge,
                 color = colors.onSurface,
             )
             Text(
-                text = Strings.APP_TAGLINE,
+                text = stringResource(Res.string.app_tagline),
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.onSurfaceVariant,
             )
         }
         AppButton(
-            text = Strings.GUIDE_BUTTON,
+            text = stringResource(Res.string.guide_button),
             onClick = { onAction(RoleAction.OpenGuide) },
             variant = AppButtonVariant.TEXT,
             size = AppButtonSize.SMALL,
             icon = AppIcon.HELP,
         )
         AppButton(
-            text = Strings.EXIT_APP,
+            text = stringResource(Res.string.exit_app),
             onClick = { onAction(RoleAction.Exit) },
             variant = AppButtonVariant.TEXT,
             size = AppButtonSize.SMALL,

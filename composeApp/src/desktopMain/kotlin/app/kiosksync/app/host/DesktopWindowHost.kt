@@ -54,6 +54,9 @@ import java.awt.Cursor
 import java.awt.Point
 import java.awt.Toolkit
 import java.awt.image.BufferedImage
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.window_projection
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun DesktopWindowHost(
@@ -243,7 +246,7 @@ private fun DesktopWindow(
     projectionPlaylist?.let { playlist ->
         Window(
             onCloseRequest = { projectionController.stop() },
-            title = "$APP_NAME · Proyección",
+            title = stringResource(Res.string.window_projection, APP_NAME),
             state = rememberWindowState(placement = WindowPlacement.Fullscreen),
             undecorated = true,
             alwaysOnTop = true,

@@ -29,7 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.common.kiosk.formatUnlockSequence
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppButtonGroup
@@ -42,6 +41,38 @@ import app.kiosksync.core.ui.theme.KioskColors
 import app.kiosksync.core.ui.theme.KioskShape
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.cancel_button
+import app.kiosksync.resources.security_change_password
+import app.kiosksync.resources.security_close
+import app.kiosksync.resources.security_no_password
+import app.kiosksync.resources.security_password_section_hint
+import app.kiosksync.resources.security_recovery_accept
+import app.kiosksync.resources.security_recovery_change
+import app.kiosksync.resources.security_recovery_confirm_field
+import app.kiosksync.resources.security_recovery_custom
+import app.kiosksync.resources.security_recovery_default
+import app.kiosksync.resources.security_recovery_field
+import app.kiosksync.resources.security_recovery_must_accept
+import app.kiosksync.resources.security_recovery_reset
+import app.kiosksync.resources.security_recovery_rule
+import app.kiosksync.resources.security_recovery_save
+import app.kiosksync.resources.security_recovery_warning
+import app.kiosksync.resources.security_recovery_warning_title
+import app.kiosksync.resources.security_sequence_add
+import app.kiosksync.resources.security_sequence_current
+import app.kiosksync.resources.security_sequence_empty
+import app.kiosksync.resources.security_sequence_hint
+import app.kiosksync.resources.security_sequence_min_hint
+import app.kiosksync.resources.security_sequence_remove
+import app.kiosksync.resources.security_sequence_reset
+import app.kiosksync.resources.security_sequence_save
+import app.kiosksync.resources.security_tab_password
+import app.kiosksync.resources.security_tab_recovery
+import app.kiosksync.resources.security_tab_sequence
+import app.kiosksync.resources.security_title
+import org.jetbrains.compose.resources.stringResource
+import app.kiosksync.core.ui.resolve
 
 @Composable
 internal fun SecurityDialog(
@@ -65,16 +96,16 @@ internal fun SecurityDialog(
     var tab by remember { mutableStateOf(0) }
 
     AppDialog(
-        title = Strings.SECURITY_TITLE,
+        title = stringResource(Res.string.security_title),
         icon = AppIcon.LOCK,
         onDismissRequest = onDismiss,
         maxWidth = Sizes.dialogWideMaxWidth,
         content = {
             AppButtonGroup(
                 options = listOf(
-                    Strings.SECURITY_TAB_PASSWORD,
-                    Strings.SECURITY_TAB_SEQUENCE,
-                    Strings.SECURITY_TAB_RECOVERY,
+                    stringResource(Res.string.security_tab_password),
+                    stringResource(Res.string.security_tab_sequence),
+                    stringResource(Res.string.security_tab_recovery),
                 ),
                 selectedIndex = tab,
                 onSelect = { tab = it },
@@ -86,16 +117,16 @@ internal fun SecurityDialog(
                 0 -> {
                     Text(
                         text = if (hasPassword) {
-                            Strings.SECURITY_PASSWORD_SECTION_HINT
+                            stringResource(Res.string.security_password_section_hint)
                         } else {
-                            "${Strings.SECURITY_NO_PASSWORD} ${Strings.SECURITY_PASSWORD_SECTION_HINT}"
+                            "${stringResource(Res.string.security_no_password)} ${stringResource(Res.string.security_password_section_hint)}"
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         color = colors.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(Space.md))
                     AppButton(
-                        text = Strings.SECURITY_CHANGE_PASSWORD,
+                        text = stringResource(Res.string.security_change_password),
                         onClick = onChangePassword,
                         variant = AppButtonVariant.TONAL,
                         size = AppButtonSize.SMALL,
@@ -105,19 +136,19 @@ internal fun SecurityDialog(
 
                 1 -> {
                     Text(
-                        text = Strings.SECURITY_SEQUENCE_HINT,
+                        text = stringResource(Res.string.security_sequence_hint),
                         style = MaterialTheme.typography.bodyMedium,
                         color = colors.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(Space.sm))
                     Text(
-                        text = Strings.SECURITY_SEQUENCE_CURRENT,
+                        text = stringResource(Res.string.security_sequence_current),
                         style = MaterialTheme.typography.labelMedium,
                         color = colors.onSurfaceVariant,
                     )
                     Text(
                         text = if (dialog.sequence.isEmpty()) {
-                            Strings.SECURITY_SEQUENCE_EMPTY
+                            stringResource(Res.string.security_sequence_empty)
                         } else {
                             formatUnlockSequence(dialog.sequence)
                         },
@@ -126,7 +157,7 @@ internal fun SecurityDialog(
                     )
                     Spacer(Modifier.height(Space.sm))
                     Text(
-                        text = Strings.SECURITY_SEQUENCE_ADD,
+                        text = stringResource(Res.string.security_sequence_add),
                         style = MaterialTheme.typography.labelMedium,
                         color = colors.onSurfaceVariant,
                     )
@@ -144,35 +175,35 @@ internal fun SecurityDialog(
                     Spacer(Modifier.height(Space.xs))
                     Row(horizontalArrangement = Arrangement.spacedBy(Space.xs)) {
                         AppButton(
-                            text = Strings.SECURITY_SEQUENCE_REMOVE,
+                            text = stringResource(Res.string.security_sequence_remove),
                             onClick = onRemoveLast,
                             variant = AppButtonVariant.OUTLINED,
                             size = AppButtonSize.SMALL,
                             enabled = dialog.sequence.isNotEmpty(),
                         )
                         AppButton(
-                            text = Strings.SECURITY_SEQUENCE_RESET,
+                            text = stringResource(Res.string.security_sequence_reset),
                             onClick = onResetSequence,
                             variant = AppButtonVariant.TEXT,
                             size = AppButtonSize.SMALL,
                         )
                     }
                     Text(
-                        text = Strings.SECURITY_SEQUENCE_MIN_HINT,
+                        text = stringResource(Res.string.security_sequence_min_hint),
                         style = MaterialTheme.typography.labelSmall,
                         color = colors.onSurfaceVariant,
                     )
                     dialog.sequenceError?.let {
                         Spacer(Modifier.height(Space.xs))
                         Text(
-                            text = it,
+                            text = it.resolve(),
                             style = MaterialTheme.typography.bodySmall,
                             color = colors.error,
                         )
                     }
                     Spacer(Modifier.height(Space.sm))
                     AppButton(
-                        text = Strings.SECURITY_SEQUENCE_SAVE,
+                        text = stringResource(Res.string.security_sequence_save),
                         onClick = onSaveSequence,
                         size = AppButtonSize.SMALL,
                         icon = AppIcon.CHECK,
@@ -187,9 +218,9 @@ internal fun SecurityDialog(
                     ) {
                         Text(
                             text = if (dialog.hasCustomRecovery) {
-                                Strings.SECURITY_RECOVERY_CUSTOM
+                                stringResource(Res.string.security_recovery_custom)
                             } else {
-                                Strings.SECURITY_RECOVERY_DEFAULT
+                                stringResource(Res.string.security_recovery_default)
                             },
                             style = MaterialTheme.typography.bodyMedium,
                             color = if (dialog.hasCustomRecovery) {
@@ -203,7 +234,7 @@ internal fun SecurityDialog(
                         if (!dialog.showRecoveryEditor) {
                             Row(horizontalArrangement = Arrangement.spacedBy(Space.xs)) {
                                 AppButton(
-                                    text = Strings.SECURITY_RECOVERY_CHANGE,
+                                    text = stringResource(Res.string.security_recovery_change),
                                     onClick = onToggleRecovery,
                                     variant = AppButtonVariant.TONAL,
                                     size = AppButtonSize.SMALL,
@@ -211,7 +242,7 @@ internal fun SecurityDialog(
                                 )
                                 if (dialog.hasCustomRecovery) {
                                     AppButton(
-                                        text = Strings.SECURITY_RECOVERY_RESET,
+                                        text = stringResource(Res.string.security_recovery_reset),
                                         onClick = onResetRecovery,
                                         variant = AppButtonVariant.TEXT,
                                         size = AppButtonSize.SMALL,
@@ -221,8 +252,8 @@ internal fun SecurityDialog(
                             }
                         } else {
                             WarningNote(
-                                title = Strings.SECURITY_RECOVERY_WARNING_TITLE,
-                                body = Strings.SECURITY_RECOVERY_WARNING,
+                                title = stringResource(Res.string.security_recovery_warning_title),
+                                body = stringResource(Res.string.security_recovery_warning),
                             )
                             Spacer(Modifier.height(Space.sm))
                             Row(
@@ -241,7 +272,7 @@ internal fun SecurityDialog(
                                     ),
                                 )
                                 Text(
-                                    text = Strings.SECURITY_RECOVERY_ACCEPT,
+                                    text = stringResource(Res.string.security_recovery_accept),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = colors.onSurface,
                                     modifier = Modifier.weight(1f),
@@ -251,7 +282,7 @@ internal fun SecurityDialog(
                             AppTextField(
                                 value = dialog.recoveryDraft,
                                 onValueChange = onRecoveryChange,
-                                label = Strings.SECURITY_RECOVERY_FIELD,
+                                label = stringResource(Res.string.security_recovery_field),
                                 enabled = dialog.recoveryAccepted,
                                 visualTransformation = PasswordVisualTransformation(),
                             )
@@ -259,28 +290,28 @@ internal fun SecurityDialog(
                             AppTextField(
                                 value = dialog.recoveryConfirmDraft,
                                 onValueChange = onRecoveryConfirmChange,
-                                label = Strings.SECURITY_RECOVERY_CONFIRM_FIELD,
+                                label = stringResource(Res.string.security_recovery_confirm_field),
                                 enabled = dialog.recoveryAccepted,
                                 visualTransformation = PasswordVisualTransformation(),
-                                error = dialog.recoveryError,
+                                error = dialog.recoveryError?.resolve(),
                             )
                             Text(
-                                text = Strings.SECURITY_RECOVERY_RULE,
+                                text = stringResource(Res.string.security_recovery_rule),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = colors.onSurfaceVariant,
                             )
                             Spacer(Modifier.height(Space.sm))
                             Row(horizontalArrangement = Arrangement.spacedBy(Space.xs)) {
                                 AppButton(
-                                    text = Strings.SECURITY_RECOVERY_SAVE,
+                                    text = stringResource(Res.string.security_recovery_save),
                                     onClick = onSaveRecovery,
                                     size = AppButtonSize.SMALL,
                                     icon = AppIcon.LOCK,
                                     enabled = dialog.recoveryAccepted,
-                                    disabledReason = Strings.SECURITY_RECOVERY_MUST_ACCEPT,
+                                    disabledReason = stringResource(Res.string.security_recovery_must_accept),
                                 )
                                 AppButton(
-                                    text = Strings.CANCEL_BUTTON,
+                                    text = stringResource(Res.string.cancel_button),
                                     onClick = onToggleRecovery,
                                     variant = AppButtonVariant.TEXT,
                                     size = AppButtonSize.SMALL,
@@ -293,7 +324,7 @@ internal fun SecurityDialog(
         },
         actions = {
             AppButton(
-                text = Strings.SECURITY_CLOSE,
+                text = stringResource(Res.string.security_close),
                 onClick = onDismiss,
                 variant = AppButtonVariant.TEXT,
                 size = AppButtonSize.SMALL,

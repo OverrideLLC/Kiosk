@@ -44,7 +44,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import app.kiosksync.core.common.app.AppTheme
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppCircularProgress
 import app.kiosksync.core.ui.components.AppButtonGroup
@@ -77,6 +76,16 @@ import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
 import kotlinx.coroutines.launch
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.app_title
+import app.kiosksync.resources.design_reduce_motion
+import app.kiosksync.resources.design_snackbar_message
+import app.kiosksync.resources.design_subtitle
+import app.kiosksync.resources.design_theme_dark
+import app.kiosksync.resources.design_theme_light
+import app.kiosksync.resources.design_title
+import app.kiosksync.resources.design_undo
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Development-only gallery of every token and component. It is opened with
@@ -107,6 +116,8 @@ fun CatalogContent(
     val colors = KioskColors.scheme
     val hostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val snackbarMessage = stringResource(Res.string.design_snackbar_message)
+    val snackbarAction = stringResource(Res.string.design_undo)
 
     Box(
         modifier = Modifier
@@ -147,8 +158,8 @@ fun CatalogContent(
                     FeedbackSection(showSnackbar = {
                         scope.launch {
                             hostState.showSnackbar(
-                                message = Strings.DESIGN_SNACKBAR_MESSAGE,
-                                actionLabel = Strings.DESIGN_UNDO,
+                                message = snackbarMessage,
+                                actionLabel = snackbarAction,
                                 withDismissAction = true,
                             )
                         }
@@ -187,23 +198,23 @@ private fun CatalogTopBar(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = Strings.APP_TITLE,
+                    text = stringResource(Res.string.app_title),
                     style = MaterialTheme.typography.labelMedium,
                     color = colors.onSurfaceVariant,
                 )
                 Text(
-                    text = Strings.DESIGN_TITLE,
+                    text = stringResource(Res.string.design_title),
                     style = MaterialTheme.typography.headlineMedium,
                     color = colors.onSurface,
                 )
                 Text(
-                    text = Strings.DESIGN_SUBTITLE,
+                    text = stringResource(Res.string.design_subtitle),
                     style = MaterialTheme.typography.bodyMedium,
                     color = colors.onSurfaceVariant,
                 )
             }
             AppButtonGroup(
-                options = listOf(Strings.DESIGN_THEME_DARK, Strings.DESIGN_THEME_LIGHT),
+                options = listOf(stringResource(Res.string.design_theme_dark), stringResource(Res.string.design_theme_light)),
                 selectedIndex = if (theme == AppTheme.DARK) 0 else 1,
                 onSelect = { index ->
                     onThemeChange(if (index == 0) AppTheme.DARK else AppTheme.LIGHT)
@@ -215,7 +226,7 @@ private fun CatalogTopBar(
                 horizontalArrangement = Arrangement.spacedBy(Space.xs),
             ) {
                 Text(
-                    text = Strings.DESIGN_REDUCE_MOTION,
+                    text = stringResource(Res.string.design_reduce_motion),
                     style = MaterialTheme.typography.bodyMedium,
                     color = colors.onSurfaceVariant,
                 )

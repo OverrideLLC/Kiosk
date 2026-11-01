@@ -4,13 +4,21 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
-import com.materialkolor.dynamiccolor.ColorSpec
-import com.materialkolor.material3.rememberDynamicColorScheme
 import app.kiosksync.core.common.app.AppTheme
+import com.materialkolor.PaletteStyle
+import com.materialkolor.dynamiccolor.ColorSpec
+import com.materialkolor.material3.DynamicMaterialTheme
+
+/** Brand seed. Material Kolor builds the tonal palettes from this blue. */
+val KioskSeedColor = Color(0xFF3D7AF5)
 
 /**
- * Root theme. It only provides tokens; screens must not define colours,
- * typography, shapes or motion on their own.
+ * Root theme. The Material theme is [DynamicMaterialTheme]: Material Kolor
+ * builds the palette from [KioskSeedColor]. Screens still read typography,
+ * shapes and spacing from this package instead of defining their own.
+ *
+ * Material 3 Expressive (`MotionScheme`) is internal in the Material 3 version
+ * this project compiles against, so motion stays in [Motion].
  *
  * @param theme persisted appearance (dark by default, light fully supported).
  * @param reduceMotion disables springs and decorative fades in one place.
@@ -22,20 +30,20 @@ fun KioskTheme(
     content: @Composable () -> Unit,
 ) {
     val isDark = theme == AppTheme.DARK
-    val colorScheme = rememberDynamicColorScheme(
-        seedColor = Color(0xFF3D7AF5),
+    DynamicMaterialTheme(
+        seedColor = KioskSeedColor,
         isDark = isDark,
+        style = PaletteStyle.Expressive,
         specVersion = ColorSpec.SpecVersion.SPEC_2025,
-    )
-    CompositionLocalProvider(
-        LocalKioskExtraColors provides kioskExtraColors(isDark, colorScheme),
-        LocalReduceMotion provides reduceMotion,
+        shapes = KioskShapes,
+        typography = kioskTypography(),
+        animate = !reduceMotion,
     ) {
-        MaterialTheme(
-            colorScheme = colorScheme,
-            typography = kioskTypography(),
-            shapes = KioskShapes,
-            content = content,
-        )
+        CompositionLocalProvider(
+            LocalKioskExtraColors provides kioskExtraColors(isDark, MaterialTheme.colorScheme),
+            LocalReduceMotion provides reduceMotion,
+        ) {
+            content()
+        }
     }
 }

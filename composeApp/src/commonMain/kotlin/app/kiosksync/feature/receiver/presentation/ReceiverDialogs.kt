@@ -3,12 +3,24 @@ package app.kiosksync.feature.receiver.presentation
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppButtonSize
 import app.kiosksync.core.ui.components.AppButtonVariant
 import app.kiosksync.core.ui.components.AppDialog
 import app.kiosksync.core.ui.components.AppIcon
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.cancel_button
+import app.kiosksync.resources.change_role
+import app.kiosksync.resources.exit_app
+import app.kiosksync.resources.guide_button
+import app.kiosksync.resources.options_message
+import app.kiosksync.resources.options_title
+import app.kiosksync.resources.receiver_unlocked_message
+import app.kiosksync.resources.relock_button
+import app.kiosksync.resources.unpair_button
+import app.kiosksync.resources.unpair_receiver_confirm
+import app.kiosksync.resources.unpair_receiver_title
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun ReceiverOptionsDialog(
@@ -20,40 +32,40 @@ fun ReceiverOptionsDialog(
     onRelock: () -> Unit,
 ) {
     AppDialog(
-        title = Strings.OPTIONS_TITLE,
+        title = stringResource(Res.string.options_title),
         icon = AppIcon.LOCK_OPEN,
         onDismissRequest = onDismiss,
         content = {
             Text(
-                text = if (isReceiver) Strings.RECEIVER_UNLOCKED_MESSAGE else Strings.OPTIONS_MESSAGE,
+                text = if (isReceiver) stringResource(Res.string.receiver_unlocked_message) else stringResource(Res.string.options_message),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
         actions = {
             AppButton(
-                text = Strings.GUIDE_BUTTON,
+                text = stringResource(Res.string.guide_button),
                 onClick = onOpenGuide,
                 variant = AppButtonVariant.TEXT,
                 size = AppButtonSize.SMALL,
                 icon = AppIcon.HELP,
             )
             AppButton(
-                text = Strings.CHANGE_ROLE,
+                text = stringResource(Res.string.change_role),
                 onClick = onChangeRole,
                 variant = AppButtonVariant.OUTLINED,
                 size = AppButtonSize.SMALL,
                 icon = AppIcon.SWAP_HORIZ,
             )
             AppButton(
-                text = Strings.EXIT_APP,
+                text = stringResource(Res.string.exit_app),
                 onClick = onExit,
                 variant = AppButtonVariant.TEXT,
                 size = AppButtonSize.SMALL,
                 icon = AppIcon.LOGOUT,
             )
             AppButton(
-                text = Strings.RELOCK_BUTTON,
+                text = stringResource(Res.string.relock_button),
                 onClick = onRelock,
                 size = AppButtonSize.SMALL,
                 icon = AppIcon.LOCK,
@@ -68,25 +80,25 @@ fun ReceiverUnpairDialog(
     onConfirm: () -> Unit,
 ) {
     AppDialog(
-        title = Strings.UNPAIR_RECEIVER_TITLE,
+        title = stringResource(Res.string.unpair_receiver_title),
         icon = AppIcon.LINK,
         onDismissRequest = onDismiss,
         content = {
             Text(
-                text = Strings.UNPAIR_RECEIVER_CONFIRM,
+                text = stringResource(Res.string.unpair_receiver_confirm),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
         actions = {
             AppButton(
-                text = Strings.CANCEL_BUTTON,
+                text = stringResource(Res.string.cancel_button),
                 onClick = onDismiss,
                 variant = AppButtonVariant.TEXT,
                 size = AppButtonSize.SMALL,
             )
             AppButton(
-                text = Strings.UNPAIR_BUTTON,
+                text = stringResource(Res.string.unpair_button),
                 onClick = onConfirm,
                 variant = AppButtonVariant.DANGER,
                 size = AppButtonSize.SMALL,

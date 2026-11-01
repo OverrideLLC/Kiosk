@@ -1,7 +1,6 @@
 package app.kiosksync.feature.emitter.presentation.coordinators
 
 import app.kiosksync.core.common.kiosk.KioskLockConfig
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.feature.emitter.domain.EmitterDeliveryResult
 import app.kiosksync.feature.emitter.domain.EmitterLocalMediaMissingException
 import app.kiosksync.feature.emitter.domain.EmitterService
@@ -15,6 +14,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.playback_sync_no_screens
+import app.kiosksync.resources.send_device_success
+import app.kiosksync.resources.send_device_up_to_date
+import app.kiosksync.resources.send_error_local_media
+import app.kiosksync.resources.send_error_missing
+import app.kiosksync.resources.send_error_network
+import app.kiosksync.resources.send_no_screens
+import app.kiosksync.core.ui.UiText
+import app.kiosksync.core.ui.sendCompletedText
+import app.kiosksync.core.ui.playbackSyncCompletedText
 
 /** Maps Controller service outcomes to the editor's delivery and sync UI state. */
 internal class EmitterDeliveryCoordinator(
@@ -28,7 +38,7 @@ internal class EmitterDeliveryCoordinator(
         if (state.isSending || state.isSyncing) return
         if (state.devices.none { it.isPairedToThisEmitter }) {
             uiState.update {
-                it.copy(statusMessage = Strings.PLAYBACK_SYNC_NO_SCREENS, statusIsError = true)
+                it.copy(statusMessage = UiText(Res.string.playback_sync_no_screens), statusIsError = true)
             }
             return
         }
@@ -41,7 +51,7 @@ internal class EmitterDeliveryCoordinator(
                         uiState.update {
                             it.copy(
                                 isSyncing = false,
-                                statusMessage = Strings.playbackSyncCompleted(
+                                statusMessage = playbackSyncCompletedText(
                                     result.successCount,
                                     result.failureCount,
                                 ),
@@ -53,7 +63,7 @@ internal class EmitterDeliveryCoordinator(
                         uiState.update {
                             it.copy(
                                 isSyncing = false,
-                                statusMessage = Strings.playbackSyncCompleted(0, state.devices.count { d -> d.isPairedToThisEmitter }),
+                                statusMessage = playbackSyncCompletedText(0, state.devices.count { d -> d.isPairedToThisEmitter }),
                                 statusIsError = true,
                             )
                         }
@@ -65,7 +75,7 @@ internal class EmitterDeliveryCoordinator(
                 uiState.update {
                     it.copy(
                         isSyncing = false,
-                        statusMessage = Strings.playbackSyncCompleted(0, state.devices.count { d -> d.isPairedToThisEmitter }),
+                        statusMessage = playbackSyncCompletedText(0, state.devices.count { d -> d.isPairedToThisEmitter }),
                         statusIsError = true,
                     )
                 }
@@ -77,7 +87,7 @@ internal class EmitterDeliveryCoordinator(
         val selected = uiState.value.devices.filter { it.isSelected && it.isPairedToThisEmitter }
         if (selected.isEmpty()) {
             uiState.update {
-                it.copy(statusMessage = Strings.SEND_NO_SCREENS, statusIsError = true)
+                it.copy(statusMessage = UiText(Res.string.send_no_screens), statusIsError = true)
             }
             return
         }
@@ -117,7 +127,7 @@ internal class EmitterDeliveryCoordinator(
                 uiState.update {
                     it.copy(
                         isSending = false,
-                        statusMessage = Strings.sendCompleted(results.size - failures, failures),
+                        statusMessage = sendCompletedText(results.size - failures, failures),
                         statusIsError = failures > 0,
                     )
                 }
@@ -126,13 +136,13 @@ internal class EmitterDeliveryCoordinator(
             } catch (_: Exception) {
                 selected.forEach { device ->
                     updateDeviceSync(device.deviceId) {
-                        DeviceSyncUi(SyncUiStatus.FAILED, message = Strings.SEND_ERROR_NETWORK)
+                        DeviceSyncUi(SyncUiStatus.FAILED, message = UiText(Res.string.send_error_network))
                     }
                 }
                 uiState.update {
                     it.copy(
                         isSending = false,
-                        statusMessage = Strings.sendCompleted(0, selected.size),
+                        statusMessage = sendCompletedText(0, selected.size),
                         statusIsError = true,
                     )
                 }
@@ -148,9 +158,9 @@ internal class EmitterDeliveryCoordinator(
                         status = SyncUiStatus.SUCCESS,
                         version = summary.appliedVersion,
                         message = if (summary.uploadedCount == 0) {
-                            Strings.SEND_DEVICE_UP_TO_DATE
+                            UiText(Res.string.send_device_up_to_date)
                         } else {
-                            Strings.SEND_DEVICE_SUCCESS
+                            UiText(Res.string.send_device_success)
                         },
                     )
                 }
@@ -173,9 +183,9 @@ internal class EmitterDeliveryCoordinator(
         }
     }
 
-    private fun syncErrorMessage(error: Throwable): String = when (error) {
-        is PlaylistRejectedException -> Strings.SEND_ERROR_MISSING
-        is EmitterLocalMediaMissingException -> Strings.SEND_ERROR_LOCAL_MEDIA
-        else -> Strings.SEND_ERROR_NETWORK
+    private fun syncErrorMessage(error: Throwable): UiText = when (error) {
+        is PlaylistRejectedException -> UiText(Res.string.send_error_missing)
+        is EmitterLocalMediaMissingException -> UiText(Res.string.send_error_local_media)
+        else -> UiText(Res.string.send_error_network)
     }
 }

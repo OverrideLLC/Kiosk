@@ -20,7 +20,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppButtonSize
 import app.kiosksync.core.ui.components.AppButtonVariant
@@ -31,6 +30,17 @@ import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
 import app.kiosksync.feature.update.presentation.ReceiverUpdateAction
 import app.kiosksync.feature.update.presentation.ReceiverUpdateState
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.security_close
+import app.kiosksync.resources.update_applying
+import app.kiosksync.resources.update_available
+import app.kiosksync.resources.update_forced
+import app.kiosksync.resources.update_forced_title
+import app.kiosksync.resources.update_later
+import app.kiosksync.resources.update_now
+import app.kiosksync.resources.update_title
+import org.jetbrains.compose.resources.stringResource
+import app.kiosksync.core.ui.resolve
 
 /**
  * Update prompt shown inside the receiver's fullscreen window. Keeping it in
@@ -72,9 +82,9 @@ fun ReceiverUpdateOverlay(
                 Spacer(Modifier.height(Space.md))
                 Text(
                     text = if (state.forced) {
-                        Strings.UPDATE_FORCED_TITLE
+                        stringResource(Res.string.update_forced_title)
                     } else {
-                        Strings.UPDATE_TITLE
+                        stringResource(Res.string.update_title)
                     },
                     style = MaterialTheme.typography.headlineSmall,
                     color = colors.onSurface,
@@ -83,9 +93,9 @@ fun ReceiverUpdateOverlay(
                 Spacer(Modifier.height(Space.sm))
                 Text(
                     text = if (state.forced) {
-                        Strings.updateForced(version)
+                        stringResource(Res.string.update_forced, version)
                     } else {
-                        Strings.updateAvailable(version, state.currentVersion)
+                        stringResource(Res.string.update_available, version, state.currentVersion)
                     },
                     style = MaterialTheme.typography.bodyLarge,
                     color = colors.onSurfaceVariant,
@@ -97,7 +107,7 @@ fun ReceiverUpdateOverlay(
                     AppLoadingIndicator(color = colors.primary)
                     Spacer(Modifier.height(Space.sm))
                     Text(
-                        text = Strings.UPDATE_APPLYING,
+                        text = stringResource(Res.string.update_applying),
                         style = MaterialTheme.typography.bodyMedium,
                         color = colors.onSurfaceVariant,
                         textAlign = TextAlign.Center,
@@ -105,14 +115,14 @@ fun ReceiverUpdateOverlay(
                 } else {
                     if (state.errorMessage != null) {
                         Text(
-                            text = state.errorMessage,
+                            text = state.errorMessage.resolve(),
                             style = MaterialTheme.typography.bodyMedium,
                             color = colors.error,
                             textAlign = TextAlign.Center,
                         )
                         Spacer(Modifier.height(Space.sm))
                         AppButton(
-                            text = Strings.SECURITY_CLOSE,
+                            text = stringResource(Res.string.security_close),
                             onClick = { onAction(ReceiverUpdateAction.DismissError) },
                             variant = AppButtonVariant.TEXT,
                             size = AppButtonSize.SMALL,
@@ -127,7 +137,7 @@ fun ReceiverUpdateOverlay(
                     ) {
                         if (!state.forced) {
                             AppButton(
-                                text = Strings.UPDATE_LATER,
+                                text = stringResource(Res.string.update_later),
                                 onClick = { onAction(ReceiverUpdateAction.Decline) },
                                 variant = AppButtonVariant.OUTLINED,
                                 size = AppButtonSize.LARGE,
@@ -135,7 +145,7 @@ fun ReceiverUpdateOverlay(
                             Spacer(Modifier.width(Space.xs))
                         }
                         AppButton(
-                            text = Strings.UPDATE_NOW,
+                            text = stringResource(Res.string.update_now),
                             onClick = { onAction(ReceiverUpdateAction.Accept) },
                             variant = AppButtonVariant.FILLED,
                             size = AppButtonSize.LARGE,

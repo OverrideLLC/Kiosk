@@ -26,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppButtonSize
 import app.kiosksync.core.ui.components.AppButtonVariant
@@ -39,6 +38,19 @@ import app.kiosksync.feature.guide.presentation.GuideAction
 import app.kiosksync.feature.guide.presentation.GuideEffect
 import app.kiosksync.feature.guide.presentation.GuideState
 import app.kiosksync.feature.guide.domain.GuideStep
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.guide_action_add_images
+import app.kiosksync.resources.guide_action_refresh
+import app.kiosksync.resources.guide_action_send
+import app.kiosksync.resources.guide_back
+import app.kiosksync.resources.guide_finish
+import app.kiosksync.resources.guide_next
+import app.kiosksync.resources.guide_progress
+import app.kiosksync.resources.guide_restart
+import app.kiosksync.resources.guide_send_needs_playlist
+import app.kiosksync.resources.guide_send_needs_screen
+import app.kiosksync.resources.guide_skip
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun GuideCoachCard(
@@ -97,13 +109,13 @@ internal fun GuideCoachCard(
                     Column(modifier = Modifier.weight(1f)) {
                         if (progress != null) {
                             Text(
-                                text = Strings.guideProgress(progress.first, progress.second),
+                                text = stringResource(Res.string.guide_progress, progress.first, progress.second),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = colors.primary,
                             )
                         }
                         Text(
-                            text = content.title,
+                            text = stringResource(content.title),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.SemiBold,
                             color = colors.onSurface,
@@ -111,7 +123,7 @@ internal fun GuideCoachCard(
                     }
                     AppIconButton(
                         icon = AppIcon.CLOSE,
-                        contentDescription = Strings.GUIDE_SKIP,
+                        contentDescription = stringResource(Res.string.guide_skip),
                         onClick = { onAction(GuideAction.Stop) },
                         size = AppIconButtonSize.SMALL,
                     )
@@ -119,7 +131,7 @@ internal fun GuideCoachCard(
 
                 Spacer(Modifier.height(Space.sm))
                 Text(
-                    text = content.body,
+                    text = stringResource(content.body),
                     style = MaterialTheme.typography.bodyMedium,
                     color = colors.onSurfaceVariant,
                 )
@@ -132,14 +144,14 @@ internal fun GuideCoachCard(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         AppButton(
-                            text = Strings.GUIDE_RESTART,
+                            text = stringResource(Res.string.guide_restart),
                             onClick = { onAction(GuideAction.Restart) },
                             variant = AppButtonVariant.OUTLINED,
                             size = AppButtonSize.SMALL,
                             icon = AppIcon.REFRESH,
                         )
                         AppButton(
-                            text = Strings.GUIDE_FINISH,
+                            text = stringResource(Res.string.guide_finish),
                             onClick = { onAction(GuideAction.Stop) },
                             size = AppButtonSize.SMALL,
                             icon = AppIcon.CHECK,
@@ -153,7 +165,7 @@ internal fun GuideCoachCard(
                     ) {
                         if (canGoBack(state.step)) {
                             AppButton(
-                                text = Strings.GUIDE_BACK,
+                                text = stringResource(Res.string.guide_back),
                                 onClick = { onAction(GuideAction.Back) },
                                 variant = AppButtonVariant.TEXT,
                                 size = AppButtonSize.SMALL,
@@ -161,14 +173,14 @@ internal fun GuideCoachCard(
                         }
                         Spacer(Modifier.weight(1f))
                         AppButton(
-                            text = Strings.GUIDE_SKIP,
+                            text = stringResource(Res.string.guide_skip),
                             onClick = { onAction(GuideAction.Stop) },
                             variant = AppButtonVariant.TEXT,
                             size = AppButtonSize.SMALL,
                         )
                         GuideActionButton(state = state, onAction = onAction)
                         AppButton(
-                            text = Strings.GUIDE_NEXT,
+                            text = stringResource(Res.string.guide_next),
                             onClick = { onAction(GuideAction.Next) },
                             variant = if (hasGuideAction(state.step)) {
                                 AppButtonVariant.OUTLINED
@@ -191,7 +203,7 @@ private fun GuideActionButton(
 ) {
     when (state.step) {
         GuideStep.EMITTER_PLAYLIST -> AppButton(
-            text = Strings.GUIDE_ACTION_ADD_IMAGES,
+            text = stringResource(Res.string.guide_action_add_images),
             onClick = { onAction(GuideAction.RequestEffect(GuideEffect.AddImages)) },
             variant = AppButtonVariant.TONAL,
             size = AppButtonSize.SMALL,
@@ -199,7 +211,7 @@ private fun GuideActionButton(
         )
 
         GuideStep.EMITTER_SCREENS -> AppButton(
-            text = Strings.GUIDE_ACTION_REFRESH,
+            text = stringResource(Res.string.guide_action_refresh),
             onClick = { onAction(GuideAction.RequestEffect(GuideEffect.RefreshDevices)) },
             variant = AppButtonVariant.TONAL,
             size = AppButtonSize.SMALL,
@@ -207,16 +219,16 @@ private fun GuideActionButton(
         )
 
         GuideStep.EMITTER_SEND -> AppButton(
-            text = Strings.GUIDE_ACTION_SEND,
+            text = stringResource(Res.string.guide_action_send),
             onClick = { onAction(GuideAction.RequestEffect(GuideEffect.Send)) },
             variant = AppButtonVariant.FILLED,
             size = AppButtonSize.SMALL,
             icon = AppIcon.SEND,
             enabled = state.playlistItems > 0 && state.selectedScreens > 0,
             disabledReason = if (state.playlistItems == 0) {
-                Strings.GUIDE_SEND_NEEDS_PLAYLIST
+                stringResource(Res.string.guide_send_needs_playlist)
             } else {
-                Strings.GUIDE_SEND_NEEDS_SCREEN
+                stringResource(Res.string.guide_send_needs_screen)
             },
         )
 

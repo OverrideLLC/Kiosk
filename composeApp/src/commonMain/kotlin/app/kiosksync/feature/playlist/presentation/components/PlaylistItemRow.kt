@@ -33,7 +33,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import app.kiosksync.core.common.playlist.MAX_DURATION_SEC
 import app.kiosksync.core.common.playlist.MIN_DURATION_SEC
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppButtonSize
 import app.kiosksync.core.ui.components.AppButtonVariant
@@ -51,6 +50,14 @@ import app.kiosksync.core.ui.theme.KioskShape
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
 import app.kiosksync.feature.playlist.domain.PlaylistItem
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.duration_field_hint
+import app.kiosksync.resources.item_default_duration
+import app.kiosksync.resources.move_down
+import app.kiosksync.resources.move_up
+import app.kiosksync.resources.remove_item
+import app.kiosksync.resources.seconds_suffix
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 internal fun PlaylistItemRow(
@@ -120,9 +127,9 @@ internal fun PlaylistItemRow(
             )
             Text(
                 text = if (item.durationSec == null) {
-                    "${Strings.ITEM_DEFAULT_DURATION} · $defaultDurationSec${Strings.SECONDS_SUFFIX}"
+                    "${stringResource(Res.string.item_default_duration)} · $defaultDurationSec${stringResource(Res.string.seconds_suffix)}"
                 } else {
-                    "${item.durationSec}${Strings.SECONDS_SUFFIX}"
+                    "${item.durationSec}${stringResource(Res.string.seconds_suffix)}"
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.onSurfaceVariant,
@@ -133,32 +140,32 @@ internal fun PlaylistItemRow(
             value = durationDraft ?: item.durationSec?.toString().orEmpty(),
             onValueChange = onDurationChange,
             modifier = Modifier.width(Sizes.durationFieldWidth),
-            placeholder = Strings.DURATION_FIELD_HINT,
+            placeholder = stringResource(Res.string.duration_field_hint),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         )
 
         AppIconButton(
             icon = AppIcon.ARROW_UPWARD,
-            contentDescription = Strings.MOVE_UP,
+            contentDescription = stringResource(Res.string.move_up),
             onClick = onMoveUp,
             enabled = index > 0,
             size = AppIconButtonSize.SMALL,
-            tooltip = Strings.MOVE_UP,
+            tooltip = stringResource(Res.string.move_up),
         )
         AppIconButton(
             icon = AppIcon.ARROW_DOWNWARD,
-            contentDescription = Strings.MOVE_DOWN,
+            contentDescription = stringResource(Res.string.move_down),
             onClick = onMoveDown,
             enabled = index < lastIndex,
             size = AppIconButtonSize.SMALL,
-            tooltip = Strings.MOVE_DOWN,
+            tooltip = stringResource(Res.string.move_down),
         )
         AppIconButton(
             icon = AppIcon.DELETE,
-            contentDescription = Strings.REMOVE_ITEM,
+            contentDescription = stringResource(Res.string.remove_item),
             onClick = onRemove,
             size = AppIconButtonSize.SMALL,
-            tooltip = Strings.REMOVE_ITEM,
+            tooltip = stringResource(Res.string.remove_item),
             tint = colors.error,
         )
     }

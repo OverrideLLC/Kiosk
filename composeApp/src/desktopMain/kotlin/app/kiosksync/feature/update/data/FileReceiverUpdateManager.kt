@@ -6,7 +6,6 @@ import app.kiosksync.core.common.app.APP_VERSION
 import app.kiosksync.core.common.app.AppLogger
 import app.kiosksync.core.common.update.AppVersionPolicy
 import app.kiosksync.core.common.update.MAX_UPDATE_EXTRACTED_BYTES
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.common.update.UPDATE_PACKAGE_FORMAT
 import app.kiosksync.core.common.update.UpdatePackageManifest
 import app.kiosksync.core.common.update.UpdateUrgency
@@ -74,7 +73,7 @@ class FileReceiverUpdateManager(
         }
         val targetAppDir = appDir
         if (targetAppDir == null || !targetAppDir.isDirectory) {
-            return Result.failure(IllegalStateException(Strings.UPDATE_NOT_SUPPORTED))
+            return Result.failure(IllegalStateException("installation_not_supported"))
         }
         // The manager's current version is the "screen" side of the policy;
         // the incoming package is the controller side.

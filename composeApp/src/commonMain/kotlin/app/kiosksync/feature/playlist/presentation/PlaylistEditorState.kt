@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import app.kiosksync.core.common.playlist.DEFAULT_DURATION_SEC
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.domain.models.PlaylistNameDialogMode
+import app.kiosksync.core.ui.UiText
 
 data class PlaylistEditorState(
     val playlist: Playlist = Playlist(),
@@ -14,11 +15,11 @@ data class PlaylistEditorState(
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
     val isImporting: Boolean = false,
-    val message: String? = null,
+    val message: UiText? = null,
     val messageIsError: Boolean = false,
     val nameDialogMode: PlaylistNameDialogMode? = null,
     val nameDraft: String = "",
-    val nameError: String? = null,
+    val nameError: UiText? = null,
     val showDeleteDialog: Boolean = false,
     val removeItemId: String? = null,
     val thumbnailByMediaId: Map<String, ImageBitmap?> = emptyMap(),

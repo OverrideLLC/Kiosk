@@ -26,7 +26,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import app.kiosksync.app.navigation.session.sessionViewModel
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppButtonSize
 import app.kiosksync.core.ui.components.AppButtonVariant
@@ -40,6 +39,22 @@ import app.kiosksync.core.ui.theme.KioskTheme
 import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.app_title
+import app.kiosksync.resources.change_role
+import app.kiosksync.resources.enter_code_in_controller
+import app.kiosksync.resources.exit_app
+import app.kiosksync.resources.guide_button
+import app.kiosksync.resources.pairing_code_label
+import app.kiosksync.resources.receiver_code_renews_in_value
+import app.kiosksync.resources.receiver_ip_hint
+import app.kiosksync.resources.receiver_ip_unavailable
+import app.kiosksync.resources.receiver_locked_countdown
+import app.kiosksync.resources.receiver_locked_title
+import app.kiosksync.resources.receiver_pairing_title
+import app.kiosksync.resources.receiver_port_label
+import org.jetbrains.compose.resources.stringResource
+import app.kiosksync.core.ui.resolve
 
 /**
  * Receiver pairing screen, designed to be read from several metres: a huge
@@ -80,7 +95,7 @@ fun PairingCodeScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
-                text = Strings.RECEIVER_PAIRING_TITLE,
+                text = stringResource(Res.string.receiver_pairing_title),
                 style = KioskDisplayType.screenTitle(),
                 color = KioskScreenColors.content,
                 textAlign = TextAlign.Center,
@@ -89,6 +104,7 @@ fun PairingCodeScreen(
             Spacer(Modifier.height(Space.xl))
 
             val displayedCode = formatPairingCode(pairing.currentCode)
+            val codeDescription = "${stringResource(Res.string.pairing_code_label)}: $displayedCode"
             Text(
                 text = displayedCode,
                 style = KioskDisplayType.pairingCode(),
@@ -99,14 +115,14 @@ fun PairingCodeScreen(
                 },
                 textAlign = TextAlign.Center,
                 modifier = Modifier.semantics {
-                    contentDescription = "${Strings.PAIRING_CODE_LABEL}: $displayedCode"
+                    contentDescription = codeDescription
                 },
             )
 
             Spacer(Modifier.height(Space.lg))
 
             Text(
-                text = Strings.ENTER_CODE_IN_CONTROLLER,
+                text = stringResource(Res.string.enter_code_in_controller),
                 style = KioskDisplayType.screenCaption(),
                 color = KioskScreenColors.muted,
                 textAlign = TextAlign.Center,
@@ -116,8 +132,8 @@ fun PairingCodeScreen(
 
             if (pairing.isLocked) {
                 LockoutMessage(
-                    title = Strings.RECEIVER_LOCKED_TITLE,
-                    message = Strings.receiverLockedMessage(pairing.lockRemainingSeconds),
+                    title = stringResource(Res.string.receiver_locked_title),
+                    message = stringResource(Res.string.receiver_locked_countdown, pairing.lockRemainingSeconds),
                 )
             } else {
                 Row(
@@ -129,8 +145,9 @@ fun PairingCodeScreen(
                         dotSize = Sizes.loadingDot,
                     )
                     Text(
-                        text = Strings.receiverCodeRenewsIn(
-                            formatCountdown(pairing.codeExpiresInSeconds)
+                        text = stringResource(
+                            Res.string.receiver_code_renews_in_value,
+                            formatCountdown(pairing.codeExpiresInSeconds),
                         ),
                         style = KioskDisplayType.screenCaption(),
                         color = KioskScreenColors.subtle,
@@ -153,9 +170,9 @@ fun PairingCodeScreen(
                     ) {
                         Text(
                             text = if (state.receiverIp != null) {
-                                Strings.RECEIVER_IP_HINT
+                                stringResource(Res.string.receiver_ip_hint)
                             } else {
-                                Strings.RECEIVER_IP_UNAVAILABLE
+                                stringResource(Res.string.receiver_ip_unavailable)
                             },
                             style = KioskDisplayType.screenCaption(),
                             color = KioskScreenColors.muted,
@@ -165,7 +182,7 @@ fun PairingCodeScreen(
                         if (state.receiverIp != null) {
                             SelectionContainer {
                                 Text(
-                                    text = Strings.receiverAddress(state.receiverIp, state.receiverPort),
+                                    text = "${state.receiverIp}:${state.receiverPort}",
                                     style = KioskDisplayType.screenBody(),
                                     color = KioskScreenColors.content,
                                     textAlign = TextAlign.Center,
@@ -173,7 +190,7 @@ fun PairingCodeScreen(
                             }
                         } else {
                             Text(
-                                text = "${Strings.RECEIVER_PORT_LABEL}: ${state.receiverPort}",
+                                text = "${stringResource(Res.string.receiver_port_label)}: ${state.receiverPort}",
                                 style = KioskDisplayType.screenBody(),
                                 color = KioskScreenColors.content,
                             )
@@ -195,7 +212,7 @@ fun PairingCodeScreen(
                         tint = KioskScreenColors.error,
                     )
                     Text(
-                        text = state.serviceError,
+                        text = state.serviceError.resolve(),
                         style = KioskDisplayType.screenCaption(),
                         color = KioskScreenColors.error,
                         textAlign = TextAlign.Start,
@@ -212,21 +229,21 @@ fun PairingCodeScreen(
                 horizontalArrangement = Arrangement.spacedBy(Space.xs),
             ) {
                 AppButton(
-                    text = Strings.GUIDE_BUTTON,
+                    text = stringResource(Res.string.guide_button),
                     onClick = { onAction(PairingAction.OpenGuide) },
                     variant = AppButtonVariant.TEXT,
                     size = AppButtonSize.SMALL,
                     icon = AppIcon.HELP,
                 )
                 AppButton(
-                    text = Strings.CHANGE_ROLE,
+                    text = stringResource(Res.string.change_role),
                     onClick = { onAction(PairingAction.ChangeRoleRequested) },
                     variant = AppButtonVariant.TEXT,
                     size = AppButtonSize.SMALL,
                     icon = AppIcon.SWAP_HORIZ,
                 )
                 AppButton(
-                    text = Strings.EXIT_APP,
+                    text = stringResource(Res.string.exit_app),
                     onClick = { onAction(PairingAction.ExitRequested) },
                     variant = AppButtonVariant.TEXT,
                     size = AppButtonSize.SMALL,
@@ -257,7 +274,7 @@ private fun BrandMark(modifier: Modifier = Modifier) {
             )
         }
         Text(
-            text = Strings.APP_TITLE,
+            text = stringResource(Res.string.app_title),
             style = MaterialTheme.typography.titleMedium,
             color = KioskScreenColors.subtle,
         )

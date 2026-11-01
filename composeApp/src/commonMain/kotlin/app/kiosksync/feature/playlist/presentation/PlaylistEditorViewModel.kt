@@ -6,7 +6,6 @@ import app.kiosksync.core.common.app.AppLogger
 import app.kiosksync.core.common.playlist.DEFAULT_DURATION_SEC
 import app.kiosksync.core.common.playlist.MAX_DURATION_SEC
 import app.kiosksync.core.common.playlist.MIN_DURATION_SEC
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.feature.playlist.domain.Playlist
 import app.kiosksync.feature.playlist.domain.PlaylistItem
 import app.kiosksync.feature.playlist.domain.models.PlaylistNameDialogMode
@@ -27,6 +26,17 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.playlist_default_name
+import app.kiosksync.resources.playlist_delete_last_error
+import app.kiosksync.resources.playlist_import_error
+import app.kiosksync.resources.playlist_import_none
+import app.kiosksync.resources.playlist_name_exists
+import app.kiosksync.resources.playlist_name_required
+import app.kiosksync.resources.playlist_save_error
+import org.jetbrains.compose.resources.getString
+import app.kiosksync.core.ui.UiText
+import app.kiosksync.core.ui.playlistImportSummaryText
 
 class PlaylistEditorViewModel(
     private val playlistRepository: PlaylistRepository,
@@ -68,7 +78,7 @@ class PlaylistEditorViewModel(
                 _state.update {
                     it.copy(
                         isLoading = false,
-                        message = Strings.PLAYLIST_SAVE_ERROR,
+                        message = UiText(Res.string.playlist_save_error),
                         messageIsError = true,
                     )
                 }
@@ -93,7 +103,7 @@ class PlaylistEditorViewModel(
             }
             PlaylistEditorAction.RequestDeletePlaylist -> _state.update {
                 if (it.playlists.size <= 1) {
-                    it.copy(message = Strings.PLAYLIST_DELETE_LAST_ERROR, messageIsError = true)
+                    it.copy(message = UiText(Res.string.playlist_delete_last_error), messageIsError = true)
                 } else {
                     it.copy(showDeleteDialog = true)
                 }
@@ -120,7 +130,7 @@ class PlaylistEditorViewModel(
                 _state.update {
                     it.copy(
                         isImporting = false,
-                        message = Strings.PLAYLIST_IMPORT_ERROR,
+                        message = UiText(Res.string.playlist_import_error),
                         messageIsError = true,
                     )
                 }
@@ -157,14 +167,14 @@ class PlaylistEditorViewModel(
         val mode = state.nameDialogMode ?: return
         val name = state.nameDraft.trim()
         if (name.isEmpty()) {
-            _state.value = state.copy(nameError = Strings.PLAYLIST_NAME_REQUIRED)
+            _state.value = state.copy(nameError = UiText(Res.string.playlist_name_required))
             return
         }
         val duplicate = state.playlists.any {
             it.id != state.playlist.id && it.name.equals(name, ignoreCase = true)
         }
         if (duplicate) {
-            _state.value = state.copy(nameError = Strings.PLAYLIST_NAME_EXISTS)
+            _state.value = state.copy(nameError = UiText(Res.string.playlist_name_exists))
             return
         }
 
@@ -272,7 +282,7 @@ class PlaylistEditorViewModel(
                     it.copy(
                         playlist = updated,
                         isImporting = false,
-                        message = Strings.playlistImportSummary(imported.size, rejected),
+                        message = playlistImportSummaryText(imported.size, rejected),
                         messageIsError = rejected > 0
                     )
                 }
@@ -281,7 +291,7 @@ class PlaylistEditorViewModel(
             } else {
                 _state.value = _state.value.copy(
                     isImporting = false,
-                    message = Strings.PLAYLIST_IMPORT_NONE,
+                    message = UiText(Res.string.playlist_import_none),
                     messageIsError = true
                 )
             }
@@ -433,7 +443,7 @@ class PlaylistEditorViewModel(
                 _state.update {
                     it.copy(
                         isSaving = false,
-                        message = Strings.PLAYLIST_SAVE_ERROR,
+                        message = UiText(Res.string.playlist_save_error),
                         messageIsError = true,
                     )
                 }
@@ -453,7 +463,7 @@ class PlaylistEditorViewModel(
 
         val fresh = Playlist(
             id = newPlaylistId(),
-            name = Strings.PLAYLIST_DEFAULT_NAME
+            name = getString(Res.string.playlist_default_name)
         )
         val library = PlaylistLibrary(
             playlists = listOf(fresh),

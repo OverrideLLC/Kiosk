@@ -26,7 +26,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import app.kiosksync.app.shell.LocalAppPreferences
 import app.kiosksync.core.common.app.AppTheme
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.core.ui.components.AppButton
 import app.kiosksync.core.ui.components.AppButtonGroup
 import app.kiosksync.core.ui.components.AppButtonSize
@@ -39,6 +38,52 @@ import app.kiosksync.core.ui.theme.Sizes
 import app.kiosksync.core.ui.theme.Space
 import app.kiosksync.feature.emitter.presentation.EmitterAction
 import app.kiosksync.feature.emitter.presentation.EmitterState
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.add_button
+import app.kiosksync.resources.cancel_button
+import app.kiosksync.resources.change_role
+import app.kiosksync.resources.change_role_confirm
+import app.kiosksync.resources.close_button
+import app.kiosksync.resources.guide_button
+import app.kiosksync.resources.guide_replay_hint
+import app.kiosksync.resources.guide_title
+import app.kiosksync.resources.kiosk_default_sequence_hint
+import app.kiosksync.resources.kiosk_lock_active_hint
+import app.kiosksync.resources.kiosk_password_applies_now
+import app.kiosksync.resources.kiosk_password_change_title
+import app.kiosksync.resources.kiosk_password_confirm_field
+import app.kiosksync.resources.kiosk_password_field
+import app.kiosksync.resources.kiosk_password_instruction
+import app.kiosksync.resources.kiosk_password_pair_hint
+import app.kiosksync.resources.kiosk_password_pair_title
+import app.kiosksync.resources.kiosk_password_rule
+import app.kiosksync.resources.kiosk_password_title
+import app.kiosksync.resources.kiosk_universal_hint
+import app.kiosksync.resources.manual_ip_dialog_instruction
+import app.kiosksync.resources.manual_ip_dialog_title
+import app.kiosksync.resources.manual_ip_field
+import app.kiosksync.resources.manual_ip_hint
+import app.kiosksync.resources.pair_code_field
+import app.kiosksync.resources.pair_code_placeholder
+import app.kiosksync.resources.pair_code_required
+import app.kiosksync.resources.pair_dialog_cancel
+import app.kiosksync.resources.pair_dialog_confirm
+import app.kiosksync.resources.pair_dialog_instruction
+import app.kiosksync.resources.pair_dialog_title
+import app.kiosksync.resources.pairing_in_progress
+import app.kiosksync.resources.save_button
+import app.kiosksync.resources.settings_reduce_motion
+import app.kiosksync.resources.settings_reduce_motion_hint
+import app.kiosksync.resources.settings_theme
+import app.kiosksync.resources.settings_theme_hint
+import app.kiosksync.resources.settings_title
+import app.kiosksync.resources.theme_dark
+import app.kiosksync.resources.theme_light
+import app.kiosksync.resources.unpair_button
+import app.kiosksync.resources.unpair_dialog_confirm
+import app.kiosksync.resources.unpair_dialog_title
+import org.jetbrains.compose.resources.stringResource
+import app.kiosksync.core.ui.resolve
 
 @Composable
 internal fun SettingsDialog(
@@ -50,18 +95,18 @@ internal fun SettingsDialog(
     val theme = preferences.theme
 
     AppDialog(
-        title = Strings.SETTINGS_TITLE,
+        title = stringResource(Res.string.settings_title),
         icon = AppIcon.SETTINGS,
         onDismissRequest = onDismiss,
         content = {
             Text(
-                text = Strings.SETTINGS_THEME,
+                text = stringResource(Res.string.settings_theme),
                 style = MaterialTheme.typography.titleSmall,
                 color = colors.onSurface,
             )
             Spacer(Modifier.height(Space.xs))
             AppButtonGroup(
-                options = listOf(Strings.THEME_DARK, Strings.THEME_LIGHT),
+                options = listOf(stringResource(Res.string.theme_dark), stringResource(Res.string.theme_light)),
                 selectedIndex = if (theme == AppTheme.DARK) 0 else 1,
                 onSelect = { index ->
                     preferences.updateTheme(if (index == 0) AppTheme.DARK else AppTheme.LIGHT)
@@ -70,7 +115,7 @@ internal fun SettingsDialog(
             )
             Spacer(Modifier.height(Space.xs))
             Text(
-                text = Strings.SETTINGS_THEME_HINT,
+                text = stringResource(Res.string.settings_theme_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.onSurfaceVariant,
             )
@@ -80,12 +125,12 @@ internal fun SettingsDialog(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = Strings.SETTINGS_REDUCE_MOTION,
+                        text = stringResource(Res.string.settings_reduce_motion),
                         style = MaterialTheme.typography.titleSmall,
                         color = colors.onSurface,
                     )
                     Text(
-                        text = Strings.SETTINGS_REDUCE_MOTION_HINT,
+                        text = stringResource(Res.string.settings_reduce_motion_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = colors.onSurfaceVariant,
                     )
@@ -105,19 +150,19 @@ internal fun SettingsDialog(
 
             Spacer(Modifier.height(Space.lg))
             Text(
-                text = Strings.GUIDE_TITLE,
+                text = stringResource(Res.string.guide_title),
                 style = MaterialTheme.typography.titleSmall,
                 color = colors.onSurface,
             )
             Spacer(Modifier.height(Space.xs))
             Text(
-                text = Strings.GUIDE_REPLAY_HINT,
+                text = stringResource(Res.string.guide_replay_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.onSurfaceVariant,
             )
             Spacer(Modifier.height(Space.sm))
             AppButton(
-                text = Strings.GUIDE_BUTTON,
+                text = stringResource(Res.string.guide_button),
                 onClick = onOpenGuide,
                 variant = AppButtonVariant.TONAL,
                 size = AppButtonSize.SMALL,
@@ -127,7 +172,7 @@ internal fun SettingsDialog(
         },
         actions = {
             AppButton(
-                text = Strings.CLOSE_BUTTON,
+                text = stringResource(Res.string.close_button),
                 onClick = onDismiss,
                 variant = AppButtonVariant.TEXT,
                 size = AppButtonSize.SMALL,
@@ -149,13 +194,13 @@ internal fun PairScreenDialog(
     val colors = MaterialTheme.colorScheme
 
     AppDialog(
-        title = "${Strings.PAIR_DIALOG_TITLE}: ${device.deviceName}",
+        title = "${stringResource(Res.string.pair_dialog_title)}: ${device.deviceName}",
         icon = AppIcon.ADD_LINK,
         onDismissRequest = onDismiss,
         dismissible = !isPairing,
         content = {
             Text(
-                text = Strings.PAIR_DIALOG_INSTRUCTION,
+                text = stringResource(Res.string.pair_dialog_instruction),
                 style = MaterialTheme.typography.bodyMedium,
                 color = colors.onSurfaceVariant,
             )
@@ -163,30 +208,30 @@ internal fun PairScreenDialog(
             AppTextField(
                 value = code,
                 onValueChange = onCodeChange,
-                label = Strings.PAIR_CODE_FIELD,
-                placeholder = Strings.PAIR_CODE_PLACEHOLDER,
+                label = stringResource(Res.string.pair_code_field),
+                placeholder = stringResource(Res.string.pair_code_placeholder),
                 error = error,
-                helper = if (error == null) Strings.PAIR_CODE_REQUIRED else null,
+                helper = if (error == null) stringResource(Res.string.pair_code_required) else null,
                 enabled = !isPairing,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
             )
         },
         actions = {
             AppButton(
-                text = Strings.PAIR_DIALOG_CANCEL,
+                text = stringResource(Res.string.pair_dialog_cancel),
                 onClick = onDismiss,
                 variant = AppButtonVariant.TEXT,
                 size = AppButtonSize.SMALL,
                 enabled = !isPairing,
             )
             AppButton(
-                text = if (isPairing) Strings.PAIRING_IN_PROGRESS else Strings.PAIR_DIALOG_CONFIRM,
+                text = if (isPairing) stringResource(Res.string.pairing_in_progress) else stringResource(Res.string.pair_dialog_confirm),
                 onClick = onConfirm,
                 size = AppButtonSize.SMALL,
                 icon = AppIcon.LINK,
                 enabled = code.length == 6,
                 loading = isPairing,
-                disabledReason = Strings.PAIR_CODE_REQUIRED,
+                disabledReason = stringResource(Res.string.pair_code_required),
             )
         },
     )
@@ -204,13 +249,13 @@ internal fun ManualIpDialog(
     val colors = MaterialTheme.colorScheme
 
     AppDialog(
-        title = Strings.MANUAL_IP_DIALOG_TITLE,
+        title = stringResource(Res.string.manual_ip_dialog_title),
         icon = AppIcon.WIFI,
         onDismissRequest = onDismiss,
         dismissible = !isLoading,
         content = {
             Text(
-                text = Strings.MANUAL_IP_DIALOG_INSTRUCTION,
+                text = stringResource(Res.string.manual_ip_dialog_instruction),
                 style = MaterialTheme.typography.bodyMedium,
                 color = colors.onSurfaceVariant,
             )
@@ -218,22 +263,22 @@ internal fun ManualIpDialog(
             AppTextField(
                 value = value,
                 onValueChange = onValueChange,
-                label = Strings.MANUAL_IP_FIELD,
-                placeholder = Strings.MANUAL_IP_HINT,
+                label = stringResource(Res.string.manual_ip_field),
+                placeholder = stringResource(Res.string.manual_ip_hint),
                 error = error,
                 enabled = !isLoading,
             )
         },
         actions = {
             AppButton(
-                text = Strings.CANCEL_BUTTON,
+                text = stringResource(Res.string.cancel_button),
                 onClick = onDismiss,
                 variant = AppButtonVariant.TEXT,
                 size = AppButtonSize.SMALL,
                 enabled = !isLoading,
             )
             AppButton(
-                text = if (isLoading) Strings.PAIRING_IN_PROGRESS else Strings.ADD_BUTTON,
+                text = if (isLoading) stringResource(Res.string.pairing_in_progress) else stringResource(Res.string.add_button),
                 onClick = onConfirm,
                 size = AppButtonSize.SMALL,
                 icon = AppIcon.ADD,
@@ -255,9 +300,9 @@ internal fun KioskPasswordDialog(
     val colors = MaterialTheme.colorScheme
     val extra = KioskColors.extra
     val title = when (dialog.action) {
-        EmitterPendingAction.CONFIGURE -> Strings.KIOSK_PASSWORD_CHANGE_TITLE
-        EmitterPendingAction.PAIR_LOCK -> Strings.KIOSK_PASSWORD_PAIR_TITLE
-        else -> Strings.KIOSK_PASSWORD_TITLE
+        EmitterPendingAction.CONFIGURE -> stringResource(Res.string.kiosk_password_change_title)
+        EmitterPendingAction.PAIR_LOCK -> stringResource(Res.string.kiosk_password_pair_title)
+        else -> stringResource(Res.string.kiosk_password_title)
     }
 
     AppDialog(
@@ -271,19 +316,19 @@ internal fun KioskPasswordDialog(
                     .verticalScroll(rememberScrollState()),
             ) {
                 Text(
-                    text = Strings.KIOSK_PASSWORD_INSTRUCTION,
+                    text = stringResource(Res.string.kiosk_password_instruction),
                     style = MaterialTheme.typography.bodyMedium,
                     color = colors.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(Space.xs))
                 Text(
-                    text = Strings.KIOSK_PASSWORD_RULE,
+                    text = stringResource(Res.string.kiosk_password_rule),
                     style = MaterialTheme.typography.labelMedium,
                     color = colors.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(Space.xs))
                 Text(
-                    text = Strings.KIOSK_DEFAULT_SEQUENCE_HINT,
+                    text = stringResource(Res.string.kiosk_default_sequence_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = colors.onSurfaceVariant,
                 )
@@ -292,20 +337,20 @@ internal fun KioskPasswordDialog(
                 AppTextField(
                     value = dialog.draft,
                     onValueChange = onDraftChange,
-                    label = Strings.KIOSK_PASSWORD_FIELD,
+                    label = stringResource(Res.string.kiosk_password_field),
                     visualTransformation = PasswordVisualTransformation(),
                 )
                 Spacer(Modifier.height(Space.sm))
                 AppTextField(
                     value = dialog.confirmDraft,
                     onValueChange = onConfirmDraftChange,
-                    label = Strings.KIOSK_PASSWORD_CONFIRM_FIELD,
+                    label = stringResource(Res.string.kiosk_password_confirm_field),
                     visualTransformation = PasswordVisualTransformation(),
                 )
                 dialog.error?.let {
                     Spacer(Modifier.height(Space.xs))
                     Text(
-                        text = it,
+                        text = it.resolve(),
                         style = MaterialTheme.typography.bodySmall,
                         color = colors.error,
                     )
@@ -313,30 +358,30 @@ internal fun KioskPasswordDialog(
 
                 Spacer(Modifier.height(Space.md))
                 WarningNote(
-                    title = Strings.KIOSK_LOCK_ACTIVE_HINT,
+                    title = stringResource(Res.string.kiosk_lock_active_hint),
                     body = buildString {
                         if (dialog.action == EmitterPendingAction.CONFIGURE) {
-                            append(Strings.KIOSK_PASSWORD_APPLIES_NOW)
+                            append(stringResource(Res.string.kiosk_password_applies_now))
                         }
                         if (dialog.action == EmitterPendingAction.PAIR_LOCK) {
                             if (isNotEmpty()) append('\n')
-                            append(Strings.KIOSK_PASSWORD_PAIR_HINT)
+                            append(stringResource(Res.string.kiosk_password_pair_hint))
                         }
                         if (isNotEmpty()) append('\n')
-                        append(Strings.KIOSK_UNIVERSAL_HINT)
+                        append(stringResource(Res.string.kiosk_universal_hint))
                     },
                 )
             }
         },
         actions = {
             AppButton(
-                text = Strings.CANCEL_BUTTON,
+                text = stringResource(Res.string.cancel_button),
                 onClick = onDismiss,
                 variant = AppButtonVariant.TEXT,
                 size = AppButtonSize.SMALL,
             )
             AppButton(
-                text = Strings.SAVE_BUTTON,
+                text = stringResource(Res.string.save_button),
                 onClick = onConfirm,
                 size = AppButtonSize.SMALL,
                 icon = AppIcon.LOCK,
@@ -382,25 +427,25 @@ fun EmitterDialogs(
 
     if (state.isRoleResetConfirmationOpen) {
         AppDialog(
-            title = Strings.CHANGE_ROLE,
+            title = stringResource(Res.string.change_role),
             icon = AppIcon.SWAP_HORIZ,
             onDismissRequest = { onAction(EmitterAction.DismissRoleReset) },
             content = {
                 Text(
-                    text = Strings.CHANGE_ROLE_CONFIRM,
+                    text = stringResource(Res.string.change_role_confirm),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             },
             actions = {
                 AppButton(
-                    text = Strings.CANCEL_BUTTON,
+                    text = stringResource(Res.string.cancel_button),
                     onClick = { onAction(EmitterAction.DismissRoleReset) },
                     variant = AppButtonVariant.TEXT,
                     size = AppButtonSize.SMALL,
                 )
                 AppButton(
-                    text = Strings.CHANGE_ROLE,
+                    text = stringResource(Res.string.change_role),
                     onClick = { onAction(EmitterAction.ConfirmRoleReset) },
                     variant = AppButtonVariant.TONAL,
                     size = AppButtonSize.SMALL,
@@ -414,7 +459,7 @@ fun EmitterDialogs(
         PairScreenDialog(
             device = device,
             code = state.pairingCode,
-            error = state.pairingError,
+            error = state.pairingError?.resolve(),
             isPairing = state.isPairing,
             onCodeChange = { onAction(EmitterAction.UpdatePairingCode(it)) },
             onConfirm = { onAction(EmitterAction.ConfirmPair) },
@@ -424,25 +469,25 @@ fun EmitterDialogs(
 
     state.unpairDevice?.let { device ->
         AppDialog(
-            title = Strings.UNPAIR_DIALOG_TITLE,
+            title = stringResource(Res.string.unpair_dialog_title),
             icon = AppIcon.LINK,
             onDismissRequest = { onAction(EmitterAction.DismissUnpairDialog) },
             content = {
                 Text(
-                    text = "${Strings.UNPAIR_DIALOG_CONFIRM}\n\n${device.deviceName}",
+                    text = "${stringResource(Res.string.unpair_dialog_confirm)}\n\n${device.deviceName}",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             },
             actions = {
                 AppButton(
-                    text = Strings.CANCEL_BUTTON,
+                    text = stringResource(Res.string.cancel_button),
                     onClick = { onAction(EmitterAction.DismissUnpairDialog) },
                     variant = AppButtonVariant.TEXT,
                     size = AppButtonSize.SMALL,
                 )
                 AppButton(
-                    text = Strings.UNPAIR_BUTTON,
+                    text = stringResource(Res.string.unpair_button),
                     onClick = { onAction(EmitterAction.ConfirmUnpair) },
                     variant = AppButtonVariant.DANGER,
                     size = AppButtonSize.SMALL,
@@ -455,7 +500,7 @@ fun EmitterDialogs(
     if (state.showManualIpDialog) {
         ManualIpDialog(
             value = state.manualIpInput,
-            error = state.manualIpError,
+            error = state.manualIpError?.resolve(),
             isLoading = state.isManualIpLoading,
             onValueChange = { onAction(EmitterAction.UpdateManualIp(it)) },
             onConfirm = { onAction(EmitterAction.ConfirmManualIp) },

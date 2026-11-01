@@ -26,7 +26,10 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import app.kiosksync.core.ui.Strings
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.stepper_decrease
+import app.kiosksync.resources.stepper_increase
+import org.jetbrains.compose.resources.stringResource
 /**
  * Numeric field with a stepper. Used for the default and per-image duration.
  * Arrow buttons clamp automatically; text input is validated by the caller so
@@ -71,7 +74,7 @@ fun AppStepper(
             ) {
                 AppIconButton(
                     icon = AppIcon.REMOVE,
-                    contentDescription = Strings.STEPPER_DECREASE,
+                    contentDescription = stringResource(Res.string.stepper_decrease),
                     onClick = { onValueChange((value - 1).coerceIn(range)) },
                     enabled = enabled && value > range.first,
                     variant = AppIconButtonVariant.STANDARD,
@@ -106,7 +109,7 @@ fun AppStepper(
                 }
                 AppIconButton(
                     icon = AppIcon.ADD,
-                    contentDescription = Strings.STEPPER_INCREASE,
+                    contentDescription = stringResource(Res.string.stepper_increase),
                     onClick = { onValueChange((value + 1).coerceIn(range)) },
                     enabled = enabled && value < range.last,
                     variant = AppIconButtonVariant.STANDARD,

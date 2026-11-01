@@ -1,6 +1,5 @@
 package app.kiosksync.feature.emitter.presentation
 
-import app.kiosksync.core.ui.Strings
 import app.kiosksync.feature.emitter.domain.EmitterUpdateState
 import app.kiosksync.feature.emitter.domain.models.DeviceSyncUi
 import app.kiosksync.feature.emitter.domain.models.EmitterDeviceUi
@@ -8,6 +7,11 @@ import app.kiosksync.feature.emitter.domain.models.EmitterPanel
 import app.kiosksync.feature.emitter.domain.models.KioskPasswordDialogUi
 import app.kiosksync.feature.emitter.domain.models.SecurityDialogUi
 import app.kiosksync.feature.playlist.domain.Playlist
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.send_empty_playlist
+import app.kiosksync.resources.send_no_screens
+import app.kiosksync.core.ui.UiText
+import app.kiosksync.core.ui.selectedScreensText
 
 data class EmitterState(
     val playlist: Playlist = Playlist(),
@@ -15,14 +19,14 @@ data class EmitterState(
     val isSearching: Boolean = true,
     val pairingDevice: EmitterDeviceUi? = null,
     val pairingCode: String = "",
-    val pairingError: String? = null,
+    val pairingError: UiText? = null,
     val isPairing: Boolean = false,
     val unpairDevice: EmitterDeviceUi? = null,
     val showManualIpDialog: Boolean = false,
     val manualIpInput: String = "",
-    val manualIpError: String? = null,
+    val manualIpError: UiText? = null,
     val isManualIpLoading: Boolean = false,
-    val statusMessage: String? = null,
+    val statusMessage: UiText? = null,
     val statusIsError: Boolean = false,
     val syncByDevice: Map<String, DeviceSyncUi> = emptyMap(),
     val updateByDevice: Map<String, EmitterUpdateState> = emptyMap(),
@@ -43,11 +47,11 @@ data class EmitterState(
     val pairedCount: Int
         get() = devices.count { it.isPairedToThisEmitter }
 
-    val sendHint: String
+    val sendHint: UiText
         get() = when {
-            playlist.items.isEmpty() -> Strings.SEND_EMPTY_PLAYLIST
-            selectedCount == 0 -> Strings.SEND_NO_SCREENS
-            else -> Strings.selectedScreens(selectedCount)
+            playlist.items.isEmpty() -> UiText(Res.string.send_empty_playlist)
+            selectedCount == 0 -> UiText(Res.string.send_no_screens)
+            else -> selectedScreensText(selectedCount)
         }
 
     val canSend: Boolean
