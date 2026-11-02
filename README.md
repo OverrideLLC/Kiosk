@@ -106,8 +106,8 @@ En PowerShell, desde la raíz del repositorio:
 Para probar los dos roles en la misma PC, con dos procesos:
 
 ```powershell
-.\gradlew.bat run --args="--role=receiver --data-dir=C:\tmp\rx"
-.\gradlew.bat run --args="--role=emitter --data-dir=C:\tmp\tx"
+.\gradlew.bat run --args="--role=receiver --data-dir=C:\tmp\rx --windowed"
+.\gradlew.bat run --args="--role=emitter --data-dir=C:\tmp\tx --windowed"
 ```
 
 En el Controlador usa **Agregar por IP** con `127.0.0.1:8765` si el descubrimiento
@@ -120,25 +120,25 @@ automático no aparece en la misma máquina.
 | `--data-dir=<ruta>` | Carpeta de datos alternativa. |
 | `--role=emitter\|receiver` | Fuerza el rol y omite la selección. |
 | `--port=<n>` | Puerto inicial de la Pantalla (por defecto 8765). |
+| `--windowed` | Ventana normal para depuración; desactiva los hooks nativos de kiosco. |
 | `--ui-catalog` | Catálogo interno de componentes (desarrollo). |
 
 Los datos viven en `%APPDATA%\OverrideKiosk\`:
 
 ```
-config.json      rol, id del equipo, nombre, puerto y tema
-paired.json      vinculación: token de la Pantalla o pantallas del Controlador
-playlists.json   biblioteca de playlists del Controlador
-playlist.json    playlist vigente de la Pantalla
-lock.json        contraseña (hash) y secuencia de desbloqueo
-updates\         paquetes de actualización
-media\           imágenes
-logs\app.log     registro con rotación
-logs\update.log  detalle del instalador de actualizaciones
+app-config.preferences_pb  preferencias pequeñas de DataStore (rol, tema, etc.)
+kiosk.db                   playlists, medios, vinculaciones y configuración de kiosco
+legacy\                    respaldos JSON previos a DataStore/Room
+media\                     imágenes nombradas por mediaId
+updates\                   paquetes de actualización
+logs\app.log               registro con rotación
+logs\update.log            detalle del instalador de actualizaciones
 ```
 
-La Pantalla borra su contenido, su bloqueo y su vinculación al arrancar, para no
-reproducir material viejo. La excepción es el primer arranque después de una
-actualización, que conserva todo. Consulta
+Por defecto todos los roles abren a pantalla completa y sin bordes. `--windowed`
+permite ejecutar el Controlador y la Pantalla en una misma PC durante la
+depuración. La Pantalla conserva vinculación, playlist y medios al reiniciar;
+solo un cambio de rol o un reinicio explícito los limpia. Consulta
 [Límites conocidos](docs/KNOWN_LIMITATIONS.md).
 
 ## Documentación

@@ -33,6 +33,7 @@ hostil; es una herramienta para decidir dónde usarlo.
 | Bloqueo de teclado y mouse/touchpad con hooks de bajo nivel mientras el kiosco está bloqueado | `WindowsKioskKeyboardGuard`, `WindowsKioskMouseGuard` |
 | Bloqueo de nuevas vinculaciones al alcanzar 5 fallos | `PairingManager` |
 | Log local con rotación; no registra tokens ni códigos | `FileAppLogger` |
+| Tokens y hashes protegidos en reposo con DPAPI en Windows | Adaptador de secretos + Room |
 | Ninguna llamada a internet ni telemetría | Todo el código |
 
 ## Riesgos aceptados (MVP)
@@ -74,10 +75,11 @@ Controlador (o en un sobre físico), sin valor universal.
 ### 4. Hash de contraseña rápido y sin sal
 
 Las contraseñas de bloqueo y la recuperación se guardan como SHA-256 hex, sin sal
-ni derivación lenta. Si alguien copia `lock.json`, puede probar contraseñas a gran
-velocidad. **Mitigación actual:** la contraseña es un PIN corto de bloqueo local,
-no una credencial de red. **Mejora futura:** PBKDF2/scrypt/Argon2 con sal aleatoria
-y un identificador de algoritmo.
+ni derivación lenta. Room protege esos hashes con DPAPI en Windows, pero si un
+proceso con los permisos del usuario puede descifrar la base también puede probar
+contraseñas a gran velocidad. **Mitigación actual:** la contraseña es un PIN corto
+de bloqueo local, no una credencial de red. **Mejora futura:** PBKDF2/scrypt/Argon2
+con sal aleatoria y un identificador de algoritmo.
 
 ### 5. mDNS es informativo
 
@@ -92,10 +94,14 @@ solo sirve contra ese servicio falso.
 - `Ctrl+Alt+Del` no se puede interceptar; el usuario siempre puede llegar a la
   pantalla de seguridad de Windows.
 - Los hooks de teclado y mouse son de bajo nivel y **solo existen en Windows**.
-  Esta versión se verificó en Windows 11 (los hooks se instalan), pero el bloqueo
-  efectivo de atajos y gestos del sistema requiere una prueba manual en el equipo
-  destino. En Linux se usa un manejo de teclas de Compose, que
-  no bloquea atajos del sistema ni el mouse.
+  El smoke test pasó en el runner hospedado `windows-2025-vs2026` y confirmó que
+  los hooks se instalan; el bloqueo efectivo de atajos y gestos del sistema aún
+  requiere una prueba manual en un equipo Windows 11 real. En Linux o con
+  `--windowed` se usa un manejo de teclas de Compose, que no bloquea atajos del
+  sistema ni el mouse.
+- La Pantalla solo entra en bloqueo kiosco cuando está vinculada y tiene una
+  contraseña recibida del Controlador. El código de vinculación y la espera de
+  esa contraseña quedan accesibles para completar la configuración.
 - El hook de mouse descarta movimiento, clics, rueda y los toques del touchpad que
   Windows entrega como eventos de mouse. Los gestos de precisión de tres o cuatro
   dedos que maneja el shell pueden escapar; desactívalos en la configuración del
@@ -107,10 +113,16 @@ solo sirve contra ese servicio falso.
 
 ### 7. Datos en disco
 
-`config.json`, `paired.json` y `lock.json` están en
-`%APPDATA%\OverrideKiosk\` con los permisos del usuario de Windows. Cualquier proceso
-de ese usuario puede leerlos. El token de la Pantalla y el hash de la contraseña
-están ahí; protégelos con los permisos de la cuenta.
+La configuración pequeña se guarda en `app-config.preferences_pb`, mediante
+DataStore. Playlists, emparejamientos, metadatos y configuración de kiosco viven en
+`kiosk.db`; tokens y hashes sensibles se protegen con DPAPI antes de guardarse.
+Los JSON heredados se copian en `legacy/` antes de importarlos; respaldos de
+`paired.json` y `lock.json` llevan el sufijo `.dpapi` y contienen el texto protegido.
+DPAPI protege esos datos frente a su copia a otro perfil de Windows, pero cualquier
+proceso del mismo usuario puede solicitar su descifrado. No sustituye la seguridad
+de la cuenta ni protege contra malware con sus permisos. Fuera de Windows, la
+ejecución de desarrollo usa un adaptador de codificación que no cifra secretos y
+no debe usarse para despliegues.
 
 ### 8. Sin TLS y sin certificados
 

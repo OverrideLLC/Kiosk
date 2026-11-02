@@ -82,7 +82,7 @@ estado. No hay un botón de "buscar actualizaciones" separado.
 ## Cómo publicar una versión
 
 1. Sube la versión en **dos lugares** y mantenlos iguales:
-   - `composeApp/src/commonMain/kotlin/app/kiosksync/core/Constants.kt`
+   - `composeApp/src/commonMain/kotlin/app/kiosksync/core/common/app/AppIdentity.kt`
      (`APP_VERSION`).
    - `composeApp/build.gradle.kts` (`packageVersion`).
 2. Ejecuta `.\gradlew.bat build`.

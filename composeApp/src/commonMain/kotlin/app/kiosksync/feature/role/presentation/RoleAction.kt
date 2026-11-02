@@ -1,0 +1,14 @@
+package app.kiosksync.feature.role.presentation
+
+import app.kiosksync.core.common.app.AppRole
+sealed interface RoleAction {
+    data class SelectRole(val role: AppRole) : RoleAction
+    data object ConfirmRole : RoleAction
+    data object ResetSelection : RoleAction
+    data object Exit : RoleAction
+    data object OpenGuide : RoleAction
+}
+
+sealed interface RoleEffect {
+    data class RoleConfirmed(val role: AppRole) : RoleEffect
+}

@@ -1,0 +1,214 @@
+package app.kiosksync.feature.emitter.presentation.components
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
+import app.kiosksync.core.common.app.APP_NAME
+import app.kiosksync.core.common.app.APP_VERSION
+import app.kiosksync.core.common.update.AppVersionPolicy
+import app.kiosksync.core.common.update.UpdateUrgency
+import app.kiosksync.core.ui.components.AppButton
+import app.kiosksync.core.ui.components.AppButtonSize
+import app.kiosksync.core.ui.components.AppButtonVariant
+import app.kiosksync.core.ui.components.AppDropdownMenu
+import app.kiosksync.core.ui.components.AppEmptyState
+import app.kiosksync.core.ui.components.AppIcon
+import app.kiosksync.core.ui.components.AppIconButton
+import app.kiosksync.core.ui.components.AppIconButtonSize
+import app.kiosksync.core.ui.components.AppLinearProgress
+import app.kiosksync.core.ui.components.AppLoadingIndicator
+import app.kiosksync.core.ui.components.AppPanelHeader
+import app.kiosksync.core.ui.components.AppMenuItem
+import app.kiosksync.core.ui.components.AppStatusChip
+import app.kiosksync.core.ui.components.AppStatusTone
+import app.kiosksync.core.ui.theme.KioskColors
+import app.kiosksync.core.ui.theme.KioskShape
+import app.kiosksync.core.ui.components.OverrideLogo
+import app.kiosksync.core.ui.theme.Sizes
+import app.kiosksync.core.ui.theme.Space
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.app_tagline
+import app.kiosksync.resources.change_role
+import app.kiosksync.resources.close_button
+import app.kiosksync.resources.exit_app
+import app.kiosksync.resources.kiosk_security_button
+import app.kiosksync.resources.more_options
+import app.kiosksync.resources.role_emitter_title
+import app.kiosksync.resources.security_status_none
+import app.kiosksync.resources.security_status_protected
+import app.kiosksync.resources.settings_title
+import org.jetbrains.compose.resources.stringResource
+
+@Composable
+internal fun ControllerHeader(
+    hasPassword: Boolean,
+    onOpenSecurity: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onChangeRole: () -> Unit,
+    onExit: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    var menuExpanded by remember { mutableStateOf(false) }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(Sizes.avatar)
+                .clip(CircleShape)
+                .background(colors.primaryContainer),
+            contentAlignment = Alignment.Center,
+        ) {
+            OverrideLogo(
+                size = Sizes.iconCompact,
+                tint = colors.onPrimaryContainer,
+            )
+        }
+        Spacer(Modifier.width(Space.sm))
+        Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = APP_NAME,
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = colors.onSurface,
+                )
+                Spacer(Modifier.width(Space.xs))
+                AppStatusChip(
+                    label = stringResource(Res.string.role_emitter_title),
+                    tone = AppStatusTone.PRIMARY,
+                    icon = AppIcon.CAST,
+                )
+            }
+            Text(
+                text = stringResource(Res.string.app_tagline),
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+
+        AppStatusChip(
+            label = if (hasPassword) {
+                stringResource(Res.string.security_status_protected)
+            } else {
+                stringResource(Res.string.security_status_none)
+            },
+            tone = if (hasPassword) AppStatusTone.SUCCESS else AppStatusTone.NEUTRAL,
+            icon = if (hasPassword) AppIcon.LOCK else AppIcon.LOCK_OPEN,
+        )
+        Spacer(Modifier.width(Space.xs))
+
+        Box {
+            AppIconButton(
+                icon = AppIcon.MORE_VERT,
+                contentDescription = stringResource(Res.string.more_options),
+                onClick = { menuExpanded = true },
+                tooltip = stringResource(Res.string.more_options),
+            )
+            AppDropdownMenu(
+                expanded = menuExpanded,
+                onDismissRequest = { menuExpanded = false },
+                items = listOf(
+                    AppMenuItem(
+                        label = stringResource(Res.string.kiosk_security_button),
+                        icon = AppIcon.LOCK,
+                        onClick = onOpenSecurity,
+                    ),
+                    AppMenuItem(
+                        label = stringResource(Res.string.settings_title),
+                        icon = AppIcon.SETTINGS,
+                        onClick = onOpenSettings,
+                    ),
+                    AppMenuItem(
+                        label = stringResource(Res.string.change_role),
+                        icon = AppIcon.SWAP_HORIZ,
+                        onClick = onChangeRole,
+                    ),
+                    AppMenuItem(
+                        label = stringResource(Res.string.exit_app),
+                        icon = AppIcon.LOGOUT,
+                        onClick = onExit,
+                    ),
+                ),
+            )
+        }
+    }
+}
+
+@Composable
+internal fun StatusBanner(
+    message: String,
+    isError: Boolean,
+    onDismiss: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val extra = KioskColors.extra
+    val container = if (isError) colors.errorContainer else extra.successContainer
+    val content = if (isError) colors.onErrorContainer else extra.onSuccessContainer
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = KioskShape.small,
+        color = container,
+        contentColor = content,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = Space.sm, vertical = Space.xs),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Space.xs),
+        ) {
+            AppIcon(
+                icon = if (isError) AppIcon.ERROR else AppIcon.CHECK_CIRCLE,
+                contentDescription = null,
+                size = Sizes.iconCompact,
+                tint = content,
+            )
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                color = content,
+                modifier = Modifier.weight(1f),
+            )
+            AppIconButton(
+                icon = AppIcon.CLOSE,
+                contentDescription = stringResource(Res.string.close_button),
+                onClick = onDismiss,
+                size = AppIconButtonSize.SMALL,
+                tint = content,
+            )
+        }
+    }
+}
+

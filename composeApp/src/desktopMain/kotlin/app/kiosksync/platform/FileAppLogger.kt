@@ -1,6 +1,6 @@
 package app.kiosksync.platform
 
-import app.kiosksync.core.AppLogger
+import app.kiosksync.core.common.app.AppLogger
 import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter

@@ -1,31 +1,22 @@
 # Sistema de diseño
 
-El paquete `app.kiosksync.designsystem` (en `commonMain`) concentra **todos** los
-tokens y componentes visuales. Ninguna pantalla debe declarar colores, tamaños,
-formas ni animaciones propias.
+El sistema visual compartido vive en `app.kiosksync.core.ui` (`commonMain`), con
+temas en `core/ui/theme` y componentes globales en `core/ui/components`. Los
+componentes de una sola feature se quedan junto a esa pantalla. Ninguna pantalla
+debe duplicar tokens, colores, formas o animaciones globales.
 
-## Base técnica
+## Base técnica actual y objetivo
 
-- Compose Multiplatform **1.7.3** (solo target desktop JVM).
-- Material 3 **1.3.1** (estable), la versión que resuelve `compose.material3`.
+- Compose Multiplatform **1.12.2** (target Desktop JVM).
+- Material Kolor **6.0.0**, módulo `material-kolor-material3`.
 - Recursos de Compose (`composeResources`) para tipografías e íconos.
 
-### Sobre Material 3 Expressive
+### Componentes compartidos
 
-La versión estable 1.3.1 **no** expone las APIs Expressive:
-
-| API | Estado real |
-| --- | --- |
-| `MaterialExpressiveTheme` | Existe, pero es `internal` |
-| `ButtonGroup` | No existe |
-| `LoadingIndicator` ondulado | No existe |
-| `MotionScheme` | No existe |
-| `MaterialShapes` | No existe |
-
-Por eso el sistema de diseño **emula** el lenguaje Expressive con tokens
-propios (formas de 28 dp, botones píldora, springs cortos) y componentes
-propios (`AppButtonGroup`, `AppLoadingIndicator`, `AppEmptyState`). No se
-forzaron versiones alfa.
+Los controles de la app (`AppButton`, `AppDialog`, `AppTextField`, estados vacíos,
+indicadores y demás) son componentes compartidos y se consumen desde varias
+features. Promueve un control a `core.ui` cuando haya al menos dos usos reales;
+los componentes específicos se quedan dentro de su feature.
 
 ## Tema
 
@@ -35,57 +26,47 @@ KioskTheme(theme = AppTheme.DARK, reduceMotion = false) {
 }
 ```
 
+`KioskTheme` delega el tema de Material en `DynamicMaterialTheme` de Material Kolor.
+
 - `AppTheme.DARK` es el valor por defecto (salas con poca luz).
 - `AppTheme.LIGHT` está completo y se puede alternar.
-- La preferencia se guarda en `config.json` (`AppConfig.theme`) y sobrevive al
-  reinicio.
+- La preferencia se guarda en DataStore Preferences junto al rol y sobrevive al
+  reinicio. `config.json` se conserva en `legacy/` como respaldo tras migrarlo.
 - `reduceMotion = true` desactiva springs y fades desde un solo punto
   (`LocalReduceMotion`).
 
 ## Color
 
-Paleta tonal generada a partir del azul semilla **`#3D7AF5`** (tonos en
-CIE L\*a\*b\*, con reducción de croma para no salir del gamut sRGB).
+El tema genera la paleta tonal desde el azul semilla **`#3D7AF5`** con
+`DynamicMaterialTheme`, estilo `TonalSpot` y `ColorSpec.SpecVersion.SPEC_2025`.
+Éxito y advertencia salen de otras semillas (`#1B8A4A` y `#F5A524`) con la misma
+API. La información y lo deshabilitado reutilizan roles del esquema principal.
 
 ### Roles principales
 
-| Rol | Oscuro | Claro |
-| --- | --- | --- |
-| `primary` | `#BBC3FF` | `#295AB9` |
-| `onPrimary` | `#002E6B` | `#FFFFFF` |
-| `primaryContainer` | `#21438B` | `#DEE0FF` |
-| `onPrimaryContainer` | `#DEE0FF` | `#001A43` |
-| `secondary` | `#C2C5E3` | `#5A5D77` |
-| `secondaryContainer` | `#42455E` | `#E2E2E7` |
-| `tertiary` | `#F3B5CD` | `#844E64` |
-| `surface` | `#131317` | `#F9F9FE` |
-| `onSurface` | `#E2E2E7` | `#1B1B1F` |
-| `surfaceContainerHigh` | `#292A2D` | `#E7E8ED` |
-| `surfaceContainerHighest` | `#343438` | `#E2E2E7` |
-| `onSurfaceVariant` | `#C4C5D8` | `#444655` |
-| `outline` | `#8E8FA1` | `#747687` |
-| `error` | `#FFB4AB` | `#9F3F3B` |
-| `errorContainer` | `#822525` | `#FFDAD6` |
+| Rol | Uso |
+| --- | --- |
+| `primary` | Acción principal y foco visual de marca |
+| `secondary` | Acciones y superficies tonales secundarias |
+| `tertiary` | Acentos generados a partir de la semilla |
+| `surface` / `surfaceContainer*` | Fondo de pantalla y jerarquía de superficies |
+| `error` | Errores destructivos y de seguridad |
+| `success` / `warning` / `infoContainer` | Estados semánticos adicionales de la app |
 
 Además hay roles que Material 3 no modela (`KioskExtraColors`): `success`,
-`warning`, `infoContainer`, `disabledContainer`, `disabledContent` y
-`hoverOverlay`.
+`onSuccess`, `successContainer`, `onSuccessContainer`, `warning`, `onWarning`,
+`warningContainer`, `onWarningContainer`, `infoContainer`, `onInfoContainer`,
+`disabledContainer` y `disabledContent`.
 
-### Contraste (WCAG)
+`CatalogRenderTest` renderiza ambos temas y comprueba un contraste WCAG AA mínimo
+de 4.5:1 para los pares de texto Material y semánticos de éxito, advertencia e
+información. Los componentes gráficos mantienen una meta de 3:1. El contorno se
+usa para bordes e íconos, nunca como color de texto pequeño. Repetir la revisión
+si cambia la semilla, el estilo de paleta o la versión de Material Kolor.
 
-| Par | Oscuro | Claro |
-| --- | --- | --- |
-| Texto normal / superficie | 14.35:1 | 16.36:1 |
-| Texto secundario / superficie | 10.88:1 | 8.88:1 |
-| Texto secundario / superficie alta | 8.42:1 | 7.62:1 |
-| Contorno / superficie | 5.82:1 | 4.27:1 |
-| Primario / superficie | 10.91:1 | 6.14:1 |
-| Sobre primario / primario | 7.71:1 | 6.45:1 |
-| Error / superficie | 10.91:1 | 6.16:1 |
-| Deshabilitado / contenedor | 7.27:1 | 7.22:1 |
-
-Todos los pares de texto superan AA (4.5:1). El contorno se usa para bordes e
-íconos (mínimo 3:1), nunca como color de texto.
+La Pantalla de reproducción usa negro fijo vía `KioskScreenColors` por legibilidad
+a distancia; los diálogos usan los tokens del tema y el velo de actualización usa
+`MaterialTheme.colorScheme.scrim`.
 
 Reglas:
 
@@ -164,23 +145,23 @@ La Pantalla en reproducción no tiene movimiento decorativo.
 
 | Componente | Archivo | Uso |
 | --- | --- | --- |
-| `AppButton` | `AppButton.kt` | 4 variantes × 3 tamaños, ícono, carga, motivo de deshabilitado |
-| `AppIconButton` | `AppButton.kt` | acción de solo ícono, 3 variantes |
-| `AppButtonGroup` | `AppButton.kt` | control segmentado tipo píldora |
-| `AppTextField` | `AppTextField.kt` | etiqueta, ayuda y error inline |
-| `AppStepper` | `AppStepper.kt` | número con −/+ y unidad |
-| `AppSelectableCard` | `AppSelectableCard.kt` | tarjeta con rol radio/check, foco y “morph” |
-| `AppStatusChip` | `AppStatusChip.kt` | estados con tono semántico |
-| `AppListItem` | `AppListItem.kt` | fila con miniatura y acciones |
-| `AppDialog` | `AppDialog.kt` | diálogo 480 dp (600 dp en el de seguridad) con ícono y acciones |
-| `AppDropdownMenu` | `AppDropdownMenu.kt` | menú de desbordamiento |
-| `AppSnackbarHost` | `AppSnackbar.kt` | aviso con “Deshacer” |
-| `AppLoadingIndicator` | `AppLoadingIndicator.kt` | puntos ondulados |
-| `AppLinearProgress` | `AppLoadingIndicator.kt` | progreso con etiqueta |
-| `AppCircularProgress` | `AppLoadingIndicator.kt` | espera circular |
-| `AppEmptyState` | `AppEmptyState.kt` | ícono + frase + acción |
-| `AppTooltip` | `AppTooltip.kt` | atajos y motivos |
-| `AppIcon` | `AppIcon.kt` | único punto de dibujo de íconos |
+| `AppButton` | `core/ui/components/AppButton.kt` | 4 variantes × 3 tamaños, ícono, carga, motivo de deshabilitado |
+| `AppIconButton` | `core/ui/components/AppButton.kt` | acción de solo ícono, 3 variantes |
+| `AppButtonGroup` | `core/ui/components/AppButton.kt` | control segmentado tipo píldora |
+| `AppTextField` | `core/ui/components/AppTextField.kt` | etiqueta, ayuda y error inline |
+| `AppStepper` | `core/ui/components/AppStepper.kt` | número con −/+ y unidad |
+| `AppSelectableCard` | `core/ui/components/AppSelectableCard.kt` | tarjeta con rol radio/check, foco y “morph” |
+| `AppStatusChip` | `core/ui/components/AppStatusChip.kt` | estados con tono semántico |
+| `AppListItem` | `core/ui/components/AppListItem.kt` | fila con miniatura y acciones |
+| `AppDialog` | `core/ui/components/AppDialog.kt` | diálogo 480 dp (600 dp en el de seguridad) con ícono y acciones |
+| `AppDropdownMenu` | `core/ui/components/AppDropdownMenu.kt` | menú de desbordamiento |
+| `AppSnackbarHost` | `core/ui/components/AppSnackbar.kt` | aviso con “Deshacer” |
+| `AppLoadingIndicator` | `core/ui/components/AppLoadingIndicator.kt` | puntos ondulados |
+| `AppLinearProgress` | `core/ui/components/AppLoadingIndicator.kt` | progreso con etiqueta |
+| `AppCircularProgress` | `core/ui/components/AppLoadingIndicator.kt` | espera circular |
+| `AppEmptyState` | `core/ui/components/AppEmptyState.kt` | ícono + frase + acción |
+| `AppTooltip` | `core/ui/components/AppTooltip.kt` | atajos y motivos |
+| `AppIcon` | `core/ui/components/AppIcon.kt` | único punto de dibujo de íconos |
 
 ## Pantallas
 
@@ -217,6 +198,7 @@ Abre una ventana de desarrollo (no forma parte del flujo de usuario) con:
   vacíos.
 
 El test `CatalogRenderTest` renderiza el catálogo fuera de pantalla en ambos
-temas y deja capturas en `composeApp/build/reports/ui/` para revisión visual.
+temas, verifica el contraste de los tokens y deja capturas en
+`composeApp/build/reports/ui/` para revisión visual.
 `ControllerRenderTest` y `ScreenRenderTest` hacen lo mismo con el Controlador
 (oscuro, claro, compacto y diálogos) y con la selección de rol y la reproducción.

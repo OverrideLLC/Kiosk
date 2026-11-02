@@ -8,7 +8,7 @@ cuando el estado real de la app confirma que el paso terminó.
 ## Cuándo aparece
 
 - Se abre sola en el **primer arranque normal**, cuando todavía no existe
-  `config.json`.
+  una configuración de rol en DataStore.
 - No se abre en los arranques con `--role=emitter` o `--role=receiver`, para no
   interferir con pruebas automatizadas o con los dos procesos de desarrollo.
 - Se puede volver a abrir cuando se quiera:

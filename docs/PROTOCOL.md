@@ -39,7 +39,8 @@ X-Emitter-Id: <id del Controlador vinculado>
 X-Auth-Token: <token de 32 bytes en hex entregado al vincular>
 ```
 
-Si falta cualquiera de los dos o no coincide con `paired.json`, la respuesta es:
+Si falta cualquiera de los dos o no coincide con el emparejamiento persistido en
+Room, la respuesta es:
 
 ```http
 401 Unauthorized
@@ -121,7 +122,7 @@ Reglas:
 - Máximo **5 intentos fallidos**. Al alcanzarlos se genera un código nuevo y se
   rechazan solicitudes durante **30 segundos**.
 - Al vincular se genera un token aleatorio de 32 bytes (64 caracteres hex), se
-  guarda con el `emitterId` en `paired.json` y se devuelve una sola vez.
+  guarda con el `emitterId` en Room y se devuelve una sola vez.
 
 ### DELETE /pair
 
@@ -130,7 +131,7 @@ Reglas:
 ok
 ```
 
-Borra `paired.json` en la Pantalla y vuelve al modo vinculación con un código
+Borra el emparejamiento de la Pantalla y vuelve al modo vinculación con un código
 nuevo. El Controlador debe olvidar el token correspondiente. También existe el
 atajo local `Ctrl+Shift+P` en la Pantalla, con confirmación.
 

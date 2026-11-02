@@ -1,8 +1,10 @@
 # Desbloqueo de una Pantalla (modo kiosco)
 
-Una Pantalla se bloquea sola al arrancar y no responde a nada del teclado ni del
-mouse/touchpad salvo la secuencia de desbloqueo. El Controlador, cuando proyecta,
-también se bloquea con la misma contraseña.
+La Pantalla entra en modo kiosco cuando está vinculada y recibe la contraseña del
+Controlador. Mientras muestra el código o espera la contraseña, la ventana sigue
+usable. Cuando el bloqueo está activo, no responde al teclado ni al mouse/touchpad
+salvo la secuencia de desbloqueo. El Controlador, cuando proyecta, también se
+bloquea con la misma contraseña.
 
 ## Secuencia de desbloqueo
 
@@ -20,11 +22,8 @@ Shift + Shift + Ctrl + Ctrl + Alt + Shift
 - Se puede cambiar desde el Controlador, en **Seguridad → Secuencia de
   desbloqueo**: se agregan las teclas con los botones Shift / Ctrl / Alt y se
   guarda. El cambio se envía a todas las pantallas vinculadas.
-- La misma secuencia se usa **con y sin contraseña**.
-- Si la pantalla **no tiene contraseña** (por ejemplo, recién instalada, en
-  blanco), completar la secuencia la desbloquea directamente.
-- Si la pantalla **tiene contraseña**, primero se escribe la secuencia y en
-  seguida la contraseña.
+- La secuencia se usa siempre que el bloqueo está activo. Después de completarla,
+  se escribe la contraseña.
 
 ## Contraseña propia
 
@@ -66,7 +65,7 @@ Tras 5 intentos fallidos, el desbloqueo se rechaza durante 30 segundos.
 
 ## Mouse y touchpad
 
-- En modo kiosco (Pantalla a pantalla completa o Controlador proyectando) se
+- En modo kiosco (Pantalla bloqueada o Controlador proyectando) se
   instala un hook `WH_MOUSE_LL`: se descartan movimiento, clics, rueda y los
   toques del touchpad. El puntero no puede alcanzar la barra de tareas, los bordes
   de la ventana ni otra aplicación. Mientras está bloqueado, el cursor se fija
@@ -78,11 +77,13 @@ Tras 5 intentos fallidos, el desbloqueo se rechaza durante 30 segundos.
   mouse se libera temporalmente para poder pulsar **Actualizar ahora** o
   **Ahora no**; el teclado sigue bloqueado. Al cerrar el aviso, el mouse se
   captura otra vez. Esta corrección está en la 1.1.4.
-- La ventana de la Pantalla no es redimensionable y, si Windows la minimiza o la
-  restaura por un evento externo, vuelve a pantalla completa mientras el bloqueo
-  siga activo.
-- En Linux (sin hooks nativos) el mouse no se bloquea, para poder usar la
-  interfaz y cerrar la app.
+- Por defecto todos los roles se abren a pantalla completa y sin bordes. La
+  Pantalla queda siempre encima; `--windowed` abre una ventana normal para
+  depuración y desactiva los hooks nativos.
+- En Windows, si la ventana de pantalla completa se minimiza por un evento
+  externo, vuelve a pantalla completa salvo durante una proyección del Controlador.
+- En Linux o con `--windowed`, no hay hooks nativos: Compose gestiona la secuencia
+  de desbloqueo y el mouse no se bloquea.
 
 ## Límites conocidos
 

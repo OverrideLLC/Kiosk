@@ -1,7 +1,13 @@
 package app.kiosksync.feature.kiosk
 
-import app.kiosksync.core.KioskLockConfig
-import app.kiosksync.core.UNIVERSAL_RECOVERY_PASSWORD
+import app.kiosksync.core.common.kiosk.KioskLockConfig
+import app.kiosksync.core.common.kiosk.UNIVERSAL_RECOVERY_PASSWORD
+import app.kiosksync.feature.kiosk.domain.KioskKeyEvent
+import app.kiosksync.feature.kiosk.domain.KioskKeyKind
+import app.kiosksync.feature.kiosk.domain.KioskUnlockDetector
+import app.kiosksync.feature.kiosk.domain.KioskUnlockResult
+import app.kiosksync.feature.kiosk.domain.UNLOCK_SEQUENCE
+import app.kiosksync.feature.kiosk.domain.unlockSequenceKinds
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -149,10 +155,10 @@ class KioskUnlockDetectorTest {
 
     @Test
     fun `password validation restricts to letters and digits`() {
-        assertTrue(app.kiosksync.core.isValidKioskPassword("Anuncios2026"))
-        assertFalse(app.kiosksync.core.isValidKioskPassword("abc"))
-        assertFalse(app.kiosksync.core.isValidKioskPassword("abc def"))
-        assertFalse(app.kiosksync.core.isValidKioskPassword("abc!"))
+        assertTrue(app.kiosksync.core.common.kiosk.isValidKioskPassword("Anuncios2026"))
+        assertFalse(app.kiosksync.core.common.kiosk.isValidKioskPassword("abc"))
+        assertFalse(app.kiosksync.core.common.kiosk.isValidKioskPassword("abc def"))
+        assertFalse(app.kiosksync.core.common.kiosk.isValidKioskPassword("abc!"))
     }
 
     @Test
@@ -257,13 +263,13 @@ class KioskUnlockDetectorTest {
 
     @Test
     fun `sequence and recovery validation reject unsafe values`() {
-        assertTrue(app.kiosksync.core.isValidUnlockSequence(listOf("SHIFT", "CTRL")))
-        assertFalse(app.kiosksync.core.isValidUnlockSequence(listOf("SHIFT")))
-        assertFalse(app.kiosksync.core.isValidUnlockSequence(listOf("SHIFT", "ENTER")))
+        assertTrue(app.kiosksync.core.common.kiosk.isValidUnlockSequence(listOf("SHIFT", "CTRL")))
+        assertFalse(app.kiosksync.core.common.kiosk.isValidUnlockSequence(listOf("SHIFT")))
+        assertFalse(app.kiosksync.core.common.kiosk.isValidUnlockSequence(listOf("SHIFT", "ENTER")))
 
-        assertTrue(app.kiosksync.core.isValidRecoveryPhrase("MiFrase2026"))
-        assertFalse(app.kiosksync.core.isValidRecoveryPhrase("corta"))
-        assertFalse(app.kiosksync.core.isValidRecoveryPhrase("con espacios"))
+        assertTrue(app.kiosksync.core.common.kiosk.isValidRecoveryPhrase("MiFrase2026"))
+        assertFalse(app.kiosksync.core.common.kiosk.isValidRecoveryPhrase("corta"))
+        assertFalse(app.kiosksync.core.common.kiosk.isValidRecoveryPhrase("con espacios"))
     }
 
     // -----------------------------------------------------------------------

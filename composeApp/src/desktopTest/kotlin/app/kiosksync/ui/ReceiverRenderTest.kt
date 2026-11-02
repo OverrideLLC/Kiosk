@@ -6,16 +6,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.ImageComposeScene
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Density
-import app.kiosksync.FakeLocalStorage
+import app.kiosksync.FakeRepositories
 import app.kiosksync.NoOpLogger
-import app.kiosksync.core.AppTheme
-import app.kiosksync.designsystem.KioskScreenColors
-import app.kiosksync.designsystem.KioskTheme
-import app.kiosksync.feature.kiosk.KioskLockUiState
-import app.kiosksync.feature.kiosk.KioskUnlockOverlay
-import app.kiosksync.feature.pairing.PairingCodeScreen
-import app.kiosksync.feature.pairing.PairingManager
+import app.kiosksync.core.common.app.AppTheme
+import app.kiosksync.core.ui.theme.KioskScreenColors
+import app.kiosksync.core.ui.theme.KioskTheme
+import app.kiosksync.feature.kiosk.presentation.KioskState
+import app.kiosksync.feature.kiosk.presentation.KioskScreen
+import app.kiosksync.feature.pairing.presentation.PairingCodeScreen
+import app.kiosksync.feature.pairing.presentation.PairingUiState
+import app.kiosksync.feature.pairing.domain.PairingManager
+import app.kiosksync.feature.receiver.presentation.WaitingForPasswordScreen
 import java.io.File
+import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import org.jetbrains.skia.EncodedImageFormat
 
@@ -29,19 +32,20 @@ class ReceiverRenderTest {
     fun rendersReceiverStates() {
         val output = File("build/reports/ui").apply { mkdirs() }
         val pairingManager = PairingManager(
-            localStorage = FakeLocalStorage(),
+            repository = FakeRepositories(),
             logger = NoOpLogger(),
             codeGenerator = { "685853" },
         )
+        runBlocking { pairingManager.initialize() }
 
         render(output, "receiver-pairing") {
             PairingCodeScreen(
-                pairingManager = pairingManager,
-                serviceError = null,
-                onExitRequested = {},
-                onChangeRoleRequested = {},
-                receiverIp = "192.168.1.20",
-                receiverPort = 8765,
+                state = PairingUiState(
+                    pairing = pairingManager.state.value,
+                    receiverIp = "192.168.1.20",
+                    receiverPort = 8765,
+                ),
+                onAction = {},
             )
         }
         render(output, "receiver-waiting") {
@@ -53,8 +57,8 @@ class ReceiverRenderTest {
                     .fillMaxSize()
                     .background(KioskScreenColors.background),
             ) {
-                KioskUnlockOverlay(
-                    KioskLockUiState(
+                KioskScreen(
+                    KioskState(
                         isLocked = true,
                         showUnlockHint = true,
                         typedLength = 4,

@@ -1,12 +1,13 @@
 package app.kiosksync.feature.playback
 
 import androidx.compose.ui.graphics.ImageBitmap
-import app.kiosksync.FakeLocalStorage
-import app.kiosksync.core.AppLogger
-import app.kiosksync.core.MAX_DURATION_SEC
-import app.kiosksync.core.MIN_DURATION_SEC
-import app.kiosksync.feature.playlist.Playlist
-import app.kiosksync.feature.playlist.PlaylistItem
+import app.kiosksync.FakeRepositories
+import app.kiosksync.core.common.app.AppLogger
+import app.kiosksync.core.common.playlist.MAX_DURATION_SEC
+import app.kiosksync.core.common.playlist.MIN_DURATION_SEC
+import app.kiosksync.feature.playlist.domain.Playlist
+import app.kiosksync.feature.playlist.domain.PlaylistItem
+import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceTimeBy
@@ -74,8 +75,8 @@ class PlaybackTest {
     @Test
     fun testPlaybackLoopSkipsDamagedImage() = runTest {
         val dummyBitmap = androidx.compose.ui.graphics.ImageBitmap(1, 1)
-        val storage = FakeLocalStorage(
-            playlist = Playlist(
+        val storage = FakeRepositories(
+            initialPlaylist = Playlist(
                 version = 1,
                 items = listOf(
                     PlaylistItem("damaged", "bad.png", "sha-bad", 5),
@@ -87,16 +88,17 @@ class PlaybackTest {
         val logger = TestLogger()
 
         val stateHolder = PlaybackStateHolder(
-            storage,
-            logger,
-            this,
+            playlistRepository = storage,
+            mediaRepository = storage,
+            logger = logger,
+            parentScope = this,
             backgroundDispatcher = Dispatchers.Unconfined
         )
         stateHolder.start()
         runCurrent()
 
         // It should skip "damaged" and display "healthy"
-        val state = stateHolder.uiState.value
+        val state = stateHolder.state.value
         assertTrue(state.hasItems)
         assertEquals("healthy", state.currentItem?.mediaId)
         assertEquals(dummyBitmap, state.currentBitmap)
@@ -107,8 +109,8 @@ class PlaybackTest {
     @Test
     fun testPlaybackLoopReusesBitmapForRepeatedContent() = runTest {
         val dummyBitmap = ImageBitmap(1, 1)
-        val storage = FakeLocalStorage(
-            playlist = Playlist(
+        val storage = FakeRepositories(
+            initialPlaylist = Playlist(
                 version = 1,
                 items = listOf(
                     PlaylistItem("first", "first.png", "same-sha", 3),
@@ -122,22 +124,23 @@ class PlaybackTest {
         )
 
         val stateHolder = PlaybackStateHolder(
-            storage,
-            TestLogger(),
-            this,
+            playlistRepository = storage,
+            mediaRepository = storage,
+            logger = TestLogger(),
+            parentScope = this,
             backgroundDispatcher = Dispatchers.Unconfined
         )
         stateHolder.start()
         runCurrent()
 
-        val firstBitmap = stateHolder.uiState.value.currentBitmap
+        val firstBitmap = stateHolder.state.value.currentBitmap
         assertEquals(1, storage.loadMediaBitmapCount)
 
         advanceTimeBy(3_000)
         runCurrent()
 
-        assertEquals("second", stateHolder.uiState.value.currentItem?.mediaId)
-        assertSame(firstBitmap, stateHolder.uiState.value.currentBitmap)
+        assertEquals("second", stateHolder.state.value.currentItem?.mediaId)
+        assertSame(firstBitmap, stateHolder.state.value.currentBitmap)
         assertEquals(1, storage.loadMediaBitmapCount)
 
         stateHolder.stop()

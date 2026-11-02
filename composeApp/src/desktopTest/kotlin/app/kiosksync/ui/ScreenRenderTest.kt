@@ -7,17 +7,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.unit.Density
-import app.kiosksync.FakeLocalStorage
+import app.kiosksync.FakeRepositories
 import app.kiosksync.NoOpLogger
-import app.kiosksync.core.AppRole
-import app.kiosksync.core.AppTheme
-import app.kiosksync.designsystem.KioskTheme
-import app.kiosksync.feature.playback.CarouselScreen
-import app.kiosksync.feature.playback.PlaybackStateHolder
-import app.kiosksync.feature.playlist.Playlist
-import app.kiosksync.feature.playlist.PlaylistItem
-import app.kiosksync.feature.role.RoleSelectionScreen
-import app.kiosksync.feature.role.RoleStateHolder
+import app.kiosksync.core.common.app.AppRole
+import app.kiosksync.core.common.app.AppTheme
+import app.kiosksync.core.ui.theme.KioskTheme
+import app.kiosksync.feature.playback.presentation.CarouselScreen
+import app.kiosksync.feature.playback.presentation.PlaybackStateHolder
+import app.kiosksync.feature.playlist.domain.Playlist
+import app.kiosksync.feature.playlist.domain.PlaylistItem
+import app.kiosksync.feature.role.presentation.RoleSelectionScreen
+import app.kiosksync.feature.role.presentation.RoleViewModel
 import java.io.File
 import kotlin.test.Test
 import kotlinx.coroutines.CoroutineScope
@@ -35,8 +35,7 @@ class ScreenRenderTest {
     @Test
     fun rendersRoleSelection() {
         val output = File("build/reports/ui").apply { mkdirs() }
-        val holder = RoleStateHolder(
-            localStorage = FakeLocalStorage(),
+        val viewModel = RoleViewModel(
             logger = NoOpLogger(),
             initialRole = AppRole.RECEIVER,
         )
@@ -49,12 +48,8 @@ class ScreenRenderTest {
                 height = 650,
             ) {
                 RoleSelectionScreen(
-                    stateHolder = holder,
-                    onRoleConfirmed = {},
-                    deviceId = "device",
-                    deviceName = "PC",
-                    port = 8765,
-                    theme = theme,
+                    state = viewModel.state.value,
+                    onAction = viewModel::onAction,
                 )
             }
         }
@@ -66,8 +61,8 @@ class ScreenRenderTest {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         try {
             val bitmap = solidBitmap(Color(0xFF21438B))
-            val storage = FakeLocalStorage(
-                playlist = Playlist(
+            val storage = FakeRepositories(
+                initialPlaylist = Playlist(
                     id = "p1",
                     name = "Promociones",
                     version = 3,
@@ -79,13 +74,14 @@ class ScreenRenderTest {
                 availableBitmaps = mutableMapOf("m1" to bitmap),
             )
             val holder = PlaybackStateHolder(
-                localStorage = storage,
+                playlistRepository = storage,
+                mediaRepository = storage,
                 logger = NoOpLogger(),
-                scope = scope,
+                parentScope = scope,
                 backgroundDispatcher = Dispatchers.Unconfined,
             )
             holder.start()
-            check(holder.uiState.value.currentBitmap != null) {
+            check(holder.state.value.currentBitmap != null) {
                 "Playback did not load the fake bitmap"
             }
             render(
@@ -95,7 +91,7 @@ class ScreenRenderTest {
                 width = 1280,
                 height = 720,
             ) {
-                CarouselScreen(stateHolder = holder)
+                CarouselScreen(state = holder.state.value)
             }
             holder.stop()
         } finally {

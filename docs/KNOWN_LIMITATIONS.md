@@ -3,12 +3,26 @@
 Lista honesta de lo que el MVP **no** hace o hace con limitaciones. Úsala antes de
 prometer funciones o de instalar la app en un comercio real.
 
+> **Estado:** las fases de arquitectura 7–17 están aplicadas en
+> `codex/architecture-improvements`. En la fase 18, Linux pasó la build y el
+> smoke check de `/info` y mDNS. El workflow hospedado de Windows pasó una build
+> limpia y smoke checks de ambos roles en la imagen `windows-2025-vs2026` el
+> 2026-10-23. Sigue pendiente el recorrido manual en un equipo Windows 11 real.
+
 ## Plataforma y empaquetado
 
-- **Windows 10/11 es la plataforma objetivo.** Esta versión se compiló y se
-  ejecutó en Windows 11 con JDK 21; los hooks nativos de teclado y mouse se
-  instalan correctamente, pero el bloqueo efectivo de atajos y gestos del sistema
-  requiere una prueba manual en el equipo destino.
+- **Windows 10/11 es la plataforma objetivo.** Linux pasó la build y el smoke check:
+  ambos roles arrancaron, el Receptor respondió `/info` y el Controlador lo
+  descubrió por mDNS. En el runner hospedado `windows-2025-vs2026` pasaron
+  `clean build` y el smoke test de los roles
+  ([ejecución de CI](https://github.com/OverrideLLC/Kiosk/actions/runs/39990088932));
+  este verificó DPAPI, migración local,
+  reproducción autenticada, instalación de hooks de teclado/mouse, registro mDNS,
+  descubrimiento desde el Controlador y arranque fullscreen/normal. Ese runner no
+  sustituye la prueba visible en un equipo Windows 11 real: aún hay que validar
+  allí el bloqueo efectivo de atajos/gestos, interacción de ventanas y uso en la
+  máquina destino. El empaquetado también necesita su propia validación antes de
+  distribuirla.
 - Para generar el instalador `.exe`/`.msi` el plugin de Compose descarga WiX 3.11
   automáticamente la primera vez; no hace falta instalarlo a mano. Sin conexión
   en esa primera compilación solo se genera la carpeta portable.
@@ -39,24 +53,21 @@ prometer funciones o de instalar la app en un comercio real.
 - La Pantalla debe estar encendida y en línea para recibir el paquete. No hay
   actualización por USB ni al arrancar.
 - El reinicio posterior a una actualización conserva vinculación, playlist, medios
-  y bloqueo; un arranque normal sigue borrando esos datos por diseño.
+  y bloqueo. El arranque normal también conserva esos datos; solo se eliminan
+  mediante un cambio de rol o una acción explícita de reinicio.
 
 ## Pantalla y reproducción
 
-- **La Pantalla se limpia al arrancar.** Por diseño, cada inicio borra contenido,
-  bloqueo y vinculación para no reproducir material viejo. La única excepción es el
-  primer arranque después de una actualización. Consecuencia: tras un corte de luz
-  o un reinicio, la pantalla queda en negro esperando que el Controlador la vuelva
-  a vincular y enviar. La reproducción sin red funciona **mientras el proceso
-  sigue vivo**, no después de reiniciar.
+- La Pantalla conserva su vinculación, playlist, medios y bloqueo al reiniciar.
+  Sigue reproduciendo la copia local aunque no haya red.
 - Solo hay **una playlist activa** por Controlador. No hay varias playlists por
   pantalla ni programación por horarios.
 - No hay video, audio, PDF ni animaciones. Solo JPG, PNG y WEBP de hasta 25 MB.
 - La transición es un fundido de 500 ms. No hay efectos configurionales.
 - Las imágenes dañadas o ausentes se omiten con un log; si todas fallan, la
   Pantalla muestra el estado vacío.
-- El carrusel no recuerda en qué imagen iba tras reiniciar; empieza de nuevo (y,
-  de hecho, arranca en blanco por la limpieza anterior).
+- El carrusel no recuerda en qué imagen iba tras reiniciar; comienza desde la
+  primera imagen de la playlist activa.
 - **La sincronización de reproducción es de mejor esfuerzo.** El Controlador envía
   un retardo común de 2 segundos y cada Pantalla reinicia su carrusel al vencerlo.
   No se sincronizan los relojes ni se corrige la latencia de la red o el tiempo de
@@ -105,22 +116,27 @@ prometer funciones o de instalar la app en un comercio real.
 
 ## UI y accesibilidad
 
-- El tema claro/oscuro y el movimiento reducido se guardan en `config.json`.
+- El tema claro/oscuro y el movimiento reducido se guardan en DataStore; la
+  configuración `config.json` anterior se conserva bajo `legacy/`.
 - La Pantalla (pairing y reproducción) es siempre negra por diseño; el tema
   afecta al Controlador y a los diálogos.
 - El catálogo de componentes (`--ui-catalog`) es una herramienta de desarrollo, no
   una pantalla de producto.
 - La navegación por teclado cubre Tab/Enter/Esc y flechas en las tarjetas de rol,
   pero no se probó con todos los lectores de pantalla de Windows.
-- La guía interactiva está en español y no reemplaza la configuración de red ni
-  el aviso del Firewall de Windows; solo recorre las pantallas reales.
-- No hay internacionalización completa: los textos están en español y
-  centralizados en `Strings.kt` para traducirlos más adelante.
+- La guía interactiva no reemplaza la configuración de red ni el aviso del
+  Firewall de Windows; solo recorre las pantallas reales.
+- Los textos de la interfaz están en español (predeterminado) e inglés. El idioma
+  sigue el del sistema. No hay un selector de idioma dentro de la app.
 - No hay temas visuales personalizados ni perfiles de usuario.
 
 ## Datos y operación
 
-- Sin base de datos: archivos JSON y una carpeta de imágenes.
+- La configuración pequeña usa `app-config.preferences_pb` mediante DataStore
+  Preferences; playlists, emparejamientos, metadatos de medios y bloqueo usan
+  `kiosk.db` mediante Room 3. Los bytes de imagen siguen en archivos. La migración
+  conserva `legacy/config.json` y copias de Room con sufijo `.room-v1`; las copias
+  de `paired.json` y `lock.json` están protegidas.
 - Sin copia de seguridad automática. Si se borra `%APPDATA%\OverrideKiosk\`, se pierde
   la vinculación y la playlist local.
 - Los paquetes de actualización ocupan espacio en `updates\`: el Controlador guarda

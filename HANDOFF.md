@@ -1,14 +1,15 @@
 # Override Kiosk — Nota de continuidad
 
-Fecha: 2026-10-23  
-Rama: `master`  
+Fecha: 2026-10-23
+Rama: `codex/architecture-improvements`
 Último commit de código: consulta `git log -1 --oneline`.
 Remoto: `https://github.com/OverrideLLC/Kiosk.git`
 
 ## Estado actual
 
-El repositorio está limpio y sincronizado con `origin/master`. La versión de
-trabajo es **1.1.4** e incluye lo de 1.1.0/1.1.1/1.1.2 (playlists con nombre,
+La rama integra `origin/master` hasta la 1.1.4 y conserva los cambios de
+arquitectura feature-first. La versión de trabajo es **1.1.4** e incluye lo de
+1.1.0/1.1.1/1.1.2 (playlists con nombre,
 bloqueo de la Pantalla, guía interactiva, rediseño visual, actualizaciones
 automáticas por LAN y pantalla completa de la Pantalla), el arranque **siempre
 fullscreen y sin bordes** para la selección de rol, el Controlador y la Pantalla,
@@ -32,8 +33,7 @@ trabajo cerrado y para poder continuar desde otra computadora.
    - Confirmar que aparece el overlay, que se consumen clics y teclas y que una
      frase incorrecta no desbloquea.
    - Confirmar que la frase correcta desbloquea. Tras un reinicio normal la
-     Pantalla se limpia por diseño; si se prueba el reinicio de actualización,
-     debe conservar la vinculación y volver bloqueada.
+     Pantalla conserva la playlist y continúa reproduciendo desde su copia local.
    - Mientras está bloqueada, probar `Esc`, `Ctrl+Shift+P` y `Alt+F4`: no deben
      cerrar ni desbloquear la app.
 2. **Pantalla completa siempre**
@@ -101,9 +101,8 @@ Requisitos: JDK 17 o superior y Git. La primera compilación necesita internet
 para descargar Gradle y las dependencias; la app ya compilada funciona offline.
 
 ```powershell
-git clone https://github.com/OverrideLLC/Kiosk.git
+git clone --branch codex/architecture-improvements https://github.com/OverrideLLC/Kiosk.git OverrideKiosk
 cd OverrideKiosk
-git pull origin master
 .\gradlew.bat build
 ```
 
@@ -111,10 +110,10 @@ Para probar los dos roles en la misma PC:
 
 ```powershell
 # Terminal 1: Pantalla
-.\gradlew.bat run --args="--role=receiver --data-dir=C:\tmp\rx"
+.\gradlew.bat run --args="--role=receiver --data-dir=C:\tmp\rx --windowed"
 
 # Terminal 2: Controlador
-.\gradlew.bat run --args="--role=emitter --data-dir=C:\tmp\tx"
+.\gradlew.bat run --args="--role=emitter --data-dir=C:\tmp\tx --windowed"
 ```
 
 Si el descubrimiento automático no encuentra la Pantalla local, usar
@@ -139,9 +138,8 @@ Si el descubrimiento automático no encuentra la Pantalla local, usar
 
 ## Notas importantes
 
-- Los datos reales viven en `%APPDATA%\OverrideKiosk\`: `config.json`,
-  `paired.json`, `playlist.json`, `playlists.json`, `lock.json`, `media\`,
-  `updates\` y `logs\`.
+- Los datos reales viven en `%APPDATA%\OverrideKiosk\`: `app-config.preferences_pb`,
+  `kiosk.db`, los respaldos de `legacy\`, `media\`, `updates\` y `logs\`.
 - Los directorios de prueba (`C:\tmp\rx`, `C:\tmp\tx` y los temporales usados
   durante el desarrollo) no se suben al repositorio.
 - El token de vinculación y la frase de desbloqueo no deben subirse a Git.

@@ -1,0 +1,134 @@
+package app.kiosksync.feature.emitter.presentation.components
+
+import app.kiosksync.feature.emitter.presentation.EmitterAction
+import app.kiosksync.feature.emitter.presentation.EmitterState
+
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
+import app.kiosksync.core.common.app.APP_NAME
+import app.kiosksync.core.common.app.APP_VERSION
+import app.kiosksync.core.common.update.AppVersionPolicy
+import app.kiosksync.core.common.update.UpdateUrgency
+import app.kiosksync.core.ui.components.AppButton
+import app.kiosksync.core.ui.components.AppButtonSize
+import app.kiosksync.core.ui.components.AppButtonVariant
+import app.kiosksync.core.ui.components.AppDropdownMenu
+import app.kiosksync.core.ui.components.AppEmptyState
+import app.kiosksync.core.ui.components.AppIcon
+import app.kiosksync.core.ui.components.AppIconButton
+import app.kiosksync.core.ui.components.AppIconButtonSize
+import app.kiosksync.core.ui.components.AppLinearProgress
+import app.kiosksync.core.ui.components.AppLoadingIndicator
+import app.kiosksync.core.ui.components.AppPanelHeader
+import app.kiosksync.core.ui.components.AppMenuItem
+import app.kiosksync.core.ui.components.AppStatusChip
+import app.kiosksync.core.ui.components.AppStatusTone
+import app.kiosksync.core.ui.theme.KioskColors
+import app.kiosksync.core.ui.theme.KioskShape
+import app.kiosksync.core.ui.components.OverrideLogo
+import app.kiosksync.core.ui.theme.Sizes
+import app.kiosksync.core.ui.theme.Space
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.add_by_ip
+import app.kiosksync.resources.discovery_empty
+import app.kiosksync.resources.discovery_refresh
+import app.kiosksync.resources.discovery_refreshing
+import app.kiosksync.resources.discovery_searching
+import app.kiosksync.resources.emitter_screens_subtitle
+import app.kiosksync.resources.emitter_screens_title
+import org.jetbrains.compose.resources.stringResource
+
+@Composable
+internal fun ScreensPanel(
+    onAction: (EmitterAction) -> Unit,
+    state: EmitterState,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        AppPanelHeader(
+            title = stringResource(Res.string.emitter_screens_title),
+            subtitle = stringResource(Res.string.emitter_screens_subtitle),
+            actions = {
+                AppIconButton(
+                    icon = AppIcon.REFRESH,
+                    contentDescription = stringResource(Res.string.discovery_refresh),
+                    onClick = { onAction(EmitterAction.RefreshDevices) },
+                    enabled = !state.isRefreshing,
+                    tooltip = if (state.isRefreshing) {
+                        stringResource(Res.string.discovery_refreshing)
+                    } else {
+                        stringResource(Res.string.discovery_refresh)
+                    },
+                )
+                AppButton(
+                    text = stringResource(Res.string.add_by_ip),
+                    onClick = { onAction(EmitterAction.OpenManualIp) },
+                    variant = AppButtonVariant.OUTLINED,
+                    size = AppButtonSize.SMALL,
+                    icon = AppIcon.ADD,
+                )
+            },
+        )
+
+        Spacer(Modifier.height(Space.xs))
+
+        val listModifier = Modifier.fillMaxWidth().weight(1f)
+        if (state.devices.isEmpty()) {
+            Box(modifier = listModifier, contentAlignment = Alignment.Center) {
+                AppEmptyState(
+                    icon = AppIcon.TV,
+                    title = if (state.isSearching) stringResource(Res.string.discovery_searching) else stringResource(Res.string.discovery_empty),
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = listModifier,
+                verticalArrangement = Arrangement.spacedBy(Space.sm),
+            ) {
+                itemsIndexed(state.devices, key = { _, device -> device.deviceId }) { _, device ->
+                    DeviceCard(
+                        device = device,
+                        sync = state.syncByDevice[device.deviceId],
+                        update = state.updateByDevice[device.deviceId],
+                        onToggleSelection = {
+                            onAction(EmitterAction.ToggleSelection(device.deviceId))
+                        },
+                        onPair = { onAction(EmitterAction.OpenPairDialog(device)) },
+                        onUnpair = { onAction(EmitterAction.RequestUnpair(device)) },
+                        onUpdate = { onAction(EmitterAction.RequestUpdate(device.deviceId)) },
+                    )
+                }
+            }
+        }
+    }
+}
+

@@ -22,8 +22,15 @@ dist/
 
 # App local runtime data & logs
 *.log
-logs/
-media/
+/logs/
+/media/
+/legacy/
+/updates/
+*.preferences_pb
+*.db
+*.db-shm
+*.db-wal
+*.part
 config.json
 paired.json
 playlist.json

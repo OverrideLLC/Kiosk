@@ -1,10 +1,13 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import androidx.room3.gradle.RoomExtension
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room3)
 }
 
 kotlin {
@@ -17,15 +20,29 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.ui)
             implementation(compose.components.resources)
+            implementation(compose.components.uiToolingPreview)
+            implementation(libs.material.kolor)
+            implementation(libs.room3.runtime)
+            implementation(libs.sqlite.bundled)
 
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
+
+            implementation(project.dependencies.platform(libs.koin.bom))
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
+            implementation(libs.koin.compose.navigation3)
+            implementation(libs.koin.compose.viewmodel)
+            implementation(libs.jetbrains.navigation3.ui)
+            implementation(libs.jetbrains.lifecycle.viewmodel.compose)
+            implementation(libs.jetbrains.lifecycle.viewmodel.navigation3)
         }
 
         val desktopMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
                 implementation(libs.kotlinx.coroutines.swing)
+                implementation(libs.datastore.preferences.core)
 
                 // Ktor Server (Receiver)
                 implementation(libs.ktor.server.core)
@@ -43,6 +60,9 @@ kotlin {
 
                 // Windows low-level keyboard hook (kiosk lock)
                 implementation(libs.jna.platform)
+
+                // Native file dialogs (image picker)
+                implementation(libs.filekit.dialogs)
             }
         }
 
@@ -53,6 +73,14 @@ kotlin {
     }
 }
 
+dependencies {
+    add("kspDesktop", libs.room3.compiler)
+}
+
+extensions.configure<RoomExtension> {
+    schemaDirectory("$projectDir/schemas")
+}
+
 compose.resources {
     publicResClass = true
     packageOfResClass = "app.kiosksync.resources"
@@ -61,7 +89,7 @@ compose.resources {
 
 compose.desktop {
     application {
-        mainClass = "app.kiosksync.MainKt"
+        mainClass = "app.kiosksync.app.MainKt"
 
         // Windows 10/11 may use a legacy ANSI code page for the JVM. The app
         // writes Spanish text and JSON, so force UTF-8 in the packaged runtime.
@@ -82,6 +110,11 @@ compose.desktop {
             // Keep the bundled runtime small. java.desktop, java.base,
             // java.logging and java.prefs are added by the Compose plugin.
             modules("java.naming", "jdk.unsupported")
+
+            linux {
+                // FileKit's XDG portal dialogs need this module in the packaged runtime.
+                modules("jdk.security.auth")
+            }
 
             windows {
                 iconFile.set(project.file("src/desktopMain/resources/icon.ico"))
