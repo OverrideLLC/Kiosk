@@ -134,31 +134,34 @@ composeApp/src/
 │   │   ├── pairing/{domain,data,presentation}/
 │   │   ├── emitter/{domain,data,presentation/{components,coordinators}}/
 │   │   ├── media/{domain,data}/
-│   │   ├── playlist/{domain,data,presentation}/
-│   │   ├── sync/domain/
-│   │   ├── playback/{domain,presentation}/
+│   │   ├── playlist/{domain,data,presentation/{components}}/
+│   │   ├── sync/domain/          # SyncPlanner y el contrato; la impl. está en desktopMain
+│   │   ├── playback/{domain,presentation/{components},di}/
 │   │   ├── kiosk/{domain,data,presentation}/
 │   │   ├── receiver/{domain,data,presentation}/
-│   │   ├── projection/{domain,presentation}/
+│   │   ├── projection/{domain,presentation,di}/
 │   │   ├── guide/{domain,presentation/{components}}/
-│   │   ├── update/{domain,presentation}/
-│   │   └── persistence/data/ # base Room, repositorios y migración JSON
-│   └── app/             # arranque de la aplicación, separado por función
+│   │   ├── update/{domain,presentation/{components}}/
+│   │   └── persistence/data/     # KioskDatabase, RoomRepositories y migración JSON
+│   └── app/
 │       ├── App.kt
-│       ├── navigation/  # AppRoute, pila única y NavDisplay
-│       ├── shell/       # arranque y preferencias
-│       ├── session/     # rol, Controlador, Pantalla, kiosco y guía
-│       ├── di/          # AppSession, apagado y módulos de presentación
+│       ├── navigation/           # AppNavHost y AppNavigator
+│       │   ├── routes/           # AppRoute: RoleSelection, EmitterHome, ReceiverHome
+│       │   └── session/          # pila, almacén de ViewModels y comandos de ventana
+│       ├── shell/                # arranque y preferencias
+│       ├── session/              # rol, Controlador, Pantalla, kiosco y guía
+│       └── di/                   # AppSession, apagado y presentación
 └── desktopMain/kotlin/app/kiosksync/
-    ├── app/Main.kt      # argumentos, logger y punto de entrada
-    ├── app/di/          # módulo Koin de plataforma y arranque
-    ├── app/host/        # ventana y catálogo
-    ├── feature/*/data/  # Room, DataStore, red y adaptadores propios de cada feature
-    ├── core/security/   # hash y protección compartida de secretos
-    └── platform/        # logger y servicios compartidos del host
+    ├── app/Main.kt               # argumentos, logger y punto de entrada
+    ├── app/di/                   # plataforma, raíz Koin y arranque
+    ├── app/host/                 # ventana
+    ├── feature/*/di/             # módulos Koin de emitter, kiosk, pairing y receiver
+    ├── feature/*/data/           # Room, DataStore, Ktor, JmDNS y archivos
+    ├── core/security/            # DPAPI y protector de desarrollo fuera de Windows
+    └── platform/                 # logger del host
 ```
 
-Dentro de cada `feature/<nombre>/` crea capas solo cuando contengan responsabilidades reales. En `feature/emitter/presentation`, `EmitterAction`, `EmitterUiState`, `EmitterViewModel` y `EmitterScreen` viven directamente en el paquete raíz; el ViewModel aplica las transiciones de estado y coordina los efectos. No añadas un reducer mecánico ni un Route wrapper si `App.kt` ya compone el ViewModel, gestiona su ciclo de vida y conecta el Screen. Los coordinadores que adapten operaciones a estado de UI viven en `presentation/coordinators`; los componentes exclusivos viven en `presentation/components`. Los servicios operativos y adaptadores concretos viven en `data`. La pantalla recibe estado y emite acciones; el ViewModel consume contratos y casos de uso del dominio, nunca DAOs ni implementaciones. Los contratos y modelos pertenecen al `domain`; Room, DataStore, red, operaciones de datos y repositorios concretos pertenecen a `data`, junto a la feature que los usa. `KioskDatabase`, `RoomRepositories` y la importación del JSON heredado viven en `feature/persistence/data` y solo componen los DAO de cada feature. Hash y protección de secretos viven en `app.kiosksync.core.security`. Las entidades Room nunca son modelos de protocolo. Comparte un componente `core.ui` cuando tenga consumidores reales en más de una feature; los componentes exclusivos permanecen en su feature. Mantén un solo módulo Gradle. Toda la inyección de dependencias pasa por Koin. DataStore Preferences almacena preferencias pequeñas; Room 3 datos estructurados; archivos, imágenes, logs y paquetes.
+El catálogo de componentes vive en `core/ui/catalog`. Dentro de cada `feature/<nombre>/` crea capas solo cuando contengan responsabilidades reales. En `feature/emitter/presentation`, `EmitterAction`, `EmitterUiState`, `EmitterViewModel` y `EmitterScreen` viven directamente en el paquete raíz; el ViewModel aplica las transiciones de estado y coordina los efectos. No añadas un reducer mecánico ni un Route wrapper: `AppNavHost` resuelve cada entrada con `koinEntryProvider` y el workspace del Controlador conecta su pantalla. Los coordinadores que adapten operaciones a estado de UI viven en `presentation/coordinators`; los componentes exclusivos viven en `presentation/components`. Los servicios operativos y adaptadores concretos viven en `data`. La pantalla recibe estado y emite acciones; el ViewModel consume contratos y casos de uso del dominio, nunca DAOs ni implementaciones. Los contratos y modelos pertenecen al `domain`; Room, DataStore, red, operaciones de datos y repositorios concretos pertenecen a `data`, junto a la feature que los usa. `KioskDatabase`, `RoomRepositories` y la importación del JSON heredado viven en `feature/persistence/data` y solo componen los DAO de cada feature. Hash y protección de secretos viven en `app.kiosksync.core.security`. Las entidades Room nunca son modelos de protocolo. Comparte un componente `core.ui` cuando tenga consumidores reales en más de una feature; los componentes exclusivos permanecen en su feature. Mantén un solo módulo Gradle. Toda la inyección de dependencias pasa por Koin. DataStore Preferences almacena preferencias pequeñas; Room 3 datos estructurados; archivos, imágenes, logs y paquetes.
 
 ---
 
@@ -245,15 +248,18 @@ OverrideKiosk\
 ├── legacy\                     # JSON previos conservados tras migrar
 ├── media\                      # imágenes (nombradas por mediaId + extensión)
 ├── updates\                    # paquetes/estado de actualización
-└── logs\app.log                # log con rotación simple (máx. 5 archivos de 1 MB)
+├── logs\app.log                # log con rotación simple (máx. 5 archivos de 1 MB)
+└── logs\update.log             # detalle del instalador de actualizaciones
 ```
 
 Los tokens y hashes de desbloqueo se cifran con Windows DPAPI antes de persistirse en Room. En desarrollo fuera de Windows se permite únicamente un protector local de desarrollo; en Windows empaquetado se usa DPAPI. Una instancia compartida de DataStore y una de Room se crean por proceso usando el directorio efectivo, incluido `--data-dir`. El arranque normal nunca borra la playlist local ni su media.
 
-Modelo mínimo de playlist para el protocolo LAN y para leer los JSON previos durante la migración (la persistencia vigente de playlists vive en Room):
+El Controlador persiste una biblioteca de playlists con nombre en Room y marca una como activa. El protocolo LAN envía solo esa playlist activa. La Pantalla guarda la última aplicada, no la biblioteca completa. Modelo vigente de `PUT /playlist` (los JSON previos pueden omitir `id` y `name`; la migración los acepta):
 
 ```json
 {
+  "id": "uuid",
+  "name": "Promociones",
   "version": 3,
   "defaultDurationSec": 10,
   "items": [
@@ -274,6 +280,7 @@ Soporta estos **argumentos de línea de comandos** desde `Main.kt`, para poder p
 - `--role=emitter|receiver`: fuerza el rol (omite la pantalla de selección).
 - `--port=<n>`: puerto del Receptor.
 - `--windowed`: abre en ventana normal para depuración y desactiva los hooks nativos de kiosco.
+- `--ui-catalog`: catálogo interno de componentes. No es una pantalla de producto.
 
 Por defecto, todos los roles abren a pantalla completa y sin bordes desde la 1.1.3.
 `--windowed` se conserva para depuración y recorridos automatizados.
@@ -294,7 +301,7 @@ Si el mDNS no encuentra el proceso en la misma PC, el campo manual de IP con `12
 **Emisor (Controlador):** una sola ventana con tres secciones.
 
 1. **Pantallas:** tarjetas con nombre, estado (sin vincular, en línea, desconectada), casilla de selección y botones *Vincular* / *Desvincular*. Botón *Agregar por IP*.
-2. **Playlist:** lista con miniatura, nombre y duración editable por imagen; botones *subir/bajar* (sin arrastrar y soltar en el MVP), *quitar* y *Agregar imágenes*; campo de duración por defecto.
+2. **Playlist:** selector de la playlist activa (crear, renombrar, eliminar; siempre queda al menos una), lista con miniatura, nombre y duración editable por imagen; botones *subir/bajar* (sin arrastrar y soltar), *quitar* y *Agregar imágenes* con el diálogo nativo; campo de duración por defecto. *Proyectar* muestra esa playlist a pantalla completa en el mismo equipo.
 3. **Enviar:** botón *Enviar a pantallas seleccionadas* con progreso y resultado por pantalla.
 
 **Receptor (Pantalla):**
@@ -307,7 +314,7 @@ Si el mDNS no encuentra el proceso en la misma PC, el campo manual de IP con `12
 real de rol, playlist, vinculación, contraseña y envío. Se puede volver a abrir
 desde Ajustes del Controlador o las opciones de la Pantalla.
 
-**Una playlist única en el MVP.** El Emisor tiene una playlist y la envía a las pantallas que seleccione. Varias playlists por pantalla quedan para después.
+**Biblioteca en el Controlador, una playlist en cada Pantalla.** El Controlador guarda varias playlists con nombre y envía la activa a las pantallas seleccionadas. Cada Pantalla reproduce solo la última playlist recibida. Asignar playlists distintas por pantalla queda fuera de alcance.
 
 ---
 
@@ -358,23 +365,25 @@ Cada fase tiene: **objetivo**, **entregable**, **criterios de aceptación** y **
 
 ### Fases de arquitectura (autorizadas en la rama `codex/architecture-improvements`)
 
-La persona autorizó ejecutar las fases de arquitectura consecutivamente. Las fases 7–17 están completadas; se conservaron los commits por fase en `codex/architecture-improvements`. El plan unificado define los detalles de las fases 13–18. En la fase 18, Linux y el runner hospedado de Windows (`windows-2025-vs2026`) pasaron build, tests y smoke checks; sigue pendiente la validación manual en Windows 11 real, incluida la experiencia de escritorio. No declares completa la validación de Windows hasta ejecutar `.\gradlew.bat build` y los recorridos manuales en Windows 11.
+La persona autorizó ejecutar las fases de arquitectura consecutivamente. Las fases 7–17 están completadas; se conservaron los commits por fase en `codex/architecture-improvements` y esa rama se fusionó en `master` (pull request #1, publicada como 1.1.5). En la fase 18, Linux y el runner hospedado de Windows (`windows-2025-vs2026`) pasaron build, tests y smoke checks; sigue pendiente la validación manual en Windows 11 real, incluida la experiencia de escritorio. No declares completa la validación de Windows hasta ejecutar `.\gradlew.bat build` y los recorridos manuales en Windows 11.
 
 - **Fases 7–12, completadas:** arquitectura por capas ligeras, DataStore + Room 3 + archivos, `core.ui`/Material Kolor, MVI selectivo, migración y adaptación Desktop.
 - **Fases 13–14, completadas:** arranque según rol y esquema Room. Las entidades y los DAO viven en la feature dueña; `KioskDatabase` los reúne en `feature/persistence/data`.
 - **Fase 15, completada:** paquetes feature-first y adaptadores de persistencia junto a sus features.
 - **Fase 16, completada:** tokens UI verificados y render test de ambos temas con contraste 4.5:1.
 - **Fase 17, completada:** `AGENTS.md`, `docs/ARCHITECTURE.md`, `docs/DESIGN_SYSTEM.md`, `docs/KNOWN_LIMITATIONS.md` y ADR-004 coinciden con los paquetes y la persistencia vigentes.
-- **Fase 18:** Linux verificado con build limpia y smoke check Receptor/Controlador por mDNS. El workflow hospedado `Architecture Windows validation` pasó `clean build` y smoke checks en la imagen `windows-2025-vs2026`, incluyendo ambos modos de ventana, DPAPI y migración, reproducción autenticada, hooks nativos y descubrimiento mDNS desde el Controlador. Falta el recorrido manual en un equipo Windows 11 real, especialmente validar el bloqueo efectivo de atajos/gestos y la experiencia de escritorio.
+- **Fase 18:** Linux verificado con build limpia y smoke check Receptor/Controlador por mDNS. El workflow hospedado `Architecture Windows validation` pasó `clean build` y smoke checks en la imagen `windows-2025-vs2026`, incluyendo ambos modos de ventana, DPAPI y migración, reproducción autenticada, hooks nativos y descubrimiento mDNS desde el Controlador. Esa rama se fusionó en `master` con el pull request #1 y se publicó como 1.1.5. Falta el recorrido manual en un equipo Windows 11 real, especialmente validar el bloqueo efectivo de atajos/gestos y la experiencia de escritorio.
 
 ### Fases posteriores (solo con petición expresa)
-Arranque automático con Windows, modo de bloqueo de teclas con frase de desbloqueo, cifrado/firma de peticiones, varias playlists, plantillas de fichas técnicas.
+Arranque automático con Windows, cifrado/firma de peticiones, playlists distintas por pantalla, plantillas de fichas técnicas.
 
 ---
 
-## 13. Fuera del alcance del MVP
+## 13. Fuera del alcance actual
 
-No implementes: jerarquía en árbol, video, programación por horarios, plantillas de fichas, actualización automática de la app, Android/iOS/Linux, internacionalización completa, temas personalizables, cuentas de usuario ni nada que requiera internet. DataStore y Room forman parte de la arquitectura de persistencia aprobada.
+Ya existen y hay que mantenerlos: actualizaciones por LAN, bloqueo kiosco con frase de desbloqueo, biblioteca de playlists con nombre en el Controlador, tema claro/oscuro, textos en español e inglés según el sistema, DataStore y Room.
+
+No implementes sin petición expresa: jerarquía en árbol, video, programación por horarios, plantillas de fichas, una playlist distinta por pantalla, Android/iOS/Linux empaquetado, más idiomas o un selector de idioma, temas personalizados, cuentas de usuario ni nada que requiera internet.
 
 ---
 

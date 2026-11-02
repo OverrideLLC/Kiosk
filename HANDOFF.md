@@ -1,26 +1,25 @@
 # Override Kiosk — Nota de continuidad
 
-Fecha: 2026-10-23
-Rama: `codex/architecture-improvements`
-Último commit de código: consulta `git log -1 --oneline`.
+Fecha: 2026-11-01
+Rama de trabajo: `master`
+Versión publicada: **1.1.5**
 Remoto: `https://github.com/OverrideLLC/Kiosk.git`
 
 ## Estado actual
 
-La rama integra `origin/master` hasta la 1.1.4 y conserva los cambios de
-arquitectura feature-first. La versión de trabajo es **1.1.5** e incluye lo de
-1.1.0/1.1.1/1.1.2 (playlists con nombre,
-bloqueo de la Pantalla, guía interactiva, rediseño visual, actualizaciones
-automáticas por LAN y pantalla completa de la Pantalla), el arranque **siempre
-fullscreen y sin bordes** para la selección de rol, el Controlador y la Pantalla,
-la página de licencia en el instalador y la corrección del mouse en el aviso de
-actualización mientras la Pantalla está bloqueada.
+`master` incluye la arquitectura feature-first (pull request #1) y la release
+[v1.1.5](https://github.com/OverrideLLC/Kiosk/releases/tag/v1.1.5). La línea de
+producto conserva playlists con nombre en el Controlador, bloqueo de la Pantalla,
+guía interactiva, tema claro/oscuro, textos en español e inglés según el sistema,
+actualizaciones automáticas por LAN, arranque a pantalla completa y sin bordes, la
+página de licencia del instalador y la corrección del mouse en el aviso de
+actualización (desde la 1.1.4). El diálogo de imágenes es el selector nativo del
+sistema. La Pantalla conserva vinculación, playlist y medios al reiniciar.
 
-Los documentos de actualizaciones, empaquetado, protocolo, límites y la
-[guía](docs/GUIDE.md) describen las funciones; el logo oficial está normalizado,
-el `icon.ico` se regeneró y el pie enlaza a `https://override.com.mx`. La licencia
-es **MIT** (`LICENSE`) y el workflow `.github/workflows/release.yml` genera los
-artefactos de Windows y la release al empujar un tag `v1.1.5`.
+La documentación de producto, arquitectura, protocolo, empaquetado, guía, límites
+y este handoff describen ese comportamiento. La licencia es **MIT** (`LICENSE`).
+El workflow `.github/workflows/release.yml` lee `APP_VERSION` y publica los
+artefactos de Windows al empujar un tag `v<versión>`.
 
 Esta nota existe para dejar claro qué falta comprobar antes de considerar el
 trabajo cerrado y para poder continuar desde otra computadora.
@@ -74,6 +73,7 @@ trabajo cerrado y para poder continuar desde otra computadora.
    - [x] RAM medida en Windows 11: Controlador ~241 MB, Pantalla ~231 MB
      (working set, sin imágenes cargadas).
    - [x] Artefactos de la versión 1.1.3 generados por GitHub Actions.
+   - [x] Artefactos de la versión 1.1.5 publicados por GitHub Actions.
    - [ ] Probar una actualización desde 1.1.2.
 6. **Publicación**
    - Licencia MIT añadida en `LICENSE` y en el `README.md`.
@@ -93,6 +93,11 @@ trabajo cerrado y para poder continuar desde otra computadora.
    - [x] Artefactos publicados: `OverrideKiosk-1.1.4.exe`,
      `OverrideKiosk-1.1.4.msi`, `OverrideKiosk-1.1.4-portable.zip` y
      `SHA256SUMS.txt`.
+   - [x] Release `v1.1.5` publicada (2026-11-01):
+     https://github.com/OverrideLLC/Kiosk/releases/tag/v1.1.5
+   - [x] Artefactos publicados: `OverrideKiosk-1.1.5.exe`,
+     `OverrideKiosk-1.1.5.msi`, `OverrideKiosk-1.1.5-portable.zip` y
+     `SHA256SUMS.txt`.
    - El `README.md` apunta a GitHub Releases para la descarga.
 
 ## Cómo continuar en otra computadora
@@ -101,7 +106,7 @@ Requisitos: JDK 17 o superior y Git. La primera compilación necesita internet
 para descargar Gradle y las dependencias; la app ya compilada funciona offline.
 
 ```powershell
-git clone --branch codex/architecture-improvements https://github.com/OverrideLLC/Kiosk.git OverrideKiosk
+git clone https://github.com/OverrideLLC/Kiosk.git OverrideKiosk
 cd OverrideKiosk
 .\gradlew.bat build
 ```

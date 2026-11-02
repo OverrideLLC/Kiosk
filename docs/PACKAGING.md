@@ -115,9 +115,9 @@ archivo con otro `.ico` multi-resolución y vuelve a empaquetar.
 4. En otra PC, abre la app, elige **Controlador** y busca la pantalla. Si no
    aparece, usa **Agregar por IP** con `IP:8765`.
 5. Vincula con el código y envía una playlist de prueba.
-6. Cierra y vuelve a abrir la Pantalla: debe arrancar en negro con un código
-   nuevo (la Pantalla se limpia al iniciar; ver
-   [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md)).
+6. Cierra y vuelve a abrir la Pantalla: debe seguir vinculada y reproduciendo
+   su copia local. Esos datos solo se borran al cambiar de rol o con un reinicio
+   explícito; ver [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md).
 
 ## Artefactos de empaquetado
 

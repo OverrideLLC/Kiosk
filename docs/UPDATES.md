@@ -61,8 +61,9 @@ estado. No hay un botón de "buscar actualizaciones" separado.
 3. Al aceptar, la Pantalla cierra la aplicación, un ayudante de PowerShell espera
    a que el proceso termine, reemplaza `app\` y vuelve a abrir `OverrideKiosk.exe`.
 4. El reinicio tras una actualización **conserva** la vinculación, la playlist, las
-   imágenes y el bloqueo. En un arranque normal (sin actualización) la Pantalla
-   sigue limpiándose a propósito; ver [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md).
+   imágenes y el bloqueo. Un arranque normal también los conserva. Solo se borran
+   con un cambio de rol confirmado o una acción explícita de reinicio; ver
+   [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md).
 
 ## Verificación y seguridad
 

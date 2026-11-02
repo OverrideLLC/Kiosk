@@ -1,13 +1,14 @@
 # Arquitectura
 
-> **Estado:** arquitectura aplicada en la rama `codex/architecture-improvements`.
-> Las fases 7–17 consolidan MVI ligero, paquetes por feature, `core.ui`,
-> Material Kolor, DataStore para preferencias, Room para datos estructurados y
-> archivos para medios y paquetes. En la fase 18, Linux pasó la build y el
-> smoke check de `/info` y descubrimiento mDNS. El workflow de Windows pasó
-> `clean build` y smoke checks en el runner hospedado `windows-2025-vs2026`,
-> incluidos DPAPI, migración, reproducción local, hooks nativos y ambos modos
-> de ventana. Falta validar la experiencia visible en un equipo Windows 11 real.
+> **Estado (1.1.5, `master`):** la arquitectura está fusionada en `master`
+> (pull request #1). Las fases 7–17 consolidan MVI ligero, paquetes por feature,
+> `core.ui`, Material Kolor, DataStore para preferencias, Room para datos
+> estructurados y archivos para medios y paquetes. En la fase 18, Linux pasó la
+> build y el smoke check de `/info` y descubrimiento mDNS. El workflow de
+> Windows pasó `clean build` y smoke checks en el runner hospedado
+> `windows-2025-vs2026`, incluidos DPAPI, migración, reproducción local, hooks
+> nativos y ambos modos de ventana. Falta validar la experiencia visible en un
+> equipo Windows 11 real.
 
 ## Vista general
 
@@ -57,30 +58,36 @@ composeApp/src/
 │   │   ├── pairing/{domain,data,presentation}/
 │   │   ├── emitter/{domain,data,presentation/{components,coordinators}}/
 │   │   ├── media/{domain,data}/
-│   │   ├── playlist/{domain,data,presentation}/
-│   │   ├── sync/domain/
-│   │   ├── playback/{domain,presentation,di}/
+│   │   ├── playlist/{domain,data,presentation/{components}}/
+│   │   ├── sync/domain/ # SyncPlanner y el contrato; la impl. está en desktopMain
+│   │   ├── playback/{domain,presentation/{components},di}/
 │   │   ├── kiosk/{domain,data,presentation}/
 │   │   ├── receiver/{domain,data,presentation}/
 │   │   ├── projection/{domain,presentation,di}/
 │   │   ├── guide/{domain,presentation/{components}}/
-│   │   ├── update/{domain,presentation}/
-│   │   └── persistence/data/ # base Room, repositorios y migración JSON
+│   │   ├── update/{domain,presentation/{components}}/
+│   │   └── persistence/data/ # KioskDatabase, RoomRepositories y migración JSON
 │   └── app/             # arranque de la aplicación, separado por función
 │       ├── App.kt
-│       ├── navigation/  # rutas, navegadores por área, pila y NavDisplay
+│       ├── navigation/  # AppNavHost y AppNavigator
+│       │   ├── routes/  # AppRoute: RoleSelection, EmitterHome, ReceiverHome
+│       │   └── session/ # pila, almacén de ViewModels y comandos de ventana
 │       ├── shell/       # arranque y preferencias
 │       ├── session/     # rol, Controlador, Pantalla, kiosco y guía
-│       ├── di/          # AppSession, apagado y agregador de presentación
+│       └── di/          # AppSession, apagado y agregador de presentación
 └── desktopMain/kotlin/app/kiosksync/
     ├── app/Main.kt      # argumentos, logger y punto de entrada
     ├── app/di/          # plataforma, raíz Koin y arranque
-    ├── app/host/        # ventana y catálogo
-    ├── feature/*/di/    # módulo Koin de la feature, sin includes cruzados
-    ├── feature/*/data/  # Room, DataStore, red y adaptadores propios de cada feature
-    ├── core/security/   # hash y protección compartida de secretos
-    └── platform/        # logger y servicios compartidos del host
+    ├── app/host/        # ventana
+    ├── feature/*/di/    # módulos Koin de emitter, kiosk, pairing y receiver
+    ├── feature/*/data/  # Room, DataStore, Ktor, JmDNS y archivos
+    ├── core/security/   # DPAPI y protector de desarrollo fuera de Windows
+    └── platform/        # logger del host
 ```
+
+El catálogo de componentes (`--ui-catalog`) vive en `core/ui/catalog`, no en el
+host de ventana. `commonMain/feature/sync/data` no contiene código: la
+implementación de sincronización está en `desktopMain/feature/sync/data`.
 
 Las dependencias apuntan hacia contratos y modelos del dominio por feature. Las
 implementaciones de repositorio, Room, DataStore, red y operaciones de datos viven
@@ -184,8 +191,13 @@ para cada pantalla seleccionada. El contrato y los tipos de progreso/resumen viv
    avisa al reproductor y limpia medios huérfanos después del commit. El carrusel
    cambia de versión sin cortar la imagen actual.
 
-La playlist local del Controlador es la fuente de verdad. Un segundo envío sin
-cambios no sube ninguna imagen.
+La playlist **activa** del Controlador es la fuente de verdad de cada envío. El
+Controlador guarda varias playlists con nombre en Room (`PlaylistLibrary`, en
+`feature/playlist/domain`). *Enviar*, *Sincronizar* y *Proyectar* usan solo la
+activa, con su `id` y su `name`. La Pantalla conserva únicamente la playlist
+aplicada. Un segundo envío sin cambios no sube ninguna imagen. Borrar una
+playlist del Controlador no borra imágenes compartidas con otra, y siempre debe
+quedar al menos una.
 
 ### 3. Sincronización de reproducción
 
@@ -315,7 +327,7 @@ cuando afectan a una acción del usuario.
   estado de proyección entre la UI y el host de ventanas sin depender de Compose.
 - `EmitterSyncRepositoryImpl` es una implementación Desktop en `desktopMain`; el
   contrato y `SyncPlanner` puro permanecen en `feature/sync/domain`.
-- Navegación con una sola pila de Navigation 3 en `app/navigation`. Cada raíz (`AppRoute.RoleSelection`, `AppRoute.EmitterHome`, `AppRoute.ReceiverHome`) vive en la sealed class `AppRoute`. `AppNavigator` abre las tres y registra sus claves en la única pila. El Controlador y la Pantalla no apilan rutas propias: sus paneles, diálogos, guía, bloqueo y proyección no son destinos. `NavDisplay` obtiene cada pantalla de `koinEntryProvider`. Confirmar o cambiar el rol reemplaza la raíz y Atrás no la quita. `AppConfig` sigue en preferencias. `rememberViewModelStoreNavEntryDecorator` ata el ViewModel de la entrada; los que comparten rol, guía, vinculación, reproducción y kiosco usan el almacén de la ventana.
+- Navegación con una sola pila de Navigation 3. `AppRoute` vive en `app/navigation/routes` y declara tres raíces: `RoleSelection`, `EmitterHome` y `ReceiverHome`. `AppNavigator` las abre y `AppNavHost` muestra la pila con `NavDisplay` y `koinEntryProvider`. El Controlador y la Pantalla no apilan rutas propias: sus paneles, diálogos, guía, bloqueo y proyección no son destinos. Confirmar o cambiar el rol reemplaza la raíz y Atrás no la quita. `AppConfig` sigue en preferencias. `rememberViewModelStoreNavEntryDecorator` ata el ViewModel de la entrada; los que comparten rol, guía, vinculación, reproducción y kiosco usan el almacén de `app/navigation/session`. `App.kt` compone el host, la guía y el aviso de actualización; no construye las pantallas de cada área.
 - El sistema de diseño compartido está en `core/ui/`: tema claro/oscuro, tipografía
   Sora/Inter, iconos Material Symbols y componentes propios. Ver
   [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md).

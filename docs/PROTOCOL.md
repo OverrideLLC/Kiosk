@@ -236,6 +236,10 @@ formato son correctos. Una subida repetida con el mismo hash es idempotente.
 }
 ```
 
+El cuerpo es la playlist **activa** del Controlador (`id`, `name`, versión e
+ítems). La Pantalla reemplaza la playlist que está reproduciendo; no guarda la
+biblioteca completa del Controlador.
+
 `lock` es opcional: si viene, la Pantalla guarda también la configuración de
 bloqueo. La playlist solo se aplica si **todas** las imágenes referenciadas ya
 están guardadas y su hash coincide.
@@ -334,4 +338,6 @@ siguiente aplicación correcta.
   `format`) y viaja por `PUT /update/{version}`.
 - Solo hay un Controlador vinculado por Pantalla; no se soportan escrituras
   concurrentes de varios Controladores.
-- La playlist local del Controlador es la única fuente de verdad.
+- La playlist activa del Controlador es la fuente de verdad de cada envío. El
+  Controlador puede guardar varias playlists con nombre; cada `PUT /playlist`
+  transmite solo la activa. La Pantalla conserva la última aplicada.

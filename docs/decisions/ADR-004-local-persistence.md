@@ -2,8 +2,8 @@
 
 ## Estado
 
-Aceptada e implementada para la persistencia local en
-`codex/architecture-improvements`.
+Aceptada e implementada en `master` desde la 1.1.5. El trabajo se desarrolló en
+`codex/architecture-improvements` y se fusionó con el pull request #1.
 
 ## Contexto
 

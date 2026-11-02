@@ -18,8 +18,9 @@ y no como una ventana de Windows.
 
 ## Los pasos
 
-1. **Controlador**: abre la app, elige *Controlador*, agrega imágenes a la playlist
-   y ajusta la duración de cada una.
+1. **Controlador**: abre la app, elige *Controlador*, agrega imágenes a la
+   playlist activa con el diálogo nativo de archivos y ajusta la duración de
+   cada una.
 2. **Pantalla**: abre la app en el otro equipo, elige *Pantalla* y anota el código
    de 6 dígitos que aparece en negro. La misma pantalla muestra su **IP:puerto**
    para vincularla sin depender del descubrimiento automático.
@@ -31,6 +32,29 @@ y no como una ventana de Windows.
 Las próximas veces basta con abrir la app: la pantalla se anuncia sola y el
 Controlador la vuelve a encontrar aunque cambie de IP. Si la red no permite mDNS,
 usa **Agregar por IP** (`192.168.1.40:8765`).
+
+## Playlists
+
+El Controlador guarda **varias playlists con nombre**. Una está activa: es la
+que se edita, la que se envía y la que se puede proyectar en el mismo equipo.
+El selector *Playlist activa* permite crearla, renombrarla o eliminarla. Siempre
+queda al menos una. Borrar una playlist no borra las imágenes que otra playlist
+todavía usa.
+
+Cada Pantalla guarda solo la playlist que recibió. No hay una playlist distinta
+asignada por pantalla ni programación por horarios.
+
+## Proyectar en el mismo equipo
+
+**Proyectar** (atajo Win+V) muestra la playlist activa a pantalla completa en el
+equipo del Controlador. Mientras proyecta, ese equipo usa el mismo bloqueo que
+una Pantalla. **Dejar de proyectar** vuelve al tablero. El envío a las Pantallas
+de la red sigue siendo independiente.
+
+## Idioma
+
+Los textos están en español y en inglés. La app usa el idioma del sistema. No
+hay un selector de idioma dentro de la aplicación.
 
 ## Guía interactiva
 
@@ -156,10 +180,17 @@ solo un cambio de rol o un reinicio explícito los limpia. Consulta
 
 ## Estado
 
-MVP funcional: vinculación por código, sincronización incremental, reproducción
-local, bloqueo tipo kiosco, guía interactiva, tema claro/oscuro, empaquetado para
-Windows y actualizaciones automáticas por LAN. Consulta los límites conocidos
-antes de usarlo en producción.
+La versión publicada es la **1.1.5**, en `master`. Incluye vinculación por
+código, playlists con nombre, sincronización incremental, reproducción local,
+proyección en el Controlador, bloqueo tipo kiosco, guía interactiva, tema
+claro/oscuro, textos según el idioma del sistema, empaquetado para Windows y
+actualizaciones automáticas por LAN.
+
+La arquitectura por features (DataStore, Room 3, Navigation 3 y Koin) está
+fusionada en `master`. La validación automática de Windows pasó en el runner
+hospedado; el recorrido manual en un equipo Windows 11 real sigue pendiente.
+Consulta los [límites conocidos](docs/KNOWN_LIMITATIONS.md) antes de usarlo en
+un comercio.
 
 ## Licencia
 

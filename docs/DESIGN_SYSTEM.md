@@ -118,7 +118,7 @@ Nada por debajo de **13 sp** en el Controlador.
 
 - Tarjetas: 28 dp (32 dp cuando están seleccionadas, con transición).
 - Botones y chips: píldora.
-- Campos: 16 dp.
+- Campos: 16 dp. Miniaturas: 12 dp.
 - Diálogos: 28 dp.
 - Menús: 20 dp.
 - Escala de espacio: 4, 8, 12, 16, 24, 32, 40 y 56 dp (`Space`).
@@ -154,6 +154,8 @@ La Pantalla en reproducción no tiene movimiento decorativo.
 | `AppStatusChip` | `core/ui/components/AppStatusChip.kt` | estados con tono semántico |
 | `AppListItem` | `core/ui/components/AppListItem.kt` | fila con miniatura y acciones |
 | `AppDialog` | `core/ui/components/AppDialog.kt` | diálogo 480 dp (600 dp en el de seguridad) con ícono y acciones |
+| `AppPanelHeader` | `core/ui/components/AppPanelHeader.kt` | título, subtítulo y acciones de un panel |
+| `OverrideLogo` / `OverrideFooter` | `core/ui/components/OverrideBrand.kt` | marca y pie con enlace a override.com.mx |
 | `AppDropdownMenu` | `core/ui/components/AppDropdownMenu.kt` | menú de desbordamiento |
 | `AppSnackbarHost` | `core/ui/components/AppSnackbar.kt` | aviso con “Deshacer” |
 | `AppLoadingIndicator` | `core/ui/components/AppLoadingIndicator.kt` | puntos ondulados |

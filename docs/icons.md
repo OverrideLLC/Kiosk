@@ -64,7 +64,7 @@ nombre del archivo.
 
 - Un ícono decorativo lleva `contentDescription = null`.
 - Un ícono que es el único contenido de un botón lleva una descripción de la
-  acción (`Strings.*`), nunca el nombre técnico del ícono.
+  acción (`stringResource`), nunca el nombre técnico del ícono.
 - No se agregan íconos “por si acaso”: solo los que usa una pantalla.
 - No se cambia el estilo (outlined/sharp) ni se mezclan familias.
 

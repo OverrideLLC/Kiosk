@@ -3,26 +3,26 @@
 Lista honesta de lo que el MVP **no** hace o hace con limitaciones. Úsala antes de
 prometer funciones o de instalar la app en un comercio real.
 
-> **Estado:** las fases de arquitectura 7–17 están aplicadas en
-> `codex/architecture-improvements`. En la fase 18, Linux pasó la build y el
-> smoke check de `/info` y mDNS. El workflow hospedado de Windows pasó una build
-> limpia y smoke checks de ambos roles en la imagen `windows-2025-vs2026` el
-> 2026-10-23. Sigue pendiente el recorrido manual en un equipo Windows 11 real.
+> **Estado (1.1.5, `master`):** las fases de arquitectura 7–18 están fusionadas
+> en `master` (pull request #1). Linux pasó la build y el smoke check de `/info`
+> y mDNS. El workflow hospedado de Windows pasó una build limpia y smoke checks
+> de ambos roles en la imagen `windows-2025-vs2026` el 2026-10-23. Sigue
+> pendiente el recorrido manual en un equipo Windows 11 real.
 
 ## Plataforma y empaquetado
 
-- **Windows 10/11 es la plataforma objetivo.** Linux pasó la build y el smoke check:
-  ambos roles arrancaron, el Receptor respondió `/info` y el Controlador lo
-  descubrió por mDNS. En el runner hospedado `windows-2025-vs2026` pasaron
-  `clean build` y el smoke test de los roles
+- **Windows 10/11 es la plataforma objetivo.** Ese código está en `master` desde
+  la 1.1.5. Linux pasó la build y el smoke check: ambos roles arrancaron, el
+  Receptor respondió `/info` y el Controlador lo descubrió por mDNS. En el runner
+  hospedado `windows-2025-vs2026` pasaron `clean build` y el smoke test de los
+  roles
   ([ejecución de CI](https://github.com/OverrideLLC/Kiosk/actions/runs/39990088932));
-  este verificó DPAPI, migración local,
-  reproducción autenticada, instalación de hooks de teclado/mouse, registro mDNS,
-  descubrimiento desde el Controlador y arranque fullscreen/normal. Ese runner no
-  sustituye la prueba visible en un equipo Windows 11 real: aún hay que validar
-  allí el bloqueo efectivo de atajos/gestos, interacción de ventanas y uso en la
-  máquina destino. El empaquetado también necesita su propia validación antes de
-  distribuirla.
+  este verificó DPAPI, migración local, reproducción autenticada, instalación de
+  hooks de teclado/mouse, registro mDNS, descubrimiento desde el Controlador y
+  arranque fullscreen/normal. Ese runner no sustituye la prueba visible en un
+  equipo Windows 11 real: aún hay que validar allí el bloqueo efectivo de
+  atajos/gestos, interacción de ventanas y uso en la máquina destino. El
+  empaquetado publicado de la 1.1.5 también necesita probarse en una PC limpia.
 - Para generar el instalador `.exe`/`.msi` el plugin de Compose descarga WiX 3.11
   automáticamente la primera vez; no hace falta instalarlo a mano. Sin conexión
   en esa primera compilación solo se genera la carpeta portable.
@@ -60,8 +60,12 @@ prometer funciones o de instalar la app en un comercio real.
 
 - La Pantalla conserva su vinculación, playlist, medios y bloqueo al reiniciar.
   Sigue reproduciendo la copia local aunque no haya red.
-- Solo hay **una playlist activa** por Controlador. No hay varias playlists por
-  pantalla ni programación por horarios.
+- El Controlador guarda **varias playlists con nombre** y marca una como activa.
+  Enviar, sincronizar y proyectar usan esa playlist. Cada Pantalla conserva solo
+  la última playlist aplicada: no hay una playlist distinta por pantalla ni
+  programación por horarios.
+- Borrar una playlist del Controlador no borra imágenes que otra playlist todavía
+  usa. Siempre debe quedar al menos una.
 - No hay video, audio, PDF ni animaciones. Solo JPG, PNG y WEBP de hasta 25 MB.
 - La transición es un fundido de 500 ms. No hay efectos configurionales.
 - Las imágenes dañadas o ausentes se omiten con un log; si todas fallan, la

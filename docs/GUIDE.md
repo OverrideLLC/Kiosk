@@ -24,7 +24,7 @@ producen el descubrimiento, la vinculación, el bloqueo y la sincronización.
 
 | Paso | Qué muestra | Cuándo avanza |
 | --- | --- | --- |
-| 1. Agrega imágenes | La playlist real, con el botón *Agregar imágenes*. | Cuando la playlist activa tiene al menos una imagen. |
+| 1. Agrega imágenes | La playlist activa, con el botón *Agregar imágenes*. | Cuando la playlist activa tiene al menos una imagen. |
 | 2. Vincula una Pantalla | La lista de pantallas descubiertas y el campo de IP manual. | Cuando hay al menos una Pantalla vinculada. |
 | 3. Crea la contraseña | El diálogo de contraseña de bloqueo que abre la vinculación. | Cuando el Controlador ya tiene una contraseña configurada. |
 | 4. Envía la playlist | La pantalla seleccionada y el botón de envío. | Cuando el envío a las pantallas seleccionadas termina bien. |
@@ -32,7 +32,7 @@ producen el descubrimiento, la vinculación, el bloqueo y la sincronización.
 
 La guía incluye atajos para operar la pantalla real:
 
-- **Agregar imágenes**: abre el selector de archivos del sistema.
+- **Agregar imágenes**: abre el diálogo nativo del sistema (JPG, PNG y WEBP, selección múltiple).
 - **Buscar pantallas**: vuelve a lanzar el descubrimiento mDNS.
 - **Enviar ahora**: ejecuta el mismo envío de *Enviar a pantallas seleccionadas*
   cuando hay playlist y al menos una pantalla seleccionada.
@@ -69,7 +69,10 @@ la persona necesita.
 
 ## Límites
 
-- La guía está en español, como el resto de la interfaz.
+- Los textos de la guía siguen el idioma del sistema: español por defecto e
+  inglés si Windows está en inglés. No hay un selector dentro de la app.
+- El paso de imágenes observa la playlist activa. Si el Controlador tiene varias,
+  la guía avanza cuando esa playlist activa ya contiene al menos una imagen.
 - No reemplaza la configuración de red ni el aviso del Firewall de Windows.
 - Si mDNS no encuentra la Pantalla, el paso de vinculación sigue disponible con
   **Agregar por IP**.
