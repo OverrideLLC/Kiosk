@@ -81,13 +81,13 @@ Los detalles, límites y el procedimiento para publicar una versión están en
 
 ## Descarga
 
-La versión **1.1.4** está publicada en
-[GitHub Releases](https://github.com/OverrideLLC/Kiosk/releases/tag/v1.1.4)
+La versión **1.1.5** está publicada en
+[GitHub Releases](https://github.com/OverrideLLC/Kiosk/releases/tag/v1.1.5)
 con tres variantes para Windows 10/11:
 
-- `OverrideKiosk-1.1.4.exe`: instalador único.
-- `OverrideKiosk-1.1.4.msi`: instalador MSI para despliegue.
-- `OverrideKiosk-1.1.4-portable.zip`: carpeta portable; descomprime y ejecuta
+- `OverrideKiosk-1.1.5.exe`: instalador único.
+- `OverrideKiosk-1.1.5.msi`: instalador MSI para despliegue.
+- `OverrideKiosk-1.1.5-portable.zip`: carpeta portable; descomprime y ejecuta
   `OverrideKiosk.exe`.
 
 No hace falta JDK ni internet para usar ninguna de las tres. La carpeta portable

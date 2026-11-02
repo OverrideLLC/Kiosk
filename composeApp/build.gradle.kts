@@ -100,7 +100,7 @@ compose.desktop {
             // Toolset 3.x installed and on PATH; createDistributable does not.
             targetFormats(TargetFormat.Msi, TargetFormat.Exe)
             packageName = "OverrideKiosk"
-            packageVersion = "1.1.4"
+            packageVersion = "1.1.5"
             description = "Override Kiosk: carrusel de imágenes para la red local"
             vendor = "Override"
             copyright = "© 2026 Override"

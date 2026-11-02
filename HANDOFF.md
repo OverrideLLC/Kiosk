@@ -8,7 +8,7 @@ Remoto: `https://github.com/OverrideLLC/Kiosk.git`
 ## Estado actual
 
 La rama integra `origin/master` hasta la 1.1.4 y conserva los cambios de
-arquitectura feature-first. La versión de trabajo es **1.1.4** e incluye lo de
+arquitectura feature-first. La versión de trabajo es **1.1.5** e incluye lo de
 1.1.0/1.1.1/1.1.2 (playlists con nombre,
 bloqueo de la Pantalla, guía interactiva, rediseño visual, actualizaciones
 automáticas por LAN y pantalla completa de la Pantalla), el arranque **siempre
@@ -20,7 +20,7 @@ Los documentos de actualizaciones, empaquetado, protocolo, límites y la
 [guía](docs/GUIDE.md) describen las funciones; el logo oficial está normalizado,
 el `icon.ico` se regeneró y el pie enlaza a `https://override.com.mx`. La licencia
 es **MIT** (`LICENSE`) y el workflow `.github/workflows/release.yml` genera los
-artefactos de Windows y la release al empujar un tag `v1.1.4`.
+artefactos de Windows y la release al empujar un tag `v1.1.5`.
 
 Esta nota existe para dejar claro qué falta comprobar antes de considerar el
 trabajo cerrado y para poder continuar desde otra computadora.
@@ -52,12 +52,12 @@ trabajo cerrado y para poder continuar desde otra computadora.
    - Cortar la red a mitad de una sincronización y comprobar que la Pantalla
      conserva la playlist anterior y sigue reproduciendo sin red.
 4. **Actualización automática**
-   - Instalar o descomprimir una versión anterior en la Pantalla y la 1.1.4 en
+   - Instalar o descomprimir una versión anterior en la Pantalla y la 1.1.5 en
      el Controlador.
    - Vincular ambas y comprobar que el Controlador detecta la versión vieja,
      envía el paquete y la Pantalla muestra el aviso.
    - Aceptar la actualización y confirmar que la Pantalla se reinicia, conserva la
-     vinculación y la playlist y reporta `appVersion` 1.1.4.
+     vinculación y la playlist y reporta `appVersion` 1.1.5.
    - Con la Pantalla **bloqueada**, confirmar que el aviso recibe clics y que
      **Actualizar ahora** funciona sin desbloquear (corrección de 1.1.4).
    - Probar **Ahora no** con una actualización opcional y el botón **Actualizar**
@@ -66,7 +66,7 @@ trabajo cerrado y para poder continuar desde otra computadora.
      obligatoria.
    - Revisar `logs\update.log` si el reemplazo falla.
    - Si la Pantalla está en **1.1.2**, recordar que esa versión tiene el fallo del
-     mouse en el aviso: desbloquearla o instalar la 1.1.4 manualmente una vez.
+     mouse en el aviso: desbloquearla o instalar la 1.1.5 manualmente una vez.
 5. **Empaquetado**
    - [x] Build final y carpeta portable generados.
    - [x] Instaladores `.exe` y `.msi` generados; el plugin descarga WiX solo.

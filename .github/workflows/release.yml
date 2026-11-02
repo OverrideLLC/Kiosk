@@ -26,7 +26,7 @@ jobs:
         id: version
         shell: pwsh
         run: |
-          $constants = "composeApp\src\commonMain\kotlin\app\kiosksync\core\Constants.kt"
+          $constants = "composeApp\src\commonMain\kotlin\app\kiosksync\core\common\app\AppIdentity.kt"
           $match = Select-String -Path $constants -Pattern 'APP_VERSION\s*=\s*"([^"]+)"'
           if (-not $match) { throw "APP_VERSION not found in $constants" }
           $version = $match.Matches[0].Groups[1].Value
