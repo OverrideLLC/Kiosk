@@ -56,6 +56,14 @@ data class PlaylistApplyResult(
 class PlaylistRejectedException(val missingMediaIds: List<String>) :
     Exception("Receiver rejected the playlist because media is missing")
 
+/**
+ * The Screen rejected an update package. [reason] is the message returned by
+ * the Screen and can be shown directly when it is human-readable.
+ */
+class UpdateRejectedException(
+    val reason: String?,
+) : Exception(reason ?: "update_rejected")
+
 interface EmitterClient {
     suspend fun getInfo(host: String, port: Int): Result<ReceiverInfo>
     suspend fun pair(

@@ -73,6 +73,10 @@ Tras 5 intentos fallidos, el desbloqueo se rechaza durante 30 segundos.
 - Al desbloquear con la secuencia, el hook libera el puntero para que la card
   **Opciones de Pantalla** se pueda usar con mouse o touchpad. Al pulsar
   **Volver a bloquear** o cerrar la card, el puntero se captura de nuevo.
+- Cuando aparece un aviso de **actualización** en una Pantalla bloqueada, el
+  mouse se libera temporalmente para poder pulsar **Actualizar ahora** o
+  **Ahora no**; el teclado sigue bloqueado. Al cerrar el aviso, el mouse se
+  captura otra vez. Esta corrección está en la 1.1.4.
 - Por defecto todos los roles se abren a pantalla completa y sin bordes. La
   Pantalla queda siempre encima; `--windowed` abre una ventana normal para
   depuración y desactiva los hooks nativos.

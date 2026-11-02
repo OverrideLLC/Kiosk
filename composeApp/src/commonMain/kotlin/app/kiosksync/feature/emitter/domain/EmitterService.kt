@@ -29,6 +29,7 @@ data class EmitterUpdateState(
     val status: EmitterUpdateStatus,
     val version: String,
     val forced: Boolean = false,
+    val message: String? = null,
 )
 
 data class EmitterServiceState(

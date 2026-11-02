@@ -16,6 +16,7 @@ import app.kiosksync.feature.emitter.domain.ReceiverInfo
 import app.kiosksync.feature.emitter.domain.ReceiverPairingCredential
 import app.kiosksync.feature.emitter.domain.ReceiverStatus
 import app.kiosksync.feature.emitter.domain.RemoteSyncState
+import app.kiosksync.feature.emitter.domain.UpdateRejectedException
 import app.kiosksync.feature.emitter.domain.UpdateUploadResult
 import app.kiosksync.feature.kiosk.domain.KioskLockConfigurationUseCases
 import app.kiosksync.feature.kiosk.domain.KioskLockManager
@@ -115,6 +116,87 @@ class EmitterUpdateTest {
             scope.cancel()
         }
     }
+
+    @Test
+    fun showsTheScreenReasonWhenItCannotStageTheUpdate() = runBlocking {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val reason = "Esta Pantalla no se está ejecutando desde una instalación actualizable."
+        val storage = FakeRepositories().apply {
+            emitterPairedDevices = listOf(
+                EmitterPairedDevice(
+                    deviceId = "rx-1",
+                    deviceName = "Pantalla",
+                    token = "token",
+                    host = "127.0.0.1",
+                    port = 8765
+                )
+            )
+        }
+        val discovery = FixedDiscovery(
+            listOf(
+                DiscoveredDevice(
+                    deviceId = "rx-1",
+                    deviceName = "Pantalla",
+                    host = "127.0.0.1",
+                    port = 8765,
+                    paired = true,
+                    appVersion = "1.1.2"
+                )
+            )
+        )
+        val client = RecordingEmitterClient(
+            screenVersion = "1.1.2",
+            updateFailure = UpdateRejectedException(reason)
+        )
+        val service = EmitterServiceImpl(
+            discovery = discovery,
+            client = client,
+            screensRepository = storage,
+            kioskLockRepository = storage,
+            syncRepository = storage,
+            logger = NoOpLogger(),
+            serviceScope = scope,
+            backgroundDispatcher = Dispatchers.Unconfined,
+            updatePackageProvider = FakeUpdatePackageProvider(
+                UpdatePackage(
+                    version = APP_VERSION,
+                    sha256 = "a".repeat(64),
+                    bytes = byteArrayOf(1, 2, 3)
+                )
+            ),
+        )
+        val lockManager = KioskLockManager(
+            logger = NoOpLogger(),
+            passwordHasher = { it },
+            scope = scope,
+            platformLockAvailable = false,
+        )
+        val holder = EmitterViewModel(
+            service = service,
+            kioskLockConfigurationUseCases = KioskLockConfigurationUseCases(
+                repository = storage,
+                manager = lockManager,
+                passwordHasher = { it },
+            ),
+            logger = NoOpLogger(),
+            emitterId = "tx-1",
+            emitterName = "Caja",
+            parentScope = scope,
+            kioskLockManager = lockManager,
+            projectionController = ProjectionController(),
+            backgroundDispatcher = Dispatchers.Unconfined,
+        )
+        try {
+            holder.start()
+
+            val update = holder.state.value.updateByDevice["rx-1"]
+            assertEquals(EmitterUpdateStatus.FAILED, update?.status)
+            assertEquals(reason, update?.message)
+        } finally {
+            holder.stop()
+            scope.cancel()
+        }
+    }
 }
 
 internal fun createEmitterViewModelForActionTests(scope: CoroutineScope): EmitterViewModel {
@@ -171,7 +253,8 @@ internal class FixedDiscovery(devices: List<DiscoveredDevice>) : DeviceDiscovery
 }
 
 internal class RecordingEmitterClient(
-    private val screenVersion: String
+    private val screenVersion: String,
+    private val updateFailure: Throwable? = null,
 ) : EmitterClient {
     val uploadedVersions = mutableListOf<String>()
 
@@ -237,6 +320,7 @@ internal class RecordingEmitterClient(
         bytes: ByteArray
     ): Result<UpdateUploadResult> {
         uploadedVersions += version
+        updateFailure?.let { return Result.failure(it) }
         return Result.success(
             UpdateUploadResult(
                 accepted = true,

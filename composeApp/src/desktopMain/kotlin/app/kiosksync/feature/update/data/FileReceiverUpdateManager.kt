@@ -14,6 +14,9 @@ import app.kiosksync.core.security.Sha256
 import app.kiosksync.feature.update.domain.ReceiverUpdateManager
 import app.kiosksync.feature.update.domain.ReceiverUpdateError
 import app.kiosksync.feature.update.domain.ReceiverUpdateState
+import app.kiosksync.resources.Res
+import app.kiosksync.resources.update_not_supported
+import org.jetbrains.compose.resources.getString
 import java.io.File
 import java.util.zip.ZipFile
 import kotlinx.coroutines.Dispatchers
@@ -73,7 +76,7 @@ class FileReceiverUpdateManager(
         }
         val targetAppDir = appDir
         if (targetAppDir == null || !targetAppDir.isDirectory) {
-            return Result.failure(IllegalStateException("installation_not_supported"))
+            return Result.failure(IllegalStateException(getString(Res.string.update_not_supported)))
         }
         // The manager's current version is the "screen" side of the policy;
         // the incoming package is the controller side.

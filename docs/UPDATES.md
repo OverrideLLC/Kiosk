@@ -55,7 +55,9 @@ estado. No hay un botón de "buscar actualizaciones" separado.
 1. El Controlador muestra el progreso por pantalla: preparando, enviando,
    esperando confirmación y actualizando.
 2. La Pantalla valida el paquete y muestra un aviso con **Actualizar ahora** o
-   **Ahora no** (este último solo si la actualización es opcional).
+   **Ahora no** (este último solo si la actualización es opcional). Desde la
+   **1.1.4** el aviso acepta clics de mouse o pantalla táctil aunque la Pantalla
+   esté bloqueada; el teclado sigue bloqueado por seguridad.
 3. Al aceptar, la Pantalla cierra la aplicación, un ayudante de PowerShell espera
    a que el proceso termine, reemplaza `app\` y vuelve a abrir `OverrideKiosk.exe`.
 4. El reinicio tras una actualización **conserva** la vinculación, la playlist, las
@@ -95,6 +97,25 @@ estado. No hay un botón de "buscar actualizaciones" separado.
 
 No hace falta actualizar primero la Pantalla: el Controlador es el que tiene el
 paquete y el que inicia el envío.
+
+## Actualizar una Pantalla que está en 1.1.2
+
+La 1.1.2 tiene un fallo en el modo kiosco: cuando el aviso de actualización
+aparece, el hook del mouse sigue descartando los clics. El aviso se ve, pero el
+botón **Actualizar ahora** no responde. Para sacar esa Pantalla de 1.1.2:
+
+1. Desbloquea la Pantalla con la secuencia de administración
+   (`Shift + Shift + Ctrl + Ctrl + Alt + Shift` por defecto) y su contraseña, si
+   tiene. El mouse vuelve a funcionar y el aviso se puede aceptar.
+2. Si el aviso ya no está, pulsa **Actualizar** en la tarjeta de esa Pantalla
+   desde el Controlador para volver a enviarlo.
+3. Si no puedes desbloquearla, instala la versión nueva manualmente con el
+   `.exe`, el `.msi` o la carpeta portable sobre la instalación existente. Los
+   datos de `%APPDATA%\OverrideKiosk` (vinculación, playlist e imágenes) se
+   conservan.
+
+La corrección está en la 1.1.4: a partir de esa versión el aviso se puede aceptar
+con mouse o pantalla táctil sin desbloquear la Pantalla.
 
 ## Límites
 

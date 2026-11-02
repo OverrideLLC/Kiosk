@@ -6,6 +6,7 @@ import app.kiosksync.feature.emitter.domain.PairError
 import app.kiosksync.feature.emitter.domain.PairRejectedException
 import app.kiosksync.feature.emitter.domain.PlaylistApplyResult
 import app.kiosksync.feature.emitter.domain.PlaylistRejectedException
+import app.kiosksync.feature.emitter.domain.UpdateRejectedException
 import app.kiosksync.core.common.pairing.DeviceInfo
 import app.kiosksync.core.common.http.ErrorResponse
 import app.kiosksync.core.common.http.HEADER_AUTH_TOKEN
@@ -240,7 +241,13 @@ class KtorEmitterClient(
             }
         }
         if (response.status != HttpStatusCode.OK) {
-            throw IOException("PUT /update returned HTTP ${response.status}")
+            // The Screen explains why it rejected the package (not a packaged
+            // install, bad hash, too large...). Keep that reason so the
+            // controller can show it instead of a generic network error.
+            val error = runCatching { response.body<ErrorResponse>() }.getOrNull()
+            throw UpdateRejectedException(
+                error?.message ?: "PUT /update returned HTTP ${response.status}"
+            )
         }
         response.body<UpdateUploadResponse>().let {
             UpdateUploadResult(accepted = it.accepted, version = it.version, forced = it.forced)

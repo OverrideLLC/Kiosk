@@ -9,6 +9,7 @@ import app.kiosksync.feature.emitter.domain.EmitterClient
 import app.kiosksync.feature.emitter.domain.EmitterServiceDevice
 import app.kiosksync.feature.emitter.domain.EmitterUpdateState
 import app.kiosksync.feature.emitter.domain.EmitterUpdateStatus
+import app.kiosksync.feature.emitter.domain.UpdateRejectedException
 import app.kiosksync.feature.update.domain.UpdatePackageProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -169,6 +170,7 @@ internal class EmitterUpdateRunner(
                             EmitterUpdateStatus.FAILED,
                             plan.targetVersion,
                             plan.urgency == UpdateUrgency.FORCED,
+                            message = updateFailureMessage(error),
                         ),
                     )
                     logger.warn("Update ${plan.targetVersion} for '${target.device.deviceName}' failed: ${error.message}")
@@ -201,6 +203,15 @@ internal class EmitterUpdateRunner(
             jobs.values.forEach(Job::cancel)
             jobs.clear()
         }
+    }
+
+    /**
+     * The Screen returns a human-readable reason when it cannot stage the
+     * update. Protocol codes use underscores and stay behind the generic message.
+     */
+    private fun updateFailureMessage(error: Throwable): String? {
+        val reason = (error as? UpdateRejectedException)?.reason?.trim()
+        return reason?.takeIf { it.isNotEmpty() && '_' !in it }
     }
 
     private fun clearFinished(deviceId: String) {

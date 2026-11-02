@@ -325,7 +325,7 @@ internal fun UpdateStatusRow(update: EmitterUpdateState, deviceVersion: String?)
                 tint = colors.error,
             )
             Text(
-                text = stringResource(Res.string.update_send_failed),
+                text = update.message ?: stringResource(Res.string.update_send_failed),
                 style = MaterialTheme.typography.bodySmall,
                 color = colors.error,
             )
